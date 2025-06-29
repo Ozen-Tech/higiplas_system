@@ -21,6 +21,27 @@ CREATE TABLE produtos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabela para registrar movimentações de estoque
+CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
+    id SERIAL PRIMARY KEY,
+    produto_id INTEGER NOT NULL,
+    tipo_movimentacao VARCHAR(7) NOT NULL, -- 'ENTRADA' ou 'SAIDA'
+    quantidade INTEGER NOT NULL,
+    data_movimentacao TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    usuario_id INTEGER, -- Opcional, mas bom para rastrear quem fez
+    observacao TEXT,
+    CONSTRAINT fk_produto
+        FOREIGN KEY(produto_id) 
+        REFERENCES produtos(id)
+        ON DELETE CASCADE, -- Se um produto for deletado, suas movimentações também são.
+    CONSTRAINT fk_usuario
+        FOREIGN KEY(usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE SET NULL, -- Se o usuário for deletado, a movimentação não é perdida.
+    CONSTRAINT chk_tipo_movimentacao CHECK (tipo_movimentacao IN ('ENTRADA', 'SAIDA')),
+    CONSTRAINT chk_quantidade_positiva CHECK (quantidade > 0)
+);
+
 CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,

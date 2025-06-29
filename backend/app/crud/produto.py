@@ -1,5 +1,5 @@
 from app.schemas.produto import ProdutoCreate
-from app.database import get_db_cursor
+from app.db.connection import get_db_cursor
 
 def create_produto(produto: ProdutoCreate):
     with get_db_cursor(commit=True) as cursor:

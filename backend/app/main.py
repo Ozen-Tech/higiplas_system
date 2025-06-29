@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import empresas, produtos
+from app.routers import empresas, produtos, auth, movimentacoes
 
 app = FastAPI(
     title="Higiplas API",
@@ -8,8 +8,10 @@ app = FastAPI(
 )
 
 # Inclui os routers na aplicação principal
+app.include_router(auth.router) 
 app.include_router(empresas.router)
 app.include_router(produtos.router)
+app.include_router(movimentacoes.router)
 
 @app.get("/", tags=["Root"])
 def read_root():

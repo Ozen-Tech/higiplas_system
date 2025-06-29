@@ -1,5 +1,6 @@
 from app.schemas.empresa import EmpresaCreate
-from app.database import get_db_cursor
+from app.db.connection import get_db_cursor
+
 
 def create_empresa(empresa: EmpresaCreate):
     with get_db_cursor(commit=True) as cursor:

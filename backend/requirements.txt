@@ -1,3 +1,16 @@
+# backend/requirements.txt
+
+# Framework e Servidor
 fastapi
 uvicorn[standard]
+
+# Conexão com o Banco de Dados
 psycopg2-binary
+
+# Segurança e Autenticação
+passlib[bcrypt]
+python-jose[cryptography]
+
+# Dependências do FastAPI/Pydantic
+email-validator
+python-multipart

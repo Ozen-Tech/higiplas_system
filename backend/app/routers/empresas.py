@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from app.schemas.empresa import Empresa, EmpresaCreate
 from app.crud import empresa as crud_empresa
+from app.db.connection import get_db_cursor
+
 
 router = APIRouter(
     prefix="/empresas",
