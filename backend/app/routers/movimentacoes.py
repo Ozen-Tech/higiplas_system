@@ -1,46 +1,50 @@
+# app/routers/movimentacoes.py
+
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg2.extensions import connection
-from app.db.connection import get_db_cursor
+
+# Importe as dependências e schemas
+from app.db.connection import get_db
 from app.schemas.movimentacao_estoque import MovimentacaoEstoque, MovimentacaoEstoqueCreate
 from app.schemas.usuario import Usuario
 from app.crud import movimentacao_estoque as crud_movimentacao
-from app.routers.auth import get_current_user
+from app.security import get_current_user
 
 router = APIRouter(
-    prefix="/movimentacoes", # Todas as rotas aqui começarão com /movimentacoes
+    prefix="/movimentacoes",
     tags=["Movimentações de Estoque"],
-    dependencies=[Depends(get_current_user)] # Protege TODAS as rotas neste arquivo
+    dependencies=[Depends(get_current_user)] # Ótima prática! Protege todas as rotas.
 )
 
 @router.post("/", response_model=MovimentacaoEstoque, status_code=status.HTTP_201_CREATED)
 def registrar_nova_movimentacao(
     movimentacao: MovimentacaoEstoqueCreate,
-    conn: connection = Depends(get_db_cursor),
+    db: connection = Depends(get_db), # Renomeei 'conn' para 'db' para manter o padrão
     current_user: Usuario = Depends(get_current_user)
 ):
     """
     Registra uma nova movimentação de estoque (ENTRADA ou SAIDA).
-
-    Esta operação é transacional:
-    - **Atualiza** o `estoque_atual` na tabela `produtos`.
-    - **Cria** um registro na tabela `movimentacoes_estoque`.
-
-    Apenas usuários autenticados podem realizar esta operação.
+    Esta operação é transacional e requer autenticação.
     """
-    
-    # Passamos o ID do usuário logado para a função do CRUD
-    # para que a movimentação seja associada a ele.
+    # A chamada para o CRUD está perfeita, passando o ID do usuário logado.
     db_movimentacao = crud_movimentacao.create_movimentacao_estoque(
-        conn=conn, 
+        conn=db, 
         movimentacao=movimentacao, 
         usuario_id=current_user.id
     )
     
-    if not db_movimentacao:
-        # Esta é uma proteção extra, embora o CRUD já levante exceções.
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Não foi possível criar a movimentação de estoque."
-        )
-        
-    return MovimentacaoEstoque.model_validate(db_movimentacao)
+    # CORREÇÃO: O retorno agora é direto. 
+    # O FastAPI usa o 'response_model' para validar o dicionário que o CRUD retorna.
+    return db_movimentacao
+
+@router.get("/produto/{produto_id}", response_model=List[MovimentacaoEstoque])
+def listar_movimentacoes_por_produto(
+    produto_id: int,
+    db: connection = Depends(get_db) # Renomeei 'conn' para 'db' para manter o padrão
+):
+    """
+    Lista todo o histórico de movimentações de estoque para um produto específico.
+    """
+    movimentacoes = crud_movimentacao.get_movimentacoes_by_produto_id(conn=db, produto_id=produto_id)
+    return movimentacoes

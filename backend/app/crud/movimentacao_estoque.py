@@ -63,3 +63,22 @@ def create_movimentacao_estoque(conn: connection, movimentacao: MovimentacaoEsto
             conn.rollback() # Desfaz a transação em caso de qualquer outro erro
             # Para depuração, você pode querer logar o erro 'e'
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Ocorreu um erro no servidor")
+
+def get_movimentacoes_by_produto_id(conn: connection, produto_id: int):
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, produto_id, tipo_movimentacao, quantidade, data_movimentacao, usuario_id, observacao
+            FROM movimentacoes_estoque
+            WHERE produto_id = %s
+            ORDER BY data_movimentacao DESC;
+            """,
+            (produto_id,)
+        )
+        movimentacoes = cur.fetchall()
+        if not movimentacoes:
+            return []
+        
+        # Converte a lista de tuplas para uma lista de dicionários
+        column_names = [desc[0] for desc in cur.description]
+        return [dict(zip(column_names, row)) for row in movimentacoes]

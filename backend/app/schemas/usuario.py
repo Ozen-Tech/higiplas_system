@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, constr
 from typing import Optional
 from datetime import datetime
 
@@ -9,7 +9,7 @@ class UsuarioBase(BaseModel):
     perfil: str # 'admin', 'vendedor', 'estoquista'
 
 class UsuarioCreate(UsuarioBase):
-    senha: str = Field(..., min_length=6)
+    password: constr(min_length=8)
 
 class Usuario(UsuarioBase):
     id: int

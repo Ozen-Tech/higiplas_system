@@ -1,50 +1,60 @@
 import os
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
-from contextlib import contextmanager
+from psycopg2.extensions import connection as PgConnection
 
-# Carrega as variáveis de ambiente
-DB_NAME = os.getenv("POSTGRES_DB")
-DB_USER = os.getenv("POSTGRES_USER")
-DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-DB_HOST = "db"  # O nome do serviço no docker-compose.yml
-DB_PORT = "5432"
+# Apenas declaramos a variável do pool aqui, mas não a inicializamos.
+# Ela será None no início.
+connection_pool: SimpleConnectionPool | None = None
 
-# Cria um pool de conexões
-# Um pool é mais eficiente do que abrir e fechar conexões a cada requisição
-connection_pool = SimpleConnectionPool(
-    minconn=1,
-    maxconn=10,
-    dbname=DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    host=DB_HOST,
-    port=DB_PORT
-)
+def get_pool() -> SimpleConnectionPool:
+    """Função para obter o pool de conexões. Levanta um erro se não for inicializado."""
+    if connection_pool is None:
+        raise RuntimeError("O pool de conexões não foi inicializado.")
+    return connection_pool
 
-@contextmanager
-def get_db_connection():
-    """
-    Gerenciador de contexto para obter uma conexão do pool.
-    Garante que a conexão seja devolvida ao pool, mesmo que ocorram erros.
-    """
-    connection = connection_pool.getconn()
+
+def init_connection_pool():
+    """Inicializa o pool de conexões. Será chamada no evento de startup da API."""
+    global connection_pool
+    if connection_pool is None:
+        # --- A CORREÇÃO ESTÁ AQUI ---
+        # Lendo as variáveis com os nomes corretos do arquivo .env
+        DB_NAME = os.getenv("DB_NAME")
+        DB_USER = os.getenv("DB_USER")
+        DB_PASSWORD = os.getenv("DB_PASSWORD")
+        DB_HOST = "postgres" # Nome do serviço no docker-compose
+        DB_PORT = "5432"
+        
+        print("Inicializando o pool de conexões...")
+        connection_pool = SimpleConnectionPool(
+            minconn=1,
+            maxconn=20,
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        print("Pool de conexões inicializado com sucesso.")
+
+
+def close_connection_pool():
+    """Fecha todas as conexões no pool. Será chamada no evento de shutdown da API."""
+    global connection_pool
+    if connection_pool:
+        print("Fechando o pool de conexões...")
+        connection_pool.closeall()
+        connection_pool = None
+        print("Pool de conexões fechado.")
+
+def get_db() -> PgConnection:
+    """Dependência do FastAPI que obtém uma conexão do pool e a devolve no final."""
+    pool = get_pool()
+    conn = None
     try:
-        yield connection
+        conn = pool.getconn()
+        yield conn
     finally:
-        connection_pool.putconn(connection)
-
-@contextmanager
-def get_db_cursor(commit=False):
-    """
-    Gerenciador de contexto para obter um cursor.
-    Realiza o commit se especificado.
-    """
-    with get_db_connection() as connection:
-        cursor = connection.cursor()
-        try:
-            yield cursor
-            if commit:
-                connection.commit()
-        finally:
-            cursor.close()
+        if conn:
+            pool.putconn(conn)
