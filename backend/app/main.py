@@ -1,33 +1,39 @@
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from app.routers import empresas, produtos, auth, movimentacoes
-from app.db.connection import init_connection_pool, close_connection_pool
+# backend/app/main.py
 
-# Gerenciador de ciclo de vida para a aplicação FastAPI
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Código a ser executado ANTES da aplicação começar a receber requisições
-    init_connection_pool()
-    yield
-    # Código a ser executado DEPOIS que a aplicação parar
-    close_connection_pool()
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.routers import auth, empresas, produtos, movimentacoes
+from app.db import models, connection
 
 app = FastAPI(
-    title="Higiplas API",
-    description="API para o sistema de gestão da Higiplas e Higitech.",
-    version="1.0.0",
-    lifespan=lifespan  # Adiciona o gerenciador de ciclo de vida
+    title="API Higiplas OzenTech",
+    description="API para o sistema de gestão de estoque e CRM da Higiplas.",
+    version="1.0.0"
 )
 
-# ... (resto do seu main.py com os app.include_router)
-app.include_router(auth.router) 
-app.include_router(empresas.router)
-app.include_router(produtos.router)
-app.include_router(movimentacoes.router)
+
+
+
+# Configuração do CORS
+origins = [
+    "http://localhost",
+    "http://localhost:3000", # Endereço do seu frontend Next.js
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Incluindo as rotas
+app.include_router(auth.router, prefix="/users", tags=["Usuários e Autenticação"])
+app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
+app.include_router(produtos.router, prefix="/produtos", tags=["Produtos"])
+app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
 
 @app.get("/", tags=["Root"])
-def read_root():
-    """
-    Endpoint raiz para verificar se a API está no ar.
-    """
-    return {"message": "Bem-vindo à API do Sistema Higiplas! Ambiente OK."}
+async def read_root():
+    return {"message": "Bem-vindo à API da Higiplas!"}

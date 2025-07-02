@@ -4,6 +4,8 @@ FROM python:3.11-slim
 # Defina o diretório de trabalho no container
 WORKDIR /code
 
+ENV PYTHONPATH "${PYTHONPATH}:/code"
+
 # Copie o arquivo de dependências PRIMEIRO para aproveitar o cache do Docker
 COPY ./backend/requirements.txt /code/requirements.txt
 
@@ -18,4 +20,4 @@ EXPOSE 8000
 
 # Comando para rodar a aplicação.
 # Uvicorn vai procurar por 'app.main' dentro do WORKDIR (/code)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["/bin/sh", "-c", "python -m app.prestart && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]

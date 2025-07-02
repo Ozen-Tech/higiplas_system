@@ -1,56 +1,52 @@
-from psycopg2.extensions import connection
-from app.schemas.produto import ProdutoCreate
-from fastapi import HTTPException, status
-from psycopg2 import errors
+# backend/app/crud/produto.py
 
-def create_produto(conn: connection, produto: ProdutoCreate):
-    """
-    Cria um novo produto no banco de dados.
-    """
-    with conn.cursor() as cur:
-        try:
-            # A query usa os campos definidos no seu schema ProdutoCreate
-            cur.execute(
-                """
-                INSERT INTO produtos (nome, codigo, empresa_id, categoria_id, estoque_minimo, unidade)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id, nome, codigo, empresa_id, categoria_id, estoque_minimo, unidade, created_at;
-                """,
-                (produto.nome, produto.codigo, produto.empresa_id, produto.categoria_id, produto.estoque_minimo, produto.unidade)
-            )
-            new_produto_tuple = cur.fetchone()
-            conn.commit()
-            
-            if new_produto_tuple:
-                column_names = [desc[0] for desc in cur.description]
-                return dict(zip(column_names, new_produto_tuple))
+from sqlalchemy.orm import Session
+from ..schemas import produto as schemas_produto
+from ..db import models
 
-            raise HTTPException(status_code=500, detail="Falha ao obter dados do produto após a criação.")
+def get_produtos(db: Session, empresa_id: int):
+    """Busca todos os produtos de uma empresa."""
+    return db.query(models.Produto).filter(models.Produto.empresa_id == empresa_id).all()
 
-        except errors.UniqueViolation:
-            conn.rollback()
-            raise HTTPException(status.HTTP_409_CONFLICT, "Produto com este código já existe.")
-        except errors.ForeignKeyViolation:
-            conn.rollback()
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "A empresa ou categoria especificada não existe.")
-        except Exception as e:
-            conn.rollback()
-            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Erro ao criar produto: {e}")
+def create_produto(db: Session, produto: schemas_produto.ProdutoCreate, empresa_id: int):
+    """Cria um novo produto."""
+    db_produto = models.Produto(
+        **produto.model_dump(), 
+        empresa_id=empresa_id
+    )
+    db.add(db_produto)
+    db.commit()
+    db.refresh(db_produto)
+    return db_produto
 
+# --- NOVA FUNÇÃO DE UPDATE ---
+def update_produto(db: Session, produto_id: int, produto_data: schemas_produto.ProdutoUpdate, empresa_id: int):
+    """Atualiza um produto existente."""
+    # Busca o produto pelo ID e pelo ID da empresa (por segurança)
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
 
-def get_produtos(conn: connection, skip: int = 0, limit: int = 100):
-    """
-    Busca uma lista paginada de produtos no banco de dados.
-    """
-    produtos = []
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT id, nome, codigo, empresa_id, categoria_id, estoque_minimo, unidade, created_at FROM produtos ORDER BY nome LIMIT %s OFFSET %s;",
-            (limit, skip)
-        )
-        column_names = [desc[0] for desc in cur.description]
-        
-        for row in cur.fetchall():
-            produtos.append(dict(zip(column_names, row)))
-            
-    return produtos
+    if not db_produto:
+        return None
+
+    # Pega os dados enviados pelo usuário (excluindo os que não foram enviados)
+    update_data = produto_data.model_dump(exclude_unset=True)
+
+    # Atualiza os campos do objeto SQLAlchemy
+    for key, value in update_data.items():
+        setattr(db_produto, key, value)
+
+    db.commit()
+    db.refresh(db_produto)
+    return db_produto
+
+# --- NOVA FUNÇÃO DE DELETE ---
+def delete_produto(db: Session, produto_id: int, empresa_id: int):
+    """Deleta um produto existente."""
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
+
+    if not db_produto:
+        return None
+
+    db.delete(db_produto)
+    db.commit()
+    return db_produto
