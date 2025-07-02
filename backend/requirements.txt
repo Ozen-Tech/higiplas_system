@@ -1,13 +1,12 @@
 # Framework e Servidor
 fastapi
 uvicorn[standard]
-
+python-dotenv
 # Conexão com o Banco de Dados
 psycopg2-binary
-
+SQLAlchemy[asyncio]
 # Segurança e Autenticação
-passlib[bcrypt]
-bcrypt
+passlib[bcrypt]==1.7.4
 python-jose[cryptography]
 
 # Dependências do FastAPI/Pydantic

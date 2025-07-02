@@ -1,16 +1,23 @@
-from pydantic import BaseModel, Field
+# backend/app/schemas/empresa.py
+
+from pydantic import BaseModel, ConfigDict
+from typing import Optional
 from datetime import datetime
 
+# --- Schema Base ---
 class EmpresaBase(BaseModel):
-    nome: str = Field(..., min_length=3, max_length=100, example="Higiplas")
-    cnpj: str = Field(..., min_length=14, max_length=18, example="22.599.389/0001-76")
+    nome: str
+    # Tornando o CNPJ opcional em toda a base
+    cnpj: Optional[str] = None
 
+# --- Schema para Criação (herda da base) ---
 class EmpresaCreate(EmpresaBase):
-    pass
+    pass # Não precisa de mais nada, já herda nome e cnpj opcional
 
+# --- Schema para Leitura/Retorno (o que a API devolve) ---
 class Empresa(EmpresaBase):
     id: int
-    created_at: datetime
+    data_criacao: datetime
 
-    class Config:
-        from_attributes = True # Permite que o Pydantic leia dados de objetos (como os do DB)
+    # Configuração para permitir que o Pydantic leia dados de um modelo ORM
+    model_config = ConfigDict(from_attributes=True)

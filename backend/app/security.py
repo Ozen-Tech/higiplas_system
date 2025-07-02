@@ -9,6 +9,7 @@ from psycopg2.extensions import connection
 from app.db.connection import get_db
 from app.schemas.usuario import Usuario
 from app.crud import usuario as crud_usuario
+from app.core import verify_password
 
 # --- CONFIGURAÇÃO DE CRIPTOGRAFIA ---
 
@@ -28,8 +29,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 # --- ESQUEMA DE AUTENTICAÇÃO ---
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 # --- FUNÇÃO DE SEGURANÇA CENTRALIZADA ---
 def get_current_user(
     conn: connection = Depends(get_db), 
@@ -49,7 +49,10 @@ def get_current_user(
         raise credentials_exception
     
     user_data = crud_usuario.get_user_by_email(conn, email=email)
-    if user_data is None:
-        raise credentials_exception
+    user = crud_usuario.get_user_by_email(conn, email=email)
+    
+    if user_data is None:   
+            raise credentials_exception
         
-    return Usuario(**user_data)
+
+    return user

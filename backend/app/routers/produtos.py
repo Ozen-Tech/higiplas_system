@@ -1,55 +1,42 @@
-# app/routers/produtos.py
+# backend/app/routers/produtos.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from psycopg2.extensions import connection
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from sqlalchemy.orm import Session
 from typing import List
 
-# Importe os schemas necessários
-from app.schemas.produto import Produto, ProdutoCreate
-from app.schemas.usuario import Usuario
-
-# Importe o módulo CRUD
-from app.crud import produto as crud_produto
-
-# Importe as dependências
-from app.db.connection import get_db
-from app.security import get_current_user
+from ..crud import produto as crud_produto
+from ..db.connection import get_db
+from ..schemas import produto as schemas_produto
+from ..schemas import usuario as schemas_usuario
+from ..security import get_current_user
 
 router = APIRouter(
     prefix="/produtos",
-    tags=["Produtos"]
+    tags=["Produtos"],
+    responses={404: {"description": "Produto não encontrado"}},
 )
 
-@router.post("/", response_model=Produto, status_code=status.HTTP_201_CREATED)
-def create_new_produto(
-    produto: ProdutoCreate, 
-    db: connection = Depends(get_db), 
-    current_user: Usuario = Depends(get_current_user)
-):
-    """
-    Cria um novo produto. Requer autenticação.
-    - A função agora recebe 'db' via injeção de dependência.
-    - A chamada ao CRUD passa a conexão 'db'.
-    - O retorno é direto, o FastAPI cuida da validação.
-    """
-    # Opcional: você pode usar o current_user para lógicas de permissão aqui
-    # print(f"Usuário {current_user.email} está criando um produto.")
-    
-    return crud_produto.create_produto(conn=db, produto=produto)
+@router.post("/", response_model=schemas_produto.Produto, status_code=status.HTTP_201_CREATED)
+def create_produto(produto: schemas_produto.ProdutoCreate, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
+    return crud_produto.create_produto(db=db, produto=produto, empresa_id=current_user.empresa_id)
 
+@router.get("/", response_model=List[schemas_produto.Produto])
+def read_produtos(db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
+    return crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
 
-@router.get("/", response_model=List[Produto])
-def read_produtos(
-    skip: int = 0, 
-    limit: int = 100, 
-    db: connection = Depends(get_db), 
-    current_user: Usuario = Depends(get_current_user)
-):
-    """
-    Retorna uma lista de produtos. Requer autenticação.
-    - A função agora recebe 'db', 'skip' e 'limit'.
-    - A chamada ao CRUD passa todos os parâmetros necessários.
-    - O retorno é a lista de dicionários que o CRUD fornece.
-    """
-    produtos = crud_produto.get_produtos(conn=db, skip=skip, limit=limit)
-    return produtos
+# --- NOVO ENDPOINT DE UPDATE (PUT) ---
+@router.put("/{produto_id}", response_model=schemas_produto.Produto)
+def update_produto_endpoint(produto_id: int, produto: schemas_produto.ProdutoUpdate, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
+    updated_produto = crud_produto.update_produto(db=db, produto_id=produto_id, produto_data=produto, empresa_id=current_user.empresa_id)
+    if updated_produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return updated_produto
+
+# --- NOVO ENDPOINT DE DELETE ---
+@router.delete("/{produto_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_produto_endpoint(produto_id: int, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
+    deleted_produto = crud_produto.delete_produto(db=db, produto_id=produto_id, empresa_id=current_user.empresa_id)
+    if deleted_produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    # Retorna uma resposta vazia com status 204, como é a boa prática para DELETE
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
