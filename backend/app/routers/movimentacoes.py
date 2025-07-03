@@ -13,7 +13,7 @@ from ..db.connection import get_db
 from ..security import get_current_user
 
 router = APIRouter(
-    prefix="/movimentacoes",
+    #prefix="/movimentacoes",
     tags=["Movimentações de Estoque"],
     responses={404: {"description": "Não encontrado"}},
 )
