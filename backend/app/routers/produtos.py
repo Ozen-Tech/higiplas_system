@@ -11,7 +11,7 @@ from ..schemas import usuario as schemas_usuario
 from ..security import get_current_user
 
 router = APIRouter(
-    prefix="/produtos",
+    #prefix="/produtos",
     tags=["Produtos"],
     responses={404: {"description": "Produto não encontrado"}},
 )
