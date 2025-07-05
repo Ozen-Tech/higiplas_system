@@ -41,10 +41,19 @@ class Produto(Base):
     estoque_minimo = Column(Integer, default=0)
     data_validade = Column(Date, nullable=True)
     quantidade_em_estoque = Column(Integer, default=0)
+    
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa", back_populates="produtos")
-    movimentacoes = relationship("MovimentacaoEstoque", back_populates="produto")
-
+    
+    # --- AQUI ESTÁ A ALTERAÇÃO PRINCIPAL ---
+    # Adicionamos a opção cascade="all, delete-orphan".
+    # Isso diz ao SQLAlchemy: "Quando um Produto for deletado,
+    # delete também todas as MovimentacaoEstoque associadas a ele."
+    movimentacoes = relationship(
+        "MovimentacaoEstoque", 
+        back_populates="produto", 
+        cascade="all, delete-orphan"
+    )
 # --- NOVA CLASSE PARA MOVIMENTAÇÕES ---
 class MovimentacaoEstoque(Base):
     __tablename__ = "movimentacoes_estoque"

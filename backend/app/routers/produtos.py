@@ -3,7 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List
-
+import pandas as pd 
+from io import BytesIO 
 from ..crud import produto as crud_produto
 from ..db.connection import get_db
 from ..schemas import produto as schemas_produto
@@ -40,3 +41,54 @@ def delete_produto_endpoint(produto_id: int, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     # Retorna uma resposta vazia com status 204, como é a boa prática para DELETE
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/download/excel", response_description="Retorna um arquivo Excel com todos os produtos")
+def download_produtos_excel(
+    db: Session = Depends(get_db),
+    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+):
+    """
+    Busca todos os produtos da empresa do usuário logado e os retorna
+    como um arquivo Excel (.xlsx) para download.
+    """
+    # 1. Busca todos os produtos do banco de dados
+    produtos = crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
+
+    if not produtos:
+        raise HTTPException(status_code=404, detail="Nenhum produto encontrado para exportar.")
+
+    # 2. Converte a lista de objetos SQLAlchemy para uma lista de dicionários
+    # Selecionamos apenas as colunas que queremos no Excel
+    produtos_dict = [
+        {
+            "nome": p.nome,
+            "codigo": p.codigo,
+            "categoria": p.categoria,
+            "estoque": p.quantidade_em_estoque, # Renomeando para 'estoque' para manter o padrão do upload
+            "estoque_minimo": p.estoque_minimo,
+            "unidade_medida": p.unidade_medida,
+            "preco_venda": p.preco_venda,
+            "preco_custo": p.preco_custo,
+            "data_validade": p.data_validade,
+            "descricao": p.descricao,
+        }
+        for p in produtos
+    ]
+    
+    # 3. Cria um DataFrame do Pandas a partir dos dados
+    df = pd.DataFrame(produtos_dict)
+
+    # 4. Cria um buffer de bytes em memória para salvar o arquivo Excel
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Produtos')
+    
+    # Pega o conteúdo do buffer
+    output.seek(0)
+
+    # 5. Retorna o arquivo como uma StreamingResponse
+    headers = {
+        'Content-Disposition': 'attachment; filename="higiplas_produtos.xlsx"'
+    }
+    
+    return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
