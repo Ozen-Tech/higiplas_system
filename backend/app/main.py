@@ -17,7 +17,7 @@ app = FastAPI(
 # Configuração do CORS
 origins = [
     "http://localhost",
-    "http://localhost:3000", # Endereço do seu frontend Next.js
+    "https://higiplas-system.vercel.app", # Endereço do seu frontend Next.js
 ]
 
 app.add_middleware(
