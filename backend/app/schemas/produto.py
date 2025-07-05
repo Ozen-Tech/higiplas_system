@@ -18,7 +18,8 @@ class ProdutoBase(BaseModel):
 # Schema para criação de um produto (herda do base)
 class ProdutoCreate(ProdutoBase):
     data_validade: Optional[date] = None
-
+    quantidade_em_estoque: Optional[int] = 0
+    
 # Schema para atualização (TODOS os campos são opcionais)
 class ProdutoUpdate(BaseModel):
     nome: Optional[str] = None

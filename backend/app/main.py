@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, empresas, produtos, movimentacoes
+from app.routers import auth, empresas, produtos, movimentacoes, upload_excel
 from app.db import models, connection
 
 app = FastAPI(
@@ -33,6 +33,7 @@ app.include_router(auth.router, prefix="/users", tags=["Usuários e Autenticaç�
 app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
 app.include_router(produtos.router, prefix="/produtos", tags=["Produtos"])
 app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
+app.include_router(upload_excel.router, tags=["Upload Excel"])
 
 @app.get("/", tags=["Root"])
 async def read_root():
