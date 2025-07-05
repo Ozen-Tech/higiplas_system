@@ -1,7 +1,8 @@
-// /app/services/apiService.ts
+// /src/services/apiService.ts
 
 const API_BASE_URL = "http://localhost:8000";
 
+// A função request continua a mesma, está bem implementada.
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem("authToken");
   const headers = new Headers(options.headers || {});
@@ -9,6 +10,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
+  // Garante que o Content-Type só seja adicionado se houver corpo
   if (options.body) {
     headers.set('Content-Type', 'application/json');
   }
@@ -19,12 +21,11 @@ async function request(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    // Tenta extrair a mensagem de erro do corpo da resposta
     const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(errorData.detail || "Ocorreu um erro na requisição.");
+    // Adiciona o status do erro na mensagem para facilitar a depuração
+    throw new Error(`[${response.status}] ${errorData.detail}` || "Ocorreu um erro na requisição.");
   }
   
-  // Para respostas DELETE (204 No Content) que não têm corpo
   if (response.status === 204) {
     return null;
   }
@@ -34,7 +35,8 @@ async function request(endpoint: string, options: RequestInit = {}) {
 
 export const apiService = {
   get: (endpoint: string) => request(endpoint),
-  post: (endpoint: string, body: any) => request(endpoint, { method: 'POST', body: JSON.stringify(body) }),
-  put: (endpoint: string, body: any) => request(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+  // Correção: Substituímos 'any' por 'unknown' para segurança de tipos.
+  post: (endpoint: string, body: unknown) => request(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  put: (endpoint: string, body: unknown) => request(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (endpoint: string) => request(endpoint, { method: 'DELETE' }),
 };

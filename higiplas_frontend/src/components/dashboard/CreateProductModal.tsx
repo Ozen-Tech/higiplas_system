@@ -18,11 +18,16 @@ export default function CreateProductModal({ isOpen, onClose, onCreate }: Create
   };
   const [newProductData, setNewProductData] = useState<ProdutoCreateData>(initialState);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    const isNumber = type === 'number';
-    // @ts-ignore
-    setNewProductData(prev => ({ ...prev, [name]: isNumber ? parseFloat(value) || 0 : value }));
+
+    // Correção: Lógica simplificada e segura de tipos
+    setNewProductData(prev => ({
+      ...prev,
+      [name]: type === 'number'
+        ? (value === '' ? undefined : parseFloat(value)) // Retorna undefined se vazio, para campos opcionais
+        : value
+    }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
