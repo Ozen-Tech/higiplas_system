@@ -48,6 +48,11 @@ export default function DashboardPage() {
             <DashboardHeader
               onNewProductClick={() => setIsCreateModalOpen(true)}
               onUploadSuccess={fetchProducts}
+              onLogoutClick={() => {
+                if (confirm("Tem certeza que deseja sair?")) {
+                  handleLogout();
+                }
+              }}
             />
 
             <div className="mb-6">
