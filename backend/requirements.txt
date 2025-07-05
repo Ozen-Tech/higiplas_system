@@ -4,6 +4,7 @@ uvicorn[standard]
 python-dotenv
 pandas
 openpyxl
+pydantic-settings
 # Conexão com o Banco de Dados
 psycopg2-binary
 SQLAlchemy[asyncio]

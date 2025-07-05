@@ -8,13 +8,23 @@ from sqlalchemy.orm import Session
 from app.db.connection import get_db
 from app.schemas.usuario import Usuario
 from app.crud import usuario as crud_usuario
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 # --- CONFIGURAÇÃO DE CRIPTOGRAFIA ---
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+class Settings(BaseSettings):
+    # O Pydantic automaticamente lê variáveis de ambiente com esses nomes.
+    # Se uma delas não for encontrada, ele levantará um erro na inicialização.
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Esta linha faz com que ele leia de um arquivo .env se existir (para desenvolvimento local)
+    model_config = SettingsConfigDict(env_file=".env")
+
+# Crie uma instância única das configurações que será usada em toda a aplicação
+settings = Settings()
 # --- FUNÇÕES DE SENHA E TOKEN ---
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
