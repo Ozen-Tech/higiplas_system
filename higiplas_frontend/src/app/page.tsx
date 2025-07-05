@@ -20,21 +20,23 @@ export default function LoginPage() {
       const response = await fetch('http://localhost:8000/users/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          username: email,
-          password: password,
-        }),
+        body: new URLSearchParams({ username: email, password: password }),
       });
 
       if (!response.ok) {
-        throw new Error('Credenciais inválidas. Verifique seu e-mail e senha.');
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Credenciais inválidas.');
       }
 
       const data = await response.json();
       localStorage.setItem('authToken', data.access_token);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Ocorreu um erro inesperado.');
+      }
     }
   };
 

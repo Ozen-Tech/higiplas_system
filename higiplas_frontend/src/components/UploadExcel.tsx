@@ -71,8 +71,13 @@ export default function UploadExcel({ onUploadSuccess }: UploadExcelProps) {
       // para recarregar a lista de produtos.
       onUploadSuccess();
 
-    } catch (err: any) {
-      setMessage(`Erro: ${err.message}`);
+    } catch (err) {
+      // Correção aqui:
+      if (err instanceof Error) {
+        setMessage(`Erro: ${err.message}`);
+      } else {
+        setMessage('Ocorreu um erro desconhecido.');
+      }
     } finally {
       setLoading(false);
     }
