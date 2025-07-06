@@ -8,9 +8,9 @@ from jose import JWTError, jwt
 # Importações necessárias e limpas
 from app.db.connection import get_db
 from app.db import models
-from app.schemas import usuario as schemas_usuario, token as schemas_token
+from app.schemas import usuario as schemas_usuario
 from app.crud import usuario as crud_usuario
-from app.security import create_access_token, settings # Importa apenas o que precisa
+from app.security import create_access_token, settings, get_current_user # Importa apenas o que precisa
 
 router = APIRouter(
     prefix="/users", # Definindo o prefixo aqui
@@ -20,28 +20,12 @@ router = APIRouter(
 # O esquema de autenticação é definido no router que o utiliza.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token") 
 
-# A dependência de segurança que quebrava o ciclo agora vive aqui.
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.Usuario:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str | None = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    
-    user = crud_usuario.get_user_by_email(db, email=email)
-    if user is None:
-        raise credentials_exception
-    return user
 
 
-@router.post("/token", response_model=schemas_token.Token)
+
+
+
+@router.post("/token", response_model=schemas_usuario.Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # A lógica de autenticação agora é uma única chamada de função limpa.
     user = crud_usuario.authenticate_user(db, email=form_data.username, password=form_data.password)

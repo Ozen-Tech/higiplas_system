@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 # backend/app/main.py
 
 from fastapi import FastAPI
@@ -7,7 +9,7 @@ from app.db import models, connection
 from app.create_superuser import create_initial_superuser
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 
 

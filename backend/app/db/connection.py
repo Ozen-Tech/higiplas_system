@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extensions import connection as PgConnection
-from app.security import settings
+
 
 connection_pool: SimpleConnectionPool | None = None
 
@@ -40,7 +40,7 @@ DB_HOST_SA = "postgres"  # O nome do serviço no docker-compose
 DB_PORT_SA = "5432"
 
 # Montando a string de conexão que o SQLAlchemy entende
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
