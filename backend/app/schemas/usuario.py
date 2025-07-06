@@ -9,10 +9,10 @@ class UsuarioBase(BaseModel):
     empresa_id: int
     perfil: str # 'admin', 'vendedor', 'estoquista'
 
-class PerfisUsuario(str, Enum): 
-    admin = "admin"
-    vendedor = "vendedor"
-    gerente = "gerente"
+class PerfilUsuario(str, Enum):
+    ADMIN = "ADMIN"
+    GESTOR = "GESTOR"
+    OPERADOR = "OPERADOR"
 
 class UsuarioCreate(UsuarioBase):
     email: EmailStr

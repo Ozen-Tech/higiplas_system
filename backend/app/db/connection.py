@@ -4,10 +4,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
-# --- SUA ESTRUTURA ORIGINAL (Mantida para referência) ---
-# Esta parte do código, que você pediu para manter, continua aqui.
-# Ela não interfere com a nova lógica do SQLAlchemy.
+from app.core.config import settings 
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extensions import connection as PgConnection
@@ -43,8 +40,18 @@ DB_HOST_SA = "postgres"  # O nome do serviço no docker-compose
 DB_PORT_SA = "5432"
 
 # Montando a string de conexão que o SQLAlchemy entende
-SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER_SA}:{DB_PASSWORD_SA}@{DB_HOST_SA}:{DB_PORT_SA}/{DB_NAME_SA}"
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 # ===================================================================
 # <<< ADICIONADO: Câmera de Debug para a URL de Conexão >>>
 # Esta linha vai nos mostrar no log do Docker exatamente como a URL

@@ -9,6 +9,7 @@ from app.db.connection import get_db
 from app.schemas.usuario import Usuario
 from app.crud import usuario as crud_usuario
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from app.core.config import settings
 
 
 # --- CONFIGURAÇÃO DE CRIPTOGRAFIA ---
@@ -16,9 +17,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     # O Pydantic automaticamente lê variáveis de ambiente com esses nomes.
     # Se uma delas não for encontrada, ele levantará um erro na inicialização.
-    SECRET_KEY: str
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ALGORITHM = settings.ALGORITHM
+    SECRET_KEY = settings.SECRET_KEY
+    ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
 
     # Esta linha faz com que ele leia de um arquivo .env se existir (para desenvolvimento local)
     model_config = SettingsConfigDict(env_file=".env")
