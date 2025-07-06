@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { apiService as api } from '../../services/apiService';
 
 const UserRegistrationPage = () => {
   const [name, setName] = useState('');
@@ -13,17 +14,10 @@ const UserRegistrationPage = () => {
     e.preventDefault();
     setMessage('');
     try {
-      const response = await fetch('/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nome: name, email, password, perfil }),
-      });
+      const response = await api.post('/users', { nome: name, email, password, perfil });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao cadastrar usuário');
+      if (response.status !== 201) {
+        throw new Error(response.data.message || 'Erro ao cadastrar usuário');
       }
 
       setMessage(`Usuário ${name} cadastrado com sucesso!`);
