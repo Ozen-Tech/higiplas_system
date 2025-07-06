@@ -4,13 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, empresas, produtos, movimentacoes, upload_excel
 from app.db import models, connection
+from app.create_superuser import create_initial_superuser
 
-app = FastAPI(
-    title="API Higiplas OzenTech",
-    description="API para o sistema de gestão de estoque e CRM da Higiplas.",
-    version="1.0.0"
-)
 
+app = FastAPI(lifespan=lifespan)
 
 
 
@@ -39,3 +36,11 @@ app.include_router(upload_excel.router, tags=["Upload Excel"])
 @app.get("/", tags=["Root"])
 async def read_root():
     return {"message": "Bem-vindo à API da Higiplas!"}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Iniciando a aplicação...")
+    create_initial_superuser() # A chamada está aqui
+    yield
+    print("Finalizando a aplicação...")
