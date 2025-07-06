@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { apiService } from '@/services/apiService'; 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,8 +18,8 @@ export default function LoginPage() {
 
     try {
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; // Usa a variável de ambiente
-      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; 
+
       const response = await fetch(`${API_BASE_URL}/users/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
