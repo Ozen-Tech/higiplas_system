@@ -1,41 +1,39 @@
+version: '3.8'
+
 services:
-  postgres:
-    image: postgres:15
-    container_name: higiplas_postgres
-    # --- ADICIONE ESTAS DUAS LINHAS ---
+  # Serviço da API FastAPI
+  higiplas_api:
+    build:
+      context: ./backend  # 1. CONTEXTO: Diz ao Docker para "entrar" nesta pasta primeiro.
+      dockerfile: Dockerfile     # 2. DOCKERFILE: O nome do arquivo a ser usado.
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/code/app # Mapeia o código para desenvolvimento
     env_file:
       - .env
-    # ---------------------------------
+    depends_on:
+      - higiplas_postgres
+    networks:
+      - higiplas_network
+
+  # Serviço do Banco de Dados PostgreSQL
+  higiplas_postgres:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  api:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: higiplas_api
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/code
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - "5432:5432"
+    networks:
+      - higiplas_network
 
 volumes:
   postgres_data:
+
+networks:
+  higiplas_network:
+    driver: bridge
