@@ -6,15 +6,19 @@ from sqlalchemy.orm import Session
 # Importações dos seus próprios módulos
 from app.db.connection import SessionLocal
 from app.db import models
-from app.core.config import settings # Usando o nosso novo gerenciador de configurações
+from app.security import settings
 from app.security import get_password_hash
-from app.schemas.usuario import PerfilUsuario # Assumindo que este Enum existe
+from app.schemas.usuario import PerfilUsuario 
 
 # Configurando um logger para ver as saídas no Render
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_initial_superuser():
+
+    SUPERUSER_EMAIL = settings.SUPERUSER_EMAIL 
+    SUPERUSER_PASSWORD = settings.SUPERUSER_PASSWORD 
+
     """
     Cria o superusuário inicial a partir das variáveis de ambiente,
     se ele ainda não existir.

@@ -1,36 +1,41 @@
-# backend/app/crud/usuario.py
+# /backend/app/crud/usuario.py
 
 from sqlalchemy.orm import Session
 from app.db import models
-from app.schemas import usuario as schemas
-from app.security import get_password_hash, verify_password # Importando do local correto
+from app.schemas import usuario as schemas_usuario
 
-def get_user_by_email(db: Session, email: str):
-    """
-    Busca um usuário pelo e-mail usando o ORM do SQLAlchemy.
-    """
+# Importa as funções de segurança necessárias do local correto.
+from app.security import get_password_hash, verify_password
+
+def get_user_by_email(db: Session, email: str) -> models.Usuario | None:
+    """Busca um usuário pelo e-mail."""
     return db.query(models.Usuario).filter(models.Usuario.email == email).first()
 
-def create_user(db: Session, user: schemas.UsuarioCreate):
-    """
-    Cria um novo usuário no banco de dados usando o ORM do SQLAlchemy.
-    """
-    hashed_password = get_password_hash(user.password)
+def create_user(db: Session, user_in: schemas_usuario.UsuarioCreate, empresa_id: int) -> models.Usuario:
+    """Cria um novo usuário no banco de dados."""
+    hashed_password = get_password_hash(user_in.password)
     
-    # Cria uma instância do modelo SQLAlchemy com os dados do schema
     db_user = models.Usuario(
-        email=user.email,
+        email=user_in.email,
         hashed_password=hashed_password,
-        nome=user.nome,
-        empresa_id=user.empresa_id,
-        perfil=user.perfil
+        nome=user_in.nome,
+        empresa_id=empresa_id,
+        perfil=user_in.perfil
     )
     
-    # Adiciona a nova instância à sessão
     db.add(db_user)
-    # Comita a transação para salvar no banco
     db.commit()
-    # Atualiza a instância com os dados do banco (como o ID gerado)
     db.refresh(db_user)
-    
     return db_user
+
+def authenticate_user(db: Session, email: str, password: str) -> models.Usuario | None:
+    """
+    Autentica um usuário. Retorna o objeto do usuário se as credenciais forem válidas,
+    caso contrário, retorna None.
+    """
+    user = get_user_by_email(db, email=email)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user

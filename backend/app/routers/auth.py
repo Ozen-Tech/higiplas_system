@@ -1,47 +1,64 @@
-# backend/app/routers/auth.py
-
-from typing import Annotated
-from sqlalchemy.orm import Session # <<< MUDANÇA AQUI
+# /backend/app/routers/auth.py
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from jose import JWTError, jwt
 
-from app.schemas import usuario as schemas_usuario
-from app.crud import usuario as crud_usuario
+# Importações necessárias e limpas
 from app.db.connection import get_db
-from .. import schemas, crud
-from app.db import models # <<< MUDANÇA AQUI
-from app.security import create_access_token, get_current_user
-from app.core import verify_password
+from app.db import models
+from app.schemas import usuario as schemas_usuario, token as schemas_token
+from app.crud import usuario as crud_usuario
+from app.security import create_access_token, settings # Importa apenas o que precisa
 
 router = APIRouter(
+    prefix="/users", # Definindo o prefixo aqui
     tags=["Autenticação e Usuários"]
 )
 
-@router.post("/token", response_model=schemas_usuario.Token)
-def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db) # <<< MUDANÇA AQUI: de 'conn' para 'db'
-):
-    # A função CRUD agora retorna um objeto, não um dicionário
-    user = crud_usuario.get_user_by_email(db=db, email=form_data.username)
+# O esquema de autenticação é definido no router que o utiliza.
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token") 
+
+# A dependência de segurança que quebrava o ciclo agora vive aqui.
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.Usuario:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str | None = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
     
-    # Acessamos os atributos diretamente (user.hashed_password)
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    user = crud_usuario.get_user_by_email(db, email=email)
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+@router.post("/token", response_model=schemas_token.Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # A lógica de autenticação agora é uma única chamada de função limpa.
+    user = crud_usuario.authenticate_user(db, email=form_data.username, password=form_data.password)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="E-mail ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Usamos o atributo user.email
-    access_token = create_access_token(
-        data={"sub": user.email}
-    )
-    
+    access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/", response_model=schemas_usuario.Usuario)
+
+# A rota para criar usuário não precisa estar aqui, pode ir para um router de "empresas"
+# ou de administração, mas vamos manter por enquanto.
+@router.post("/", response_model=schemas_usuario.Usuario, status_code=status.HTTP_201_CREATED)
 def create_new_user(user: schemas_usuario.UsuarioCreate, db: Session = Depends(get_db)):
     db_user = crud_usuario.get_user_by_email(db=db, email=user.email)
     if db_user:
@@ -49,8 +66,12 @@ def create_new_user(user: schemas_usuario.UsuarioCreate, db: Session = Depends(g
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="E-mail já registrado."
         )
-    return crud_usuario.create_user(db=db, user=user)
+    # Supondo que a empresa_id seja passada no corpo ou obtida de outra forma.
+    # Se a empresa_id vier do usuário logado, essa rota precisaria de autenticação.
+    return crud_usuario.create_user(db=db, user_in=user, empresa_id=1) # Usando 1 como placeholder
 
-@router.get("/users/me/", response_model=schemas_usuario.Usuario)
+
+@router.get("/me", response_model=schemas_usuario.Usuario)
 def read_users_me(current_user: models.Usuario = Depends(get_current_user)):
+    """Retorna os dados do usuário atualmente logado."""
     return current_user

@@ -4,10 +4,10 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from app.core.config import settings 
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extensions import connection as PgConnection
+from app.security import settings
 
 connection_pool: SimpleConnectionPool | None = None
 
