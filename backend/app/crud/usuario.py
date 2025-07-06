@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from app.db import models
 from app.schemas import usuario as schemas
-from app.core import get_password_hash
+from app.security import get_password_hash, verify_password # Importando do local correto
 
 def get_user_by_email(db: Session, email: str):
     """
