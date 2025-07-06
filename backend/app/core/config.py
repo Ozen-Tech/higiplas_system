@@ -2,6 +2,7 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     # O Pydantic lerá estas variáveis de ambiente.
     # Se alguma não for encontrada (exceto as com valor padrão), a aplicação falhará ao iniciar.
