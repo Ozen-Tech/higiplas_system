@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { apiService } from '@/services/apiService'; 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,10 +18,16 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/users/token', {
+      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; // Usa a variável de ambiente
+      
+      const response = await fetch(`${API_BASE_URL}/users/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ username: email, password: password }),
+        body: new URLSearchParams({
+          username: email,
+          password: password,
+        }),
       });
 
       if (!response.ok) {

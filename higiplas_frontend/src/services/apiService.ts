@@ -1,6 +1,6 @@
 // /src/services/apiService.ts
 
-const API_BASE_URL = "https://higiplas-system.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // A função request continua a mesma, está bem implementada.
 async function request(endpoint: string, options: RequestInit = {}) {
