@@ -30,8 +30,12 @@ const UserRegistrationPage = () => {
       setName('');
       setEmail('');
       setPassword('');
-    } catch (error: any) {
-      setMessage(`Erro: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMessage(`Erro: ${error.message}`);
+      } else {
+        setMessage('Erro desconhecido');
+      }
     }
   };
 
