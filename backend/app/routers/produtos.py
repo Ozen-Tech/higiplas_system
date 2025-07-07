@@ -13,7 +13,7 @@ from ..crud import produto as crud_produto
 from ..db.connection import get_db
 from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
-from ..security import get_current_user
+from app.dependencies import get_current_user
 
 router = APIRouter(
     #prefix="/produtos", # É uma boa prática definir o prefixo aqui ou no main.py, mas não em ambos.

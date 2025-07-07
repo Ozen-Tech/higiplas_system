@@ -1,46 +1,18 @@
-# /backend/app/security.py
-
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.orm import Session
 
-# Importe os módulos do seu app que são necessários
+# Importa dos novos módulos de core
+from app.core.config import settings
+
+# Importa dos outros módulos da aplicação
 from app.db import models
 from app.db.connection import get_db
 from app.crud import usuario as crud_usuario
 
-# --- 1. GERENCIADOR DE CONFIGURAÇÕES (LÊ .env) ---
-class Settings(BaseSettings):
-    DATABASE_URL: str
-    SECRET_KEY: str
-    SUPERUSER_EMAIL: str
-    SUPERUSER_PASSWORD: str
-    
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 dias
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8')
-
-settings = Settings()
-
-
-# --- 2. LÓGICA DE CRIPTOGRAFIA DE SENHA ---
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifica se a senha fornecida corresponde à senha com hash."""
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password: str) -> str:
-    """Gera o hash de uma senha."""
-    return pwd_context.hash(password)
-
-
-# --- 3. LÓGICA DE TOKEN JWT E DEPENDÊNCIAS DE AUTENTICAÇÃO ---
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
 def create_access_token(data: dict) -> str:
