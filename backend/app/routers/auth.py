@@ -10,7 +10,8 @@ from app.db.connection import get_db
 from app.db import models
 from app.schemas import usuario as schemas_usuario
 from app.crud import usuario as crud_usuario
-from app.security import create_access_token, settings, get_current_user # Importa apenas o que precisa
+from app.dependencies import create_access_token, get_current_user
+from app.core.config import settings
 
 router = APIRouter(
     tags=["Autenticação e Usuários"]

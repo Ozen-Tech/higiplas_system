@@ -4,7 +4,7 @@ from app.schemas.empresa import Empresa, EmpresaCreate
 from psycopg2.extensions import connection 
 from app.crud import empresa as crud_empresa
 from app.db.connection import get_db
-from app.security import get_current_user
+from app.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/empresas",

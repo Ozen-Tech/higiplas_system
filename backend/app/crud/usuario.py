@@ -5,7 +5,7 @@ from app.db import models
 from app.schemas import usuario as schemas_usuario
 
 # Importa as funções de segurança necessárias do local correto.
-from app.security import get_password_hash, verify_password
+from app.core.hashing import get_password_hash, verify_password
 
 def get_user_by_email(db: Session, email: str) -> models.Usuario | None:
     """Busca um usuário pelo e-mail."""
