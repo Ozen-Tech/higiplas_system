@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { Header } from '@/components/dashboard/Header'; // O caminho pode precisar de ajuste
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -50,31 +50,26 @@ export default function LoginPage() {
   };
 
   return (
-    // Estrutura de layout alterada para acomodar o header
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-neutral-gray-darkBg">
-      {/* O Header é renderizado aqui, na sua versão "pública" */}
-      <Header title="Acesso ao Sistema" isAuthenticated={false} />
+      {/* HEADER SIMPLES E LOCAL PARA A PÁGINA DE LOGIN */}
+      <header className="flex items-center justify-between w-full px-4 md:px-8 py-3 border-b border-gray-200 dark:border-gray-700">
+        <Image 
+          src="/HIGIPLAS-LOGO-2048x761.png" 
+          alt="Logo Higiplas" 
+          width={140} 
+          height={48} 
+          priority 
+        />
+        <ThemeToggleButton />
+      </header>
 
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-md bg-white dark:bg-neutral-gray-darkSurface rounded-2xl shadow-xl p-8 sm:p-10 space-y-8 border border-gray-200 dark:border-neutral-gray-darkBorder">
-          <div className="flex justify-center">
-            <Image
-              src="/HIGIPLAS-LOGO-2048x761.png"
-              alt="Logo Higiplas"
-              width={200}
-              height={75}
-              priority
-              className="dark:invert-[.15] dark:brightness-150" // Pequeno ajuste para a logo em modo escuro
-            />
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-higiplas-blue dark:text-gray-100 text-center tracking-tight">
-            Painel de Controle
-          </h2>
-
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white dark:bg-neutral-gray-darkSurface rounded-2xl shadow-xl p-8 space-y-8 border dark:border-neutral-gray-darkBorder">
+          <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">Acesso ao Painel</h2>
           <form className="space-y-6" onSubmit={handleLogin} noValidate>
             <Input
               label="E-mail"
-              id="email" // Adicionando id para acessibilidade
+              id="login-email" // ID único para este input
               type="email"
               autoComplete="email"
               required
@@ -84,7 +79,7 @@ export default function LoginPage() {
             />
             <Input
               label="Senha"
-              id="password" // Adicionando id para acessibilidade
+              id="login-password" // ID único para este input
               type="password"
               autoComplete="current-password"
               required
@@ -92,23 +87,12 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="placeholder:text-gray-500"
             />
-            
-            {/* Mensagem de erro */}
-            {error && (
-              <p className="text-sm font-medium text-red-600 dark:text-red-500 text-center animate-fadeIn">
-                {error}
-              </p>
-            )}
-
-            <Button type="submit" fullWidth className="text-lg">
-              Entrar
-            </Button>
+            {error && <p className="text-sm text-center text-red-500 animate-fadeIn">{error}</p>}
+            <Button type="submit" fullWidth className="text-lg">Entrar</Button>
           </form>
         </div>
       </main>
-      
-      {/* Estilos específicos que você tinha antes */}
-      <style jsx>{`
+       <style jsx>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
