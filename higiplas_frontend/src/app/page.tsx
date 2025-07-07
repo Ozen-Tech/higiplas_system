@@ -1,3 +1,4 @@
+// /src/app/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -33,8 +34,8 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Credenciais inválidas.');
+        const errorData = await response.json().catch(() => ({ detail: 'Credenciais inválidas ou erro no servidor.' }));
+        throw new Error(errorData.detail);
       }
 
       const data = await response.json();
@@ -50,9 +51,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-neutral-gray-darkBg">
-      {/* HEADER SIMPLES E LOCAL PARA A PÁGINA DE LOGIN */}
-      <header className="flex items-center justify-between w-full px-4 md:px-8 py-3 border-b border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col min-h-screen">
+      <header className="flex items-center justify-between w-full px-4 md:px-8 py-3 border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <Image 
           src="/HIGIPLAS-LOGO-2048x761.png" 
           alt="Logo Higiplas" 
@@ -62,51 +62,33 @@ export default function LoginPage() {
         />
         <ThemeToggleButton />
       </header>
-
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white dark:bg-neutral-gray-darkSurface rounded-2xl shadow-xl p-8 space-y-8 border dark:border-neutral-gray-darkBorder">
-          <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">Acesso ao Painel</h2>
-          <form className="space-y-6" onSubmit={handleLogin} noValidate>
+      <main className="flex-1 flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+          <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">Acesso ao Painel</h2>
+          <form onSubmit={handleLogin} className="space-y-4">
             <Input
               label="E-mail"
-              id="login-email" // ID único para este input
+              id="login-email-unique"
               type="email"
-              autoComplete="email"
-              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="placeholder:text-gray-500"
+              required
+              autoComplete="email"
             />
             <Input
               label="Senha"
-              id="login-password" // ID único para este input
+              id="login-password-unique"
               type="password"
-              autoComplete="current-password"
-              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="placeholder:text-gray-500"
+              required
+              autoComplete="current-password"
             />
-            {error && <p className="text-sm text-center text-red-500 animate-fadeIn">{error}</p>}
-            <Button type="submit" fullWidth className="text-lg">Entrar</Button>
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            <Button type="submit" fullWidth>Entrar</Button>
           </form>
         </div>
       </main>
-       <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-5px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease forwards;
-        }
-      `}</style>
     </div>
   );
 }
