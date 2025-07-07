@@ -60,8 +60,8 @@ def create_user():
         )
 
         # Chama a função do CRUD para criar o usuário
-        user = crud_usuario.create_user(db=db, user_in=user_in)
-
+        user = crud_usuario.create_user(db=db, user_in=user_in, empresa_id=empresa_id)
+        
         print("\n--- ✅ Sucesso! ---")
         print(f"Usuário '{user.nome}' criado com o e-mail '{user.email}' e perfil '{user.perfil}'.")
 
