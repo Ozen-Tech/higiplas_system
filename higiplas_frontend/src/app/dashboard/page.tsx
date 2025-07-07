@@ -2,19 +2,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ClientLayout from "@/components/ClientLayout";
 import { Header } from "@/components/dashboard/Header";
 import { ProductTable } from "@/components/dashboard/ProductTable";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAuth } from "@/contexts/AuthContext";
-import UploadExcel from "@/components/UploadExcel";
 import { useProducts } from "@/hooks/useProducts";
 import StockMovementModal from "@/components/StockMovementModal";
 import CreateProductModal from "@/components/dashboard/CreateProductModal";
-import { Product } from '@/types';
-import ClientLayout from "@/components/ClientLayout";
+import UploadExcel from "@/components/UploadExcel";
+import { Product } from "@/types";
 
 
-// O wrapper para proteção de rota continua exatamente o mesmo. É a abordagem correta.
+// Wrapper que protege a rota
 export default function DashboardPageWrapper() {
   return (
     <ClientLayout>
@@ -23,7 +23,7 @@ export default function DashboardPageWrapper() {
   );
 }
 
-// O conteúdo real da página
+// O componente principal da página do dashboard
 function DashboardPage() {
   const { products, loading, error, fetchProducts, createProduct, updateProduct, removeProduct, moveStock } = useProducts();
   const { logout } = useAuth();
@@ -34,7 +34,9 @@ function DashboardPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleDownloadExcel = async () => {
     setIsDownloading(true);
@@ -42,11 +44,11 @@ function DashboardPage() {
     if (!token) {
       alert("Sessão expirada. Por favor, faça login novamente.");
       logout();
-      setIsDownloading(false);
       return;
     }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/produtos/download/excel`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${API_BASE_URL}/produtos/download/excel`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -55,14 +57,13 @@ function DashboardPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = "higiplas_produtos_estoque.xlsx";
+      a.download = "higiplas_produtos.xlsx";
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      alert(error instanceof Error ? error.message : "Ocorreu um erro desconhecido.");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Ocorreu um erro');
     } finally {
       setIsDownloading(false);
     }
@@ -74,17 +75,16 @@ function DashboardPage() {
   );
   
   return (
-    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       
-      {/* A PÁGINA MONTA SEU PRÓPRIO HEADER USANDO O CONTAINER SIMPLES */}
       <Header>
         <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 hidden sm:block">
-            Visão Geral do Estoque
+          Dashboard
         </h1>
-        <div className="flex-1" /> {/* Espaçador para empurrar os botões para a direita */}
+        <div className="flex-1" />
         <div className="flex items-center gap-2">
             <button onClick={handleDownloadExcel} disabled={isDownloading} className="px-3 py-2 text-sm font-semibold rounded-lg bg-gray-500 text-white hover:bg-gray-600 disabled:opacity-50 transition-colors">
-              Exportar
+              {isDownloading ? "Gerando..." : "Exportar"}
             </button>
             <UploadExcel onUploadSuccess={fetchProducts} />
             <button onClick={() => setIsCreateModalOpen(true)} className="px-3 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
@@ -101,7 +101,7 @@ function DashboardPage() {
         </div>
       </Header>
         
-      <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <input
@@ -109,11 +109,11 @@ function DashboardPage() {
                   placeholder="Buscar por nome ou código..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full max-w-sm px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full max-w-sm px-4 py-2 border rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
               />
             </div>
-            <div className="bg-white dark:bg-gray-800/50 rounded-lg shadow-md">
-                {loading && <p className="p-8 text-center text-gray-500">Carregando...</p>}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                {loading && <p className="p-8 text-center">Carregando...</p>}
                 {error && <p className="p-8 text-center text-red-500">{error}</p>}
                 {!loading && !error && 
                   <ProductTable
@@ -127,7 +127,6 @@ function DashboardPage() {
         </div>
       </main>
 
-      {/* MODAIS */}
       {selectedProduct && <StockMovementModal 
         isOpen={isMovementModalOpen} 
         onClose={() => setIsMovementModalOpen(false)} 

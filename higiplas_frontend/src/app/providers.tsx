@@ -1,24 +1,16 @@
+// /src/app/providers.tsx
 "use client";
 
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from 'next-themes';
 
-
-interface ProvidersProps {
-  children: ReactNode;
-}
-
-export function Providers({ children }: ProvidersProps) {
-  // Envolva os children com todos os seus providers de cliente.
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <AuthProvider>
-      {/* 
-        Exemplo se você também usar next-themes:
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
-      */}
-      {children}
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <AuthProvider>
+        {children}
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
