@@ -13,7 +13,6 @@ from app.crud import usuario as crud_usuario
 from app.security import create_access_token, settings, get_current_user # Importa apenas o que precisa
 
 router = APIRouter(
-    prefix="/users", # Definindo o prefixo aqui
     tags=["Autenticação e Usuários"]
 )
 
