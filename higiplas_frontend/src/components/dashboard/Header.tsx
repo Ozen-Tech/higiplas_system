@@ -4,46 +4,29 @@
 import { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ThemeToggleButton } from "@/components/ThemeToggleButton";
-import AuthenticatedHeaderActions from "./AuthenticatedHeaderActions"; // Importa nosso novo componente
 
 interface HeaderProps {
-  title: string;
-  actions?: ReactNode;
-  isAuthenticated?: boolean;
+  children?: ReactNode; // Ações a serem exibidas na direita
 }
 
-export function Header({ title, actions, isAuthenticated = false }: HeaderProps) {
-  // NENHUMA CHAMADA a useAuth() AQUI!
-  
+export function Header({ children }: HeaderProps) {
   return (
-    <header className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full px-4 md:px-8 py-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-20">
+    <header className="flex items-center justify-between w-full px-4 md:px-8 py-3 border-b border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm sticky top-0 z-20">
       
-      <div className="flex items-center gap-4">
-        <Link href={isAuthenticated ? "/dashboard" : "/"} passHref>
+      {/* Lado Esquerdo: Apenas a Logo que sempre leva ao dashboard */}
+      <Link href="/dashboard" passHref>
           <Image 
               src="/HIGIPLAS-LOGO-2048x761.png" 
               alt="Logo Higiplas" 
-              width={130} 
-              height={45} 
+              width={140} 
+              height={48} 
               priority 
           />
-        </Link>
-        {isAuthenticated && (
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 hidden sm:block">
-            | {title}
-          </h1>
-        )}
-      </div>
+      </Link>
 
+      {/* Lado Direito: Container para ações */}
       <div className="flex items-center gap-3">
-        {isAuthenticated ? (
-          // Renderiza o componente que DE FATO usa o hook
-          <AuthenticatedHeaderActions pageActions={actions} />
-        ) : (
-          // Na versão pública, renderizamos apenas o botão de tema.
-          <ThemeToggleButton />
-        )}
+        {children} {/* Renderiza qualquer botão ou elemento que a página passar */}
       </div>
     </header>
   );
