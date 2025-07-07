@@ -11,7 +11,7 @@ SQLAlchemy[asyncio]
 # Segurança e Autenticação
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]
-
+typer[all]
 # Dependências do FastAPI/Pydantic
 email-validator
 python-multipart
