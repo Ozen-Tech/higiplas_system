@@ -40,9 +40,3 @@ async def read_root():
     return {"message": "Bem-vindo à API da Higiplas!"}
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Iniciando a aplicação...")
-    create_initial_superuser() # A chamada está aqui
-    yield
-    print("Finalizando a aplicação...")
