@@ -19,7 +19,7 @@ export default function LoginPage() {
       
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; 
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/token`, {
+      const response = await fetch(`${API_BASE_URL}/users/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
