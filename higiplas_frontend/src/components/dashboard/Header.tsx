@@ -1,7 +1,7 @@
 // /src/components/dashboard/Header.tsx
 "use client";
 
-import { useState, ReactNode } from "react";
+import { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext"; // Usando nosso novo hook!
