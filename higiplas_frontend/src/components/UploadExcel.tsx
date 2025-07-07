@@ -43,7 +43,7 @@ export default function UploadExcel({ onUploadSuccess }: UploadExcelProps) {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8000/upload-excel", {
+      const response = await fetch("https://higiplas-system.onrender.com/upload-excel", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
