@@ -35,7 +35,7 @@ export function DashboardHeader({ onNewProductClick, onUploadSuccess, onLogoutCl
     }
     try {
       // O fetch direto é necessário aqui para lidar com o blob (arquivo)
-      const response = await fetch("http://localhost:8000/produtos/download/excel", {
+      const response = await fetch("https://higiplas-system.onrender.com/produtos/download/excel", {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       });
