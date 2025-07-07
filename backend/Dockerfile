@@ -22,4 +22,4 @@ EXPOSE 8000
 
 # 7. Comando para iniciar a aplicação
 #    --host 0.0.0.0 é CRUCIAL para que a API seja acessível de fora do container.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/code/start.sh"]
