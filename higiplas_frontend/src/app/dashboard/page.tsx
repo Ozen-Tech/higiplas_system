@@ -49,6 +49,7 @@ function DashboardPage() {
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
       <Header 
         title="Visão Geral do Estoque"
+        isAuthenticated={true}
         actions={
           <DashboardActions
             onNewProduct={() => setIsCreateModalOpen(true)}
