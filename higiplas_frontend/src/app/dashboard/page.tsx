@@ -2,29 +2,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ClientLayout from "@/components/ClientLayout";
-import { Header } from "@/components/dashboard/Header";
+import { useProducts } from "@/hooks/useProducts";
 import { ProductTable } from "@/components/dashboard/ProductTable";
+import { Header } from "@/components/dashboard/Header";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProducts } from "@/hooks/useProducts";
 import StockMovementModal from "@/components/StockMovementModal";
 import CreateProductModal from "@/components/dashboard/CreateProductModal";
 import UploadExcel from "@/components/UploadExcel";
 import { Product } from "@/types";
 
-
-// Wrapper que protege a rota
-export default function DashboardPageWrapper() {
-  return (
-    <ClientLayout>
-      <DashboardPage />
-    </ClientLayout>
-  );
-}
-
-// O componente principal da página do dashboard
-function DashboardPage() {
+// Agora a exportação padrão é o próprio componente da página.
+// O ClientLayout e o Sidebar serão adicionados pelo arquivo app/dashboard/layout.tsx
+export default function DashboardPage() {
   const { products, loading, error, fetchProducts, createProduct, updateProduct, removeProduct, moveStock } = useProducts();
   const { logout } = useAuth();
   
@@ -75,20 +65,21 @@ function DashboardPage() {
   );
   
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      
+    // Note que não há mais a div <div className="flex flex-col h-screen...">
+    <> 
       <Header>
-        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 hidden sm:block">
-          Dashboard
+        {/* Este conteúdo será injetado como 'children' no Header */}
+        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+          Visão Geral do Estoque
         </h1>
-        <div className="flex-1" />
+        <div className="flex-1" /> {/* Empurra os botões para a direita */}
         <div className="flex items-center gap-2">
             <button onClick={handleDownloadExcel} disabled={isDownloading} className="px-3 py-2 text-sm font-semibold rounded-lg bg-gray-500 text-white hover:bg-gray-600 disabled:opacity-50 transition-colors">
-              {isDownloading ? "Gerando..." : "Exportar"}
+              {isDownloading ? "Gerando..." : "Exportar Excel"}
             </button>
             <UploadExcel onUploadSuccess={fetchProducts} />
             <button onClick={() => setIsCreateModalOpen(true)} className="px-3 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-              + Novo
+              + Novo Produto
             </button>
         </div>
         <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-600 ml-2 pl-2">
@@ -127,6 +118,7 @@ function DashboardPage() {
         </div>
       </main>
 
+      {/* Os modais permanecem, pois são específicos desta página */}
       {selectedProduct && <StockMovementModal 
         isOpen={isMovementModalOpen} 
         onClose={() => setIsMovementModalOpen(false)} 
@@ -138,6 +130,6 @@ function DashboardPage() {
         onClose={() => setIsCreateModalOpen(false)} 
         onCreate={(data) => createProduct(data).then(() => setIsCreateModalOpen(false))}
       />
-    </div>
+    </>
   );
 }
