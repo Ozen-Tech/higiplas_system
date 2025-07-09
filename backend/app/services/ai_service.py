@@ -5,7 +5,7 @@ from app.core.config import settings
  # Configura a API uma vez, quando o módulo é carregado.
 try:
      genai.configure(api_key=settings.GOOGLE_API_KEY)
-     model = genai.GenerativeModel('gemini-2.0-flash-latest') # Modelo rápido e eficiente
+     model = genai.GenerativeModel('gemini-2.0-flash') # Modelo rápido e eficiente
      print("✅ Modelo de IA Gemini inicializado com sucesso.")
 except Exception as e:
      print(f"❌ Erro ao configurar a API do Gemini: {e}")
