@@ -2,16 +2,22 @@
 fastapi
 uvicorn[standard]
 python-dotenv
-pandas
-openpyxl
 pydantic-settings
-# Conexão com o Banco de Dados
-psycopg2-binary
+
+# Banco de Dados e ORM
 SQLAlchemy[asyncio]
+psycopg2-binary
+
 # Segurança e Autenticação
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]
-typer[all]
-# Dependências do FastAPI/Pydantic
+
+# Ferramentas de Utilidade
+typer 
+pandas
+openpyxl
 email-validator
 python-multipart
+
+# Inteligência Artificial
+google-generativeai

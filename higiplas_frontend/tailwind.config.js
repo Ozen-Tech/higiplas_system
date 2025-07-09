@@ -5,7 +5,7 @@ const config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  darkMode: 'class', // ativa modo escuro via classe 'dark'
+  darkMode: 'class', 
   theme: {
     extend: {
       colors: {
@@ -93,7 +93,9 @@ const config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+  require('@tailwindcss/typography')
+],
 };
 
 module.exports = config;

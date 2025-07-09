@@ -11,8 +11,7 @@ WORKDIR /code
 COPY requirements.txt /code/requirements.txt
 
 # 4. Instale as dependências
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-
+RUN pip install --timeout=100 --no-cache-dir --upgrade -r /code/requirements.txt
 # 5. Copie o resto do código da sua aplicação
 # Correção: Copie tudo da raiz do contexto (a pasta 'backend') para o diretório de trabalho
 COPY . /code
