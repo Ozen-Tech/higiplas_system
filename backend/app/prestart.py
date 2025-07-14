@@ -4,135 +4,103 @@ import logging
 import time
 import json
 import os
-from sqlalchemy.exc import OperationalError
+import traceback
 from sqlalchemy.orm import Session
-from sqlalchemy import text
-import traceback # Para logs de erro detalhados
+from sqlalchemy import text, inspect
 
-# Importações dos seus módulos da aplicação
 from app.db.connection import engine, SessionLocal
-from app.db.models import Base, VendaHistorica, Empresa # Importe os modelos que você vai usar
-from app.crud import empresa as crud_empresa
-from app.schemas.empresa import EmpresaCreate
+from app.db.models import Base, VendaHistorica, Empresa
 
-# --- Configuração do Logging ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- Constantes de Configuração ---
-MAX_DB_RETRIES = 60 # Total de tentativas para conectar ao banco (ex: 60 segundos)
-WAIT_SECONDS = 1
-HISTORICAL_DATA_FILE = "dados_historicos_vendas.json"
+def check_db_connection(db: Session, max_retries=15, wait=2):
+    """Tenta conectar ao banco de dados com múltiplas tentativas."""
+    logger.info("Verificando conexão com o banco de dados...")
+    for i in range(max_retries):
+        try:
+            db.execute(text("SELECT 1"))
+            logger.info("✅ Conexão com o banco de dados bem-sucedida!")
+            return True
+        except Exception as e:
+            logger.warning(f"Tentativa {i+1}/{max_retries} falhou. Banco de dados indisponível: {e}")
+            time.sleep(wait)
+    logger.error("❌ FALHA CRÍTICA: Não foi possível conectar ao banco de dados.")
+    return False
 
-# --- Funções de Inicialização de Dados ---
-
-def create_initial_company(db: Session):
-    """
-    Cria a empresa principal ('HIGIPLAS') se ela não existir.
-    Isso garante que os usuários tenham uma empresa para se associar.
-    """
-    logger.info("Verificando se a empresa principal existe...")
-    # Assume-se que a empresa principal sempre terá o ID 1
-    main_company = db.query(Empresa).filter_by(id=1).first()
-    if not main_company:
-        logger.warning("Empresa principal não encontrada. Criando 'HIGIPLAS' com ID 1...")
-        empresa_in = EmpresaCreate(nome="HIGIPLAS")
-        crud_empresa.create_empresa(db, empresa=empresa_in)
-        logger.info("✅ Empresa 'HIGIPLAS' criada com sucesso.")
-    else:
-        logger.info("Empresa principal já existe. Nenhuma ação necessária.")
-
-
-def seed_historical_data(db: Session):
-    """
-    Lê o arquivo JSON com dados históricos de vendas e popula a tabela 
-    'vendas_historicas' caso ela esteja vazia, para evitar duplicação.
-    """
-    logger.info("Verificando dados históricos de vendas...")
-    
-    # Esta verificação é crucial para não reinserir os dados a cada deploy
-    if db.query(VendaHistorica).first():
-        logger.info("Tabela 'vendas_historicas' já contém dados. Pulando seeding.")
-        return
-
-    logger.info("Tabela 'vendas_historicas' está vazia. Iniciando processo de seeding...")
-    
+def ensure_tables_exist():
+    """Garante que todas as tabelas definidas em Base.metadata existam."""
+    logger.info("Verificando e criando tabelas, se necessário...")
     try:
-        # O Dockerfile define o WORKDIR como /code, então o caminho relativo é app/
-        file_path = os.path.join("app", HISTORICAL_DATA_FILE) 
-        with open(file_path, 'r', encoding='utf-8') as f:
-            historical_data = json.load(f)
+        # Inspeciona o banco para ver se a tabela já existe antes de tentar criar
+        inspector = inspect(engine)
+        if not inspector.has_table(VendaHistorica.__tablename__):
+             logger.info(f"Tabela '{VendaHistorica.__tablename__}' não encontrada. Criando todas as tabelas...")
+             Base.metadata.create_all(bind=engine)
+             logger.info("✅ Todas as tabelas foram criadas/verificadas com sucesso.")
+        else:
+             logger.info(f"✅ Tabela '{VendaHistorica.__tablename__}' já existe.")
+             # Você ainda pode rodar o create_all para garantir outras tabelas
+             Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        logger.error(f"❌ Erro ao criar as tabelas: {e}")
+        traceback.print_exc()
+        raise
 
-        if not historical_data:
-            logger.warning("Arquivo de dados históricos está vazio.")
+def seed_data_if_empty(db: Session):
+    """Popula a tabela de vendas históricas apenas se ela estiver completamente vazia."""
+    logger.info("Iniciando verificação de dados históricos...")
+    try:
+        count = db.query(VendaHistorica).count()
+        if count > 0:
+            logger.info(f"Tabela 'vendas_historicas' já possui {count} registros. Seeding não é necessário.")
             return
 
-        for item in historical_data:
-            # Constrói o objeto do modelo a partir dos dados do JSON
+        logger.info("Tabela 'vendas_historicas' está vazia. Procurando pelo arquivo de dados...")
+        
+        # O caminho é relativo ao WORKDIR, que é /code no Dockerfile.
+        json_path = "app/dados_historicos_vendas.json" 
+        
+        if not os.path.exists(json_path):
+             logger.error(f"❌ ARQUIVO NÃO ENCONTRADO em '{json_path}'. O seeding não pode continuar. Faça o commit do arquivo JSON.")
+             return
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        logger.info(f"Arquivo JSON encontrado com {len(data)} registros. Iniciando inserção no banco...")
+
+        for item in data:
             db_item = VendaHistorica(
-                ident_antigo=item.get('ident_antigo'),
-                descricao=item.get('descricao'),
-                quantidade_vendida_total=item.get('quantidade_vendida_total'),
-                custo_compra_total=item.get('custo_compra_total'),
-                valor_vendido_total=item.get('valor_vendido_total'),
-                lucro_bruto_total=item.get('lucro_bruto_total'),
-                margem_lucro_percentual=item.get('margem_lucro_percentual')
+                ident_antigo=item['ident_antigo'],
+                descricao=item['descricao'],
+                quantidade_vendida_total=item['quantidade_vendida_total'],
+                custo_compra_total=item.get('custo_compra_total', 0), # Usar .get com valor padrão
+                valor_vendido_total=item.get('valor_vendido_total', 0),
+                lucro_bruto_total=item.get('lucro_bruto_total', 0),
+                margem_lucro_percentual=item.get('margem_lucro_percentual', 0)
             )
             db.add(db_item)
         
         db.commit()
-        logger.info(f"✅ Seeding de {len(historical_data)} registros históricos concluído!")
+        logger.info(f"✅ Seeding concluído! {len(data)} registros inseridos com sucesso em 'vendas_historicas'.")
 
-    except FileNotFoundError:
-        logger.error(f"❌ ERRO CRÍTICO DE SEEDING: O arquivo '{file_path}' não foi encontrado! Certifique-se de que 'dados_historicos_vendas.json' está na pasta 'app/' e foi commitado.")
     except Exception as e:
-        logger.error("❌ Ocorreu um erro inesperado durante o seeding de dados históricos:")
-        logger.error(traceback.format_exc())
+        logger.error(f"❌ Erro durante o processo de seeding: {e}")
+        traceback.print_exc()
         db.rollback()
 
-# --- Função Principal de Inicialização ---
 
-def init_db():
-    db_session: Session | None = None
+def main():
+    logger.info("🚀 Iniciando processo de pré-inicialização...")
+    db_session = SessionLocal()
     try:
-        logger.info("Iniciando a verificação do banco de dados...")
-        
-        # Tentativas de conexão com o banco
-        for i in range(MAX_DB_RETRIES):
-            try:
-                db_session = SessionLocal()
-                # Testa a conexão com uma query simples
-                db_session.execute(text("SELECT 1"))
-                logger.info("✅ Conexão com o banco de dados estabelecida com sucesso!")
-                
-                # ---- Se a conexão funcionou, executa as tarefas ----
-                logger.info("Iniciando criação de tabelas (se necessário)...")
-                Base.metadata.create_all(bind=engine)
-                logger.info("✅ Tabelas verificadas/criadas.")
-                
-                # 1. Garante que a empresa principal existe
-                create_initial_company(db_session)
-                
-                # 2. Popula com os dados históricos se necessário
-                seed_historical_data(db_session)
-                
-                # Se tudo deu certo, sai do loop
-                return
-            
-            except OperationalError:
-                logger.warning(f"Banco de dados indisponível. Tentativa {i + 1}/{MAX_DB_RETRIES}. Tentando novamente em {WAIT_SECONDS}s...")
-                time.sleep(WAIT_SECONDS)
-        
-        # Se saiu do loop sem sucesso, lança um erro
-        raise ConnectionError("FALHA: Não foi possível conectar ao banco de dados após múltiplas tentativas.")
-
+        if check_db_connection(db_session):
+            ensure_tables_exist()
+            seed_data_if_empty(db_session)
     finally:
-        # Garante que a sessão seja sempre fechada
-        if db_session:
-            db_session.close()
+        db_session.close()
+    logger.info("🏁 Processo de pré-inicialização finalizado.")
 
-# --- Ponto de Entrada do Script ---
 if __name__ == "__main__":
-    logger.info("🚀 Iniciando script de pré-inicialização da API...")
-    init_db()
-    logger.info("🏁 Script de pré-inicialização concluído.")
+    main()
