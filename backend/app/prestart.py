@@ -1,5 +1,3 @@
-# /backend/app/prestart.py
-
 import logging
 import time
 import json

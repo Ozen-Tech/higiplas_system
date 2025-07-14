@@ -1,12 +1,9 @@
-# /backend/app/routers/insights.py
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import json
 import traceback
 
-# Importações dos módulos do seu projeto
 from app.db.connection import get_db
 from app.db import models
 from app.dependencies import get_current_user
