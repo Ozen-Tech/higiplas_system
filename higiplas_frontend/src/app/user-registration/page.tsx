@@ -17,6 +17,7 @@ const UserRegistrationPage = () => {
       const response = await api.post('/users', { nome: name, email, password, perfil });
 
       if (response.status !== 201) {
+        
         throw new Error(response.data.message || 'Erro ao cadastrar usuário');
       }
 

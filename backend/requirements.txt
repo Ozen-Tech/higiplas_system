@@ -18,6 +18,7 @@ pandas
 openpyxl
 email-validator
 python-multipart
-
+beautifulsoup4 
+lxml
 # Inteligência Artificial
 google-generativeai
