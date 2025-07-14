@@ -69,3 +69,20 @@ class MovimentacaoEstoque(Base):
 
     produto = relationship("Produto", back_populates="movimentacoes")
     usuario = relationship("Usuario", back_populates="movimentacoes")
+
+
+class VendaHistorica(Base):
+    __tablename__ = "vendas_historicas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ident_antigo = Column(Integer, unique=True, index=True) # Mantém o ID do sistema antigo
+    descricao = Column(String, index=True)
+    quantidade_vendida_total = Column(Float, default=0)
+    custo_compra_total = Column(Float, default=0)
+    valor_vendido_total = Column(Float, default=0)
+    lucro_bruto_total = Column(Float, default=0)
+    margem_lucro_percentual = Column(Float, default=0)
+
+    # Relacionamento opcional com a tabela de produtos atual
+    produto_atual_id = Column(Integer, ForeignKey("produtos.id"), nullable=True)
+    produto = relationship("Produto")
