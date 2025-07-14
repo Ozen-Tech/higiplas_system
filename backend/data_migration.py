@@ -1,5 +1,3 @@
-# /backend/data_migration.py
-
 from bs4 import BeautifulSoup
 import re
 import json
