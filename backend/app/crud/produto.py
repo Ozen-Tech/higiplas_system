@@ -60,7 +60,7 @@ def delete_produto(db: Session, produto_id: int, empresa_id: int):
 
 
 def update_produto_by_nome(db: Session, nome: str, estoque: int, data_validade, preco_venda: float, estoque_minimo: int):
-    produto = db.query(Produto).filter(Produto.nome == nome).first()
+    produto = db.query(models.Produto).filter(models.Produto.nome == nome).first() # Corrigido para models.Produto
     if not produto:
         raise Exception("Produto não encontrado")
 
