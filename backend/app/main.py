@@ -29,7 +29,7 @@ app.add_middleware(
 # Note que no seu código, a rota de insights ainda não estava sendo incluída
 app.include_router(auth.router, prefix="/users", tags=["Usuários e Autenticação"])
 app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
-app.include_router(produtos.router, prefix="/produtos", tags=["Produtos"])
+app.include_router(produtos.router, tags=["Produtos"])
 app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
 app.include_router(upload_excel.router, tags=["Upload Excel"])
 app.include_router(insights.router, tags=["Insights"]) # Incluindo o router da IA
