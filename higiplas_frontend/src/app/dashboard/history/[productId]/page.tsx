@@ -1,4 +1,3 @@
-// /src/app/dashboard/history/[productId]/page.tsx
 "use client";
 
 import { useEffect, useState } from 'react';

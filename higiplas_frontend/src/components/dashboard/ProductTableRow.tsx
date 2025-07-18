@@ -1,5 +1,3 @@
-// /src/components/dashboard/ProductTableRow.tsx
-
 import { Product, ProdutoUpdateData } from "@/types";
 import { useState, ChangeEvent } from "react";
 import Link from 'next/link';
@@ -43,10 +41,35 @@ export function ProductTableRow({ product, onSave, onRemove, onMoveStock }: Prod
     setIsEditing(false);
   };
 
-  const getRowClassName = (p: Product) => {
-    // ... (sua lógica de classes, sem alterações) ...
-    return ""; // Placeholder
-  };
+  const getRowClassName = (product: Product) => { // Renomeei o parâmetro para 'product' para clareza
+    const classes = [];
+
+    // Prioridade 1: Vencido ou perto de vencer
+    if (product.data_validade) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Zera o tempo para comparar apenas as datas
+
+        // Adiciona T00:00:00 para evitar problemas de fuso horário
+        const validade = new Date(product.data_validade + "T00:00:00"); 
+
+        const diasRestantes = (validade.getTime() - hoje.getTime()) / (1000 * 3600 * 24);
+
+        if (diasRestantes < 0) {
+            // Se já venceu, a classe de vencimento tem prioridade máxima
+            return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"; 
+        }
+        if (diasRestantes <= 30) {
+            classes.push("bg-orange-100 dark:bg-orange-900/30"); // Próximo ao vencimento
+        }
+    }
+    
+    // Prioridade 2: Estoque baixo (se não estiver vencido)
+    if (product.quantidade_em_estoque <= (product.estoque_minimo ?? 0)) {
+        classes.push("bg-yellow-100 dark:bg-yellow-900/30"); // Estoque baixo
+    }
+
+    return classes.join(" "); // Retorna a string de classes CSS
+};
 
   const inputClasses = "border rounded px-2 py-1 w-full bg-yellow-100 dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none";
   const textCenterInputClasses = `${inputClasses} text-center`;
