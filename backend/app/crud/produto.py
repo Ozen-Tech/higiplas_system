@@ -8,6 +8,13 @@ def get_produtos(db: Session, empresa_id: int):
     """Busca todos os produtos de uma empresa."""
     return db.query(models.Produto).filter(models.Produto.empresa_id == empresa_id).all()
 
+def get_produto_by_id(db: Session, produto_id: int, empresa_id: int):
+    """Busca um único produto pelo ID, garantindo que pertence à empresa correta."""
+    return db.query(models.Produto).filter(
+        models.Produto.id == produto_id,
+        models.Produto.empresa_id == empresa_id
+    ).first()
+
 def create_produto(db: Session, produto: schemas_produto.ProdutoCreate, empresa_id: int):
     """Cria um novo produto."""
     db_produto = models.Produto(
