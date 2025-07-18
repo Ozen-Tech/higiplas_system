@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..db import models
+from datetime import datetime, timedelta
+
 
 def create_movimentacao_estoque(db: Session, movimentacao: schemas_movimentacao.MovimentacaoEstoqueCreate, usuario_id: int, empresa_id: int):
     """
