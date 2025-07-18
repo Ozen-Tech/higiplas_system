@@ -62,3 +62,27 @@ def get_movimentacoes_by_produto_id(db: Session, produto_id: int, empresa_id: in
         ).order_by(
             models.MovimentacaoEstoque.data_movimentacao.desc()
         ).all()
+
+def get_recent_movimentacoes(db: Session, empresa_id: int, days: int = 30):
+    """
+    Busca todas as movimentações de uma empresa nos últimos X dias.
+    Faz join com Produto e Usuário para obter seus nomes.
+    """
+    # Calcula a data de início do período
+    data_limite = datetime.now() - timedelta(days=days)
+
+    # A query faz join em 'Produto' e 'Usuario' para enriquecer os dados
+    return db.query(models.MovimentacaoEstoque).join(
+        models.Produto, models.MovimentacaoEstoque.produto_id == models.Produto.id
+    ).join(
+        models.Usuario, models.MovimentacaoEstoque.usuario_id == models.Usuario.id
+    ).filter(
+        models.Produto.empresa_id == empresa_id,
+        models.MovimentacaoEstoque.data_movimentacao >= data_limite
+    ).options(
+        # Eager load para evitar múltiplas queries
+        joinedload(models.MovimentacaoEstoque.produto),
+        joinedload(models.MovimentacaoEstoque.usuario)
+    ).order_by(
+        models.MovimentacaoEstoque.data_movimentacao.desc()
+    ).all()
