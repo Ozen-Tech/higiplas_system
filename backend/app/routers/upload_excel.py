@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import pandas as pd
 from io import BytesIO
-
+from ..db import models
 # Importações necessárias
 from app.db.connection import get_db
 from app.crud import produto as crud_produto
@@ -18,7 +18,7 @@ router = APIRouter()
 async def upload_excel_file(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     if not file.filename.endswith((".xls", ".xlsx")):
         raise HTTPException(status_code=400, detail="Arquivo deve ser Excel (.xls ou .xlsx)")

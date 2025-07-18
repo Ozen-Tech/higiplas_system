@@ -5,6 +5,7 @@ from psycopg2.extensions import connection
 from app.crud import empresa as crud_empresa
 from app.db.connection import get_db
 from app.dependencies import get_current_user
+from ..db import models
 
 router = APIRouter(
     prefix="/empresas",

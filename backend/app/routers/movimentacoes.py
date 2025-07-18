@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from typing import List
+from ..db import models
 
 from ..crud import movimentacao_estoque as crud_movimentacao
 from ..schemas import movimentacao_estoque as schemas_movimentacao
@@ -52,7 +53,7 @@ def create_movimentacao(
         }
     ),
     db: Session = Depends(get_db),
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     try:
         produto_atualizado = crud_movimentacao.create_movimentacao_estoque(
@@ -76,7 +77,7 @@ def create_movimentacao(
 def read_movimentacoes_por_produto(
     produto_id: int,
     db: Session = Depends(get_db),
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     return crud_movimentacao.get_movimentacoes_by_produto_id(
         db=db, 
