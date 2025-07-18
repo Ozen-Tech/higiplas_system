@@ -10,8 +10,6 @@ model = None
 # Tenta configurar a API ao iniciar o módulo
 try:
     # Usando o nome do modelo que você confirmou estar disponível
-    MODEL_NAME = "gemini-1.5-flash-latest" # Ou "gemini-2.0-flash" se já estiver disponível
-
     genai.configure(api_key=settings.GOOGLE_API_KEY)
     
     # Configuração de segurança para permitir respostas menos restritivas
@@ -23,11 +21,8 @@ try:
         {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
     ]
     
-    model = genai.GenerativeModel(
-        model_name=MODEL_NAME,
-        safety_settings=safety_settings
-    )
-    print(f"✅ Modelo de IA Gemini ('{MODEL_NAME}') inicializado com sucesso.")
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    print("✅ Modelo de IA Gemini inicializado com sucesso.")
 
 except Exception as e:
     print(f"❌ Erro ao configurar a API do Gemini: {e}")
@@ -42,7 +37,7 @@ def generate_analysis_from_data(user_question: str, system_data: str) -> str:
      
     # Mega prompt aprimorado que ensina a IA a usar todos os dados
     prompt_template = f"""
-    Você é o "Assistente de Análise Higiplas", uma IA especialista em gestão de estoque e análise de dados de negócios. Sua função é ajudar o gestor a entender os dados do sistema e tomar melhores decisões.
+    Você é a "Assistente de Análise Higiplas", uma IA especialista em gestão de estoque e análise de dados de negócios. Sua função é ajudar o gestor a entender os dados do sistema e tomar melhores decisões, o nome dado a você é Rozana.
      
     O gestor fez a seguinte pergunta: 
     "{user_question}"
