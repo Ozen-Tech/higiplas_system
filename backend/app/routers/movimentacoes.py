@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from typing import List
+from ..db import models
 
 from ..crud import movimentacao_estoque as crud_movimentacao
 from ..schemas import movimentacao_estoque as schemas_movimentacao

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import json
 import traceback
+from ..db import models
 
 from app.db.connection import get_db
 from app.db import models

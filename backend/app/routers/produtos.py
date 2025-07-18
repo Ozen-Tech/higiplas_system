@@ -7,7 +7,7 @@ import pandas as pd
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 import traceback
-
+from ..db import models
 # Importações dos seus módulos de aplicação
 from ..crud import produto as crud_produto
 from ..db.connection import get_db

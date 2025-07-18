@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import pandas as pd
 from io import BytesIO
-
+from ..db import models
 # Importações necessárias
 from app.db.connection import get_db
 from app.crud import produto as crud_produto
