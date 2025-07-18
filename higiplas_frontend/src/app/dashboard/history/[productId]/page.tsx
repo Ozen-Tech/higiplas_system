@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation'; // Hook para pegar o ID da URL
 import { apiService } from '@/services/apiService';
-import ClientLayout from '@/components/ClientLayout';
 import { Header } from '@/components/dashboard/Header';
 import { useAuth } from '@/contexts/AuthContext';
 
