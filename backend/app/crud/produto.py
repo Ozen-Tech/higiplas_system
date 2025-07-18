@@ -1,109 +1,104 @@
-# /backend/app/routers/produtos.py
+# backend/app/crud/produto.py
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from typing import List
-import pandas as pd
-from io import BytesIO
-from fastapi.responses import StreamingResponse
-import traceback
-
-from ..crud import produto as crud_produto
-from ..db.connection import get_db
 from ..schemas import produto as schemas_produto
-from ..schemas import usuario as schemas_usuario
-from app.dependencies import get_current_user
+from ..db import models
 
-# Definimos o prefixo aqui para manter as rotas organizadas
-router = APIRouter(
-    prefix="/produtos",
-    tags=["Produtos"],
-    responses={404: {"description": "Produto não encontrado"}},
-)
+def get_produtos(db: Session, empresa_id: int):
+    """Busca todos os produtos de uma empresa."""
+    return db.query(models.Produto).filter(models.Produto.empresa_id == empresa_id).all()
 
-# --- ROTAS DA API ---
-
-@router.post("/", response_model=schemas_produto.Produto, status_code=status.HTTP_201_CREATED, summary="Criar um novo produto")
-def create_produto(produto: schemas_produto.ProdutoCreate, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
-    """Cria um novo produto associado à empresa do usuário logado."""
-    return crud_produto.create_produto(db=db, produto=produto, empresa_id=current_user.empresa_id)
-
-@router.get("/", response_model=List[schemas_produto.Produto], summary="Listar todos os produtos")
-def read_all_produtos(db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
-    """Retorna uma lista de todos os produtos da empresa do usuário logado."""
-    return crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
-
-@router.get("/{produto_id}", response_model=schemas_produto.Produto, summary="Buscar um produto por ID")
-def read_one_produto(produto_id: int, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
-    """
-    Retorna os dados de um produto específico.
-    Utilizado pela página de histórico para buscar o nome do produto.
-    """
-    db_produto = crud_produto.get_produto_by_id(db=db, produto_id=produto_id, empresa_id=current_user.empresa_id)
-    if db_produto is None:
-        raise HTTPException(status_code=404, detail="Produto não encontrado ou não pertence à sua empresa.")
+def create_produto(db: Session, produto: schemas_produto.ProdutoCreate, empresa_id: int):
+    """Cria um novo produto."""
+    db_produto = models.Produto(
+        **produto.model_dump(), 
+        empresa_id=empresa_id
+    )
+    db.add(db_produto)
+    db.commit()
+    db.refresh(db_produto)
     return db_produto
 
-@router.put("/{produto_id}", response_model=schemas_produto.Produto, summary="Atualizar um produto")
-def update_produto_endpoint(produto_id: int, produto: schemas_produto.ProdutoUpdate, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
-    """Atualiza os dados de um produto existente."""
-    updated_produto = crud_produto.update_produto(db=db, produto_id=produto_id, produto_data=produto, empresa_id=current_user.empresa_id)
-    if updated_produto is None:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
-    return updated_produto
+# --- NOVA FUNÇÃO DE UPDATE ---
+def update_produto(db: Session, produto_id: int, produto_data: schemas_produto.ProdutoUpdate, empresa_id: int):
+    """Atualiza um produto existente."""
+    # Busca o produto pelo ID e pelo ID da empresa (por segurança)
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
 
-@router.delete("/{produto_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Deletar um produto")
-def delete_produto_endpoint(produto_id: int, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
-    """Deleta um produto do banco de dados."""
-    deleted_produto = crud_produto.delete_produto(db=db, produto_id=produto_id, empresa_id=current_user.empresa_id)
-    if deleted_produto is None:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    if not db_produto:
+        return None
 
-@router.get("/download/excel", response_description="Retorna um arquivo Excel com todos os produtos", summary="Exportar produtos para Excel")
-def download_produtos_excel(db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
+    # Pega os dados enviados pelo usuário (excluindo os que não foram enviados)
+    update_data = produto_data.model_dump(exclude_unset=True)
+
+    # Atualiza os campos do objeto SQLAlchemy
+    for key, value in update_data.items():
+        setattr(db_produto, key, value)
+
+    db.commit()
+    db.refresh(db_produto)
+    return db_produto
+
+# --- NOVA FUNÇÃO DE DELETE ---
+def delete_produto(db: Session, produto_id: int, empresa_id: int):
+    """Deleta um produto existente."""
+    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
+
+    if not db_produto:
+        return None
+
+    db.delete(db_produto)
+    db.commit()
+    return db_produto
+
+
+def update_produto_by_nome(db: Session, nome: str, estoque: int, data_validade, preco_venda: float, estoque_minimo: int):
+    produto = db.query(Produto).filter(Produto.nome == nome).first()
+    if not produto:
+        raise Exception("Produto não encontrado")
+
+    produto.quantidade_em_estoque = estoque
+    produto.data_validade = data_validade
+    produto.preco_venda = preco_venda
+    produto.estoque_minimo = estoque_minimo
+
+    db.commit()
+    db.refresh(produto)
+    return produto
+
+def create_or_update_produto(db: Session, produto_data: schemas_produto.ProdutoCreate, empresa_id: int):
     """
-    Busca todos os produtos da empresa do usuário logado e os retorna
-    como um arquivo Excel (.xlsx) para download.
+    Verifica se um produto com o mesmo código já existe para a empresa.
+    Se existir, atualiza seus dados (incluindo o estoque). 
+    Se não existir, cria um novo com os dados fornecidos.
     """
-    try:
-        produtos = crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
-        if not produtos:
-            raise HTTPException(status_code=404, detail="Nenhum produto encontrado para exportar.")
+    db_produto = db.query(models.Produto).filter(
+        models.Produto.codigo == produto_data.codigo,
+        models.Produto.empresa_id == empresa_id
+    ).first()
 
-        produtos_dict_list = [
-            {
-                "nome": p.nome,
-                "codigo": p.codigo,
-                "categoria": p.categoria,
-                "estoque": p.quantidade_em_estoque,
-                "estoque_minimo": p.estoque_minimo,
-                "unidade_medida": p.unidade_medida,
-                "preco_venda": p.preco_venda,
-                "preco_custo": p.preco_custo,
-                "data_validade": p.data_validade,
-                "descricao": p.descricao,
-            }
-            for p in produtos
-        ]
+    # Separa o valor do estoque dos outros dados para um tratamento claro.
+    estoque_para_definir = produto_data.quantidade_em_estoque or 0
+    # Gera um dicionário com os outros dados do produto.
+    update_dict = produto_data.model_dump(exclude={"quantidade_em_estoque"}, exclude_unset=True)
+    
+    # Se o produto já existe, atualize-o
+    if db_produto:
+        for key, value in update_dict.items():
+            setattr(db_produto, key, value)
+        # Define o estoque com o valor do arquivo (sobrescreve o anterior)
+        db_produto.quantidade_em_estoque = estoque_para_definir
         
-        df = pd.DataFrame(produtos_dict_list)
-
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Produtos')
-        
-        output.seek(0)
-
-        headers = {
-            'Content-Disposition': 'attachment; filename="higiplas_produtos.xlsx"'
-        }
-        
-        return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
-    except Exception as e:
-        print(f"\n--- ERRO INTERNO AO GERAR EXCEL ---\n{e}\n{traceback.format_exc()}\n---------------------------------\n")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ocorreu um erro no servidor ao gerar o arquivo Excel: {str(e)}"
+    # Se não existe, crie um novo
+    else:
+        db_produto = models.Produto(
+            **update_dict, # Usa o dicionário com os dados principais
+            empresa_id=empresa_id,
+            # Define o estoque com o valor do arquivo (em vez de 0)
+            quantidade_em_estoque=estoque_para_definir 
         )
+        db.add(db_produto)
+
+    db.commit()
+    db.refresh(db_produto)
+    return db_produto
