@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..db import models
