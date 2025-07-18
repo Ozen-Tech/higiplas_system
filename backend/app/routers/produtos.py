@@ -27,7 +27,7 @@ router = APIRouter(
 @router.get("/", response_model=List[schemas_produto.Produto], summary="Listar todos os produtos")
 def read_all_produtos(
     db: Session = Depends(get_db), 
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     """Retorna uma lista de todos os produtos da empresa do usuário logado."""
     return crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
@@ -35,7 +35,7 @@ def read_all_produtos(
 @router.get("/download/excel", response_description="Retorna um arquivo Excel com todos os produtos", summary="Exportar produtos para Excel")
 def download_produtos_excel(
     db: Session = Depends(get_db),
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     """
     Busca todos os produtos da empresa do usuário logado e os retorna
@@ -96,7 +96,7 @@ def download_produtos_excel(
 def read_one_produto(
     produto_id: int, 
     db: Session = Depends(get_db), 
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     """
     Retorna os dados de um produto específico.
@@ -112,7 +112,7 @@ def read_one_produto(
 def create_produto(
     produto: schemas_produto.ProdutoCreate, 
     db: Session = Depends(get_db), 
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     """Cria um novo produto associado à empresa do usuário logado."""
     return crud_produto.create_produto(db=db, produto=produto, empresa_id=current_user.empresa_id)
@@ -122,7 +122,7 @@ def update_produto_endpoint(
     produto_id: int, 
     produto: schemas_produto.ProdutoUpdate, 
     db: Session = Depends(get_db), 
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     """Atualiza os dados de um produto existente."""
     updated_produto = crud_produto.update_produto(db=db, produto_id=produto_id, produto_data=produto, empresa_id=current_user.empresa_id)
@@ -134,7 +134,7 @@ def update_produto_endpoint(
 def delete_produto_endpoint(
     produto_id: int, 
     db: Session = Depends(get_db), 
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     """Deleta um produto do banco de dados."""
     deleted_produto = crud_produto.delete_produto(db=db, produto_id=produto_id, empresa_id=current_user.empresa_id)

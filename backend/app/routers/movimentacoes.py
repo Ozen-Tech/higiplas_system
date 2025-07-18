@@ -52,7 +52,7 @@ def create_movimentacao(
         }
     ),
     db: Session = Depends(get_db),
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     try:
         produto_atualizado = crud_movimentacao.create_movimentacao_estoque(
@@ -76,7 +76,7 @@ def create_movimentacao(
 def read_movimentacoes_por_produto(
     produto_id: int,
     db: Session = Depends(get_db),
-    current_user: schemas_usuario.Usuario = Depends(get_current_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
     return crud_movimentacao.get_movimentacoes_by_produto_id(
         db=db, 
