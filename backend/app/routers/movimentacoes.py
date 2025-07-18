@@ -69,7 +69,7 @@ def create_movimentacao(
 
 @router.get(
     "/{produto_id}",
-    response_model=List[schemas_movimentacao.MovimentacaoEstoque],
+    response_model=List[schemas_movimentacao.MovimentacaoEstoqueResponse],
     summary="Lista o histórico de movimentações de um produto",
     description="Retorna todas as movimentações de estoque para um produto específico, ordenadas da mais recente para a mais antiga."
 )

@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field, validator, ConfigDict
 from datetime import datetime
 from typing import Optional
+from .usuario import Usuario
 
 class MovimentacaoEstoqueBase(BaseModel):
     produto_id: int
@@ -26,3 +27,12 @@ class MovimentacaoEstoque(MovimentacaoEstoqueBase):
     data_movimentacao: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+class MovimentacaoEstoqueResponse(MovimentacaoEstoqueBase):
+    id: int
+    tipo_movimentacao: str
+    data_movimentacao: datetime
+    usuario: Optional[Usuario] = None 
+
+    class Config:
+        from_attributes = True

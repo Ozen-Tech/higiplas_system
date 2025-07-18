@@ -27,7 +27,7 @@ router = APIRouter(
 def create_produto(produto: schemas_produto.ProdutoCreate, db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
     return crud_produto.create_produto(db=db, produto=produto, empresa_id=current_user.empresa_id)
 
-@router.get("/", response_model=List[schemas_produto.Produto])
+@router.get("/{produto_id}", response_model=List[schemas_produto.Produto])
 def read_produtos(db: Session = Depends(get_db), current_user: schemas_usuario.Usuario = Depends(get_current_user)):
     return crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
 

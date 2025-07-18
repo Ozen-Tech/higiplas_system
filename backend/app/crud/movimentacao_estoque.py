@@ -1,5 +1,3 @@
-# backend/app/crud/movimentacao_estoque.py
-
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from ..schemas import movimentacao_estoque as schemas_movimentacao
@@ -57,4 +55,10 @@ def get_movimentacoes_by_produto_id(db: Session, produto_id: int, empresa_id: in
     if not produto:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produto não encontrado ou não pertence à sua empresa.")
 
-    return db.query(models.MovimentacaoEstoque).filter(models.MovimentacaoEstoque.produto_id == produto_id).order_by(models.MovimentacaoEstoque.data_movimentacao.desc()).all()
+    return db.query(models.MovimentacaoEstoque).options(
+            joinedload(models.MovimentacaoEstoque.usuario)
+        ).filter(
+            models.MovimentacaoEstoque.produto_id == produto_id
+        ).order_by(
+            models.MovimentacaoEstoque.data_movimentacao.desc()
+        ).all()
