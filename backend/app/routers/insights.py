@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import json
 import traceback
-
 # Importações dos módulos da aplicação
 from app.db.connection import get_db
 from app.db import models
