@@ -1,18 +1,24 @@
+// /src/app/dashboard/orcamentos/page.tsx (ou onde quer que este componente esteja)
+
 "use client";
 
 import Link from 'next/link';
+// --- 1. IMPORTAR O useRouter ---
+import { useRouter } from 'next/navigation'; 
 import { useEffect } from 'react';
 import { Header } from "@/components/dashboard/Header";
 import ClientLayout from '@/components/ClientLayout';
 import { ClipboardDocumentListIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
-import { useOrcamentos } from '@/hooks/useOrcamentos'; // Importamos o hook que criamos
+import { useOrcamentos } from '@/hooks/useOrcamentos';
 
 // O conteúdo principal da página foi movido para cá.
 function OrcamentosPageContent() {
   const { logout } = useAuth();
   const { orcamentos, loading, fetchOrcamentos } = useOrcamentos();
+  // --- 2. INICIAR O HOOK DO ROUTER ---
+  const router = useRouter(); 
 
   useEffect(() => {
     fetchOrcamentos();
@@ -26,7 +32,7 @@ function OrcamentosPageContent() {
         <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-600 ml-2 pl-2">
             <ThemeToggleButton />
             <button onClick={logout} aria-label="Sair" className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
               </svg>
             </button>
@@ -57,7 +63,7 @@ function OrcamentosPageContent() {
             </div>
           </div>
           
-          {/* Tabela de Orçamentos Recentes (agora funcional) */}
+          {/* Tabela de Orçamentos Recentes */}
           <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
             <div className="px-6 py-4 border-b dark:border-gray-700">
               <h3 className="text-lg font-semibold">Orçamentos Recentes</h3>
@@ -80,15 +86,28 @@ function OrcamentosPageContent() {
                             </tr>
                         ) : orcamentos.length > 0 ? (
                             orcamentos.map(orc => (
-                                <tr key={orc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">#{orc.id}</td>
+                                // --- 3. ADICIONAR onClick E cursor-pointer NA LINHA ---
+                                <tr 
+                                  key={orc.id} 
+                                  onClick={() => router.push(`/dashboard/orcamentos/${orc.id}`)}
+                                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                                >
+                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">#{String(orc.id).padStart(4, '0')}</td>
                                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{orc.nome_cliente}</td>
                                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{new Date(orc.data_criacao).toLocaleDateString('pt-BR')}</td>
                                     <td className="px-6 py-4">
-                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">{orc.status}</span>
+                                        {/* --- 4. LÓGICA DE COR DINÂMICA PARA O STATUS --- */}
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                            orc.status === 'FINALIZADO' 
+                                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                          }`}
+                                        >
+                                          {orc.status}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <Link href={`/dashboard/orcamentos/${orc.id}`} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">Ver Detalhes</Link>
+                                        <span className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">Ver Detalhes</span>
                                     </td>
                                 </tr>
                             ))

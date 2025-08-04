@@ -24,6 +24,28 @@ export interface OrcamentoItem {
   preco_unitario: number;
 }
 
+export interface Orcamento {
+  id: number;
+  nome_cliente: string;
+  status: string;
+  data_criacao: string; // Vem como string da API
+  data_validade?: string | null;
+  usuario: {
+    id: number;
+    nome: string;
+  };
+  itens: {
+    id: number;
+    quantidade: number;
+    preco_unitario_congelado: number;
+    produto: {
+      id: number;
+      nome: string;
+      codigo: string;
+    };
+  }[];
+}
+
 export interface User {
   id: number;
   nome: string;
