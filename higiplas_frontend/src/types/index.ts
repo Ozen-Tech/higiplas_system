@@ -16,6 +16,14 @@ export interface Product {
   data_validade?: string | null;
 }
 
+export interface OrcamentoItem {
+  produto_id: number;
+  nome: string; // Adicionamos nome e estoque para exibir na UI
+  estoque_disponivel: number;
+  quantidade: number;
+  preco_unitario: number;
+}
+
 // Dados necessários para criar um novo produto (sem os campos gerados pelo DB).
 // Omit é uma forma mais segura de garantir que campos indesejados não sejam enviados.
 export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>;

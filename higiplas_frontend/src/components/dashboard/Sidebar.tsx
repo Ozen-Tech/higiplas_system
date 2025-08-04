@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
+import Image from 'next/image'; 
 
 // Define a estrutura de cada item do menu
 const navigation = [
@@ -21,10 +22,12 @@ export function Sidebar() {
       <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-5 pb-4 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
         {/* O Logo não está mais no Header, mas aqui! */}
         <div className="flex items-center flex-shrink-0 px-4">
-          <img
-            className="h-10 w-auto" // Ajustado o tamanho da imagem
+        <Image
             src="/HIGIPLAS-LOGO-2048x761.png"
             alt="Higiplas Logo"
+            width={140} // Ajuste o tamanho conforme preferir
+            height={48}
+            priority // Otimiza o carregamento da logo
           />
         </div>
         
