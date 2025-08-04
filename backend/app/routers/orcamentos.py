@@ -1,6 +1,6 @@
 # /backend/app/routers/orcamentos.py
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -47,3 +47,29 @@ def read_one_orcamento(
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado ou não pertence a este usuário.")
     return orcamento
+
+# --- NOVA ROTA PARA FINALIZAR UM ORÇAMENTO ---
+@router.post("/{orcamento_id}/finalizar", response_model=schemas_orcamento.Orcamento, summary="Finaliza um orçamento e dá baixa no estoque")
+def finalizar_orcamento_endpoint(
+    orcamento_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Muda o status de um orçamento para 'FINALIZADO' e realiza a baixa
+    no estoque para cada item do orçamento.
+    """
+    try:
+        orcamento_finalizado = crud_orcamento.finalizar_orcamento(
+            db=db,
+            orcamento_id=orcamento_id,
+            usuario_id=current_user.id,
+            empresa_id=current_user.empresa_id
+        )
+        return orcamento_finalizado
+    except HTTPException as e:
+        # Repassa exceções de negócio (ex: estoque insuficiente) para o cliente
+        raise e
+    except Exception as e:
+        # Captura erros inesperados
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro interno no servidor: {e}")
