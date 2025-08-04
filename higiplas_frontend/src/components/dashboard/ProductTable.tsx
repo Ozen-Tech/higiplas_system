@@ -32,7 +32,7 @@ interface ProductTableProps {
   onMoveStock: (product: Product) => void;
 }
 
-export function ProductTable({ products, onSave, onRemove, onMoveStock }: ProductTableProps) {
+export function ProductTable({ products, onRemove, onMoveStock }: ProductTableProps) {
 
   // A função para o botão "Editar" por enquanto pode só dar um alerta.
   // Futuramente, ela abriria um Modal de Edição.
