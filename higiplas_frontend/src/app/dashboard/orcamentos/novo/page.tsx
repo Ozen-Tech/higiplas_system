@@ -13,7 +13,7 @@ import Input from '@/components/Input';
 
 function NovoOrcamentoPageContent() {
   const router = useRouter();
-  const { products: allProducts, loading: productsLoading } = useProducts(); // Renomeado para evitar conflito
+  const { products: allProducts } = useProducts(); 
 
   // Estado do formulário
   const [nomeCliente, setNomeCliente] = useState('');
