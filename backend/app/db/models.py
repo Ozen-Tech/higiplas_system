@@ -86,3 +86,31 @@ class VendaHistorica(Base):
     # Relacionamento opcional com a tabela de produtos atual
     produto_atual_id = Column(Integer, ForeignKey("produtos.id"), nullable=True)
     produto = relationship("Produto")
+
+class Orcamento(Base):
+    __tablename__ = "orcamentos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome_cliente = Column(String, nullable=False)
+    status = Column(String, default="RASCUNHO")  # Ex: RASCUNHO, ENVIADO, APROVADO, REJEITADO
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    data_validade = Column(Date, nullable=True)
+    
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    usuario = relationship("Usuario")
+    
+    # Relação com os itens do orçamento
+    itens = relationship("OrcamentoItem", back_populates="orcamento", cascade="all, delete-orphan")
+
+class OrcamentoItem(Base):
+    __tablename__ = "orcamento_itens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quantidade = Column(Integer, nullable=False)
+    preco_unitario_congelado = Column(Float, nullable=False) # "Congela" o preço do produto no momento do orçamento
+
+    orcamento_id = Column(Integer, ForeignKey("orcamentos.id"))
+    orcamento = relationship("Orcamento", back_populates="itens")
+    
+    produto_id = Column(Integer, ForeignKey("produtos.id"))
+    produto = relationship("Produto")
