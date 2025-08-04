@@ -8,7 +8,7 @@ import { apiService } from '@/services/apiService';
 export function useProducts() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Envolvemos a função de erro em useCallback para estabilizar sua referência
@@ -25,9 +25,14 @@ export function useProducts() {
     }
   }, [router]);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (force = false) => {
+    // Só faz a chamada se ainda não tiver produtos ou se for forçado
+    if (products.length > 0 && !force) {
+        return;
+    }
+    
+    setLoading(true);
     try {
-      setLoading(true);
       const data = await apiService.get('/produtos/');
       setProducts(data);
       setError(null);
@@ -36,7 +41,7 @@ export function useProducts() {
     } finally {
       setLoading(false);
     }
-  }, [handleApiError]); // Adicionamos a dependência aqui
+  }, [products.length, handleApiError]);
 
   const createProduct = async (newProductData: ProdutoCreateData) => {
     try {
