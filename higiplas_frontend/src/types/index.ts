@@ -24,6 +24,16 @@ export interface OrcamentoItem {
   preco_unitario: number;
 }
 
+export interface User {
+  id: number;
+  nome: string;
+  email: string;
+  perfil: 'ADMIN' | 'GESTOR' | 'OPERADOR';
+  is_active: boolean;
+  xp?: number; // Opcional, caso o backend não envie
+  level?: number; // Opcional
+}
+
 // Dados necessários para criar um novo produto (sem os campos gerados pelo DB).
 // Omit é uma forma mais segura de garantir que campos indesejados não sejam enviados.
 export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>;
