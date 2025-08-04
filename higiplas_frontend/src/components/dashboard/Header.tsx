@@ -2,7 +2,6 @@
 "use client";
 
 import { ReactNode } from "react";
-import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 
