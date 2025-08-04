@@ -1,7 +1,7 @@
 // /src/app/dashboard/orcamentos/novo/page.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProducts } from '@/hooks/useProducts';
 import { Product, OrcamentoItem } from '@/types'; // Importe os tipos
@@ -13,7 +13,7 @@ import Input from '@/components/Input';
 
 function NovoOrcamentoPageContent() {
   const router = useRouter();
-  const { products: allProducts } = useProducts(); 
+  const { products: allProducts, fetchProducts } = useProducts(); 
 
   // Estado do formulário
   const [nomeCliente, setNomeCliente] = useState('');
@@ -21,6 +21,10 @@ function NovoOrcamentoPageContent() {
   const [itensOrcamento, setItensOrcamento] = useState<OrcamentoItem[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Filtra os produtos com base na busca E que ainda não foram adicionados
   const produtosFiltrados = useMemo(() => {
