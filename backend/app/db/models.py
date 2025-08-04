@@ -24,6 +24,8 @@ class Usuario(Base):
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     perfil = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+    xp = Column(Integer, default=0) # Pontos de experiência
+    level = Column(Integer, default=1) # Nível
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     empresa = relationship("Empresa", back_populates="usuarios")
     movimentacoes = relationship("MovimentacaoEstoque", back_populates="usuario")

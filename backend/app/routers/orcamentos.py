@@ -27,3 +27,23 @@ def create_new_orcamento(
         usuario_id=current_user.id,
         empresa_id=current_user.empresa_id
     )
+
+@router.get("/", response_model=List[schemas_orcamento.Orcamento], summary="Lista os orçamentos do usuário logado")
+def read_user_orcamentos(
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Retorna uma lista de todos os orçamentos criados pelo vendedor logado."""
+    return crud_orcamento.get_orcamentos_by_user(db=db, usuario_id=current_user.id)
+
+@router.get("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Busca um orçamento específico")
+def read_one_orcamento(
+    orcamento_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Retorna os dados de um orçamento específico, se ele pertencer ao usuário logado."""
+    orcamento = crud_orcamento.get_orcamento_by_id(db=db, orcamento_id=orcamento_id, usuario_id=current_user.id)
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado ou não pertence a este usuário.")
+    return orcamento

@@ -40,6 +40,14 @@ def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, 
 
         db.commit()
         db.refresh(db_orcamento)
+        usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()
+        if usuario:
+            usuario.xp += 10 # 10 XP por orçamento criado
+            if usuario.xp >= (usuario.level * 100):
+                usuario.level += 1
+                usuario.xp = 0
+            db.commit()
+        
         return db_orcamento
         
     except HTTPException as e:
@@ -49,5 +57,17 @@ def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, 
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro interno ao criar orçamento: {e}")
 
-# (Opcional) Funções para listar e buscar orçamentos:
-# get_orcamentos_by_user, get_orcamento_by_id...
+def get_orcamentos_by_user(db: Session, usuario_id: int):
+    """Busca todos os orçamentos criados por um usuário específico."""
+    return db.query(models.Orcamento).filter(
+        models.Orcamento.usuario_id == usuario_id
+    ).order_by(
+        models.Orcamento.data_criacao.desc()
+    ).all()
+
+def get_orcamento_by_id(db: Session, orcamento_id: int, usuario_id: int):
+    """Busca um único orçamento pelo ID, garantindo que pertence ao usuário."""
+    return db.query(models.Orcamento).filter(
+        models.Orcamento.id == orcamento_id,
+        models.Orcamento.usuario_id == usuario_id
+    ).first()
