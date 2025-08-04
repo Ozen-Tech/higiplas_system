@@ -40,16 +40,59 @@ export function ProductTable({ products, onRemove, onMoveStock }: ProductTablePr
     alert(`Funcionalidade de editar "${product.nome}" a ser implementada.`);
   };
 
+  // --- CORREÇÃO AQUI ---
+  // Defina todas as colunas que a tabela deve exibir.
   const columns = [
-    // ... suas colunas ...
-    { header: 'Ações', accessor: 'actions' as const, render: (p: Product) => (
-      <ProductActions product={p} onMoveStock={onMoveStock} onRemove={onRemove} onEditClick={handleEditClick} />
-    )},
+    { 
+      header: 'Nome', 
+      accessor: 'nome' as const,
+      // Renderização especial para adicionar o estilo de fonte
+      render: (p: Product) => <span className="font-medium text-gray-900 dark:text-gray-100">{p.nome}</span>
+    },
+    { 
+      header: 'Código', 
+      accessor: 'codigo' as const 
+    },
+    { 
+      header: 'Estoque Mínimo', 
+      accessor: 'estoque_minimo' as const,
+      // Renderização para mostrar '0' caso o valor seja nulo
+      render: (p: Product) => <span>{p.estoque_minimo ?? 0}</span>
+    },
+    { 
+      header: 'Qtde em Estoque', 
+      accessor: 'quantidade_em_estoque' as const,
+      render: (p: Product) => <span className="font-bold">{p.quantidade_em_estoque}</span>
+    },
+    { 
+      header: 'Data de Validade', 
+      accessor: 'data_validade' as const,
+      // Renderização para formatar a data para o padrão brasileiro
+      render: (p: Product) => (
+        <span>
+          {p.data_validade ? new Date(p.data_validade + 'T00:00:00').toLocaleDateString("pt-BR") : "-"}
+        </span>
+      )
+    },
+    { 
+      header: 'Ações', 
+      accessor: 'actions' as const, 
+      render: (p: Product) => (
+        <ProductActions product={p} onMoveStock={onMoveStock} onRemove={onRemove} onEditClick={handleEditClick} />
+      )
+    },
   ];
 
   const renderMobileCard = (product: Product) => (
     <div className="space-y-3">
-        {/* ... seu card mobile ... */}
+        <div className="flex justify-between items-center">
+            <span className="font-bold text-lg dark:text-gray-100">{product.nome}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{product.codigo}</span>
+        </div>
+        <div>
+            <p>Estoque: <span className="font-semibold">{product.quantidade_em_estoque}</span> (Mín: {product.estoque_minimo ?? 0})</p>
+            <p>Validade: {product.data_validade ? new Date(product.data_validade + 'T00:00:00').toLocaleDateString("pt-BR") : "-"}</p>
+        </div>
         <div className="pt-3 border-t dark:border-gray-700">
            <ProductActions product={product} onMoveStock={onMoveStock} onRemove={onRemove} onEditClick={handleEditClick} />
         </div>
