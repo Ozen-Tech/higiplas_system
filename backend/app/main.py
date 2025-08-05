@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 # Nossos routers
-from app.routers import auth, empresas, produtos, movimentacoes, upload_excel, insights, orcamento
+from app.routers import auth, empresas, produtos, movimentacoes, upload_excel, insights, orcamentos
 
 # Criação da instância principal do FastAPI
 app = FastAPI(
