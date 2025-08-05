@@ -6,9 +6,11 @@ services:
     build:
       context: ./backend  # 1. CONTEXTO: Diz ao Docker para "entrar" nesta pasta primeiro.
       dockerfile: Dockerfile     # 2. DOCKERFILE: O nome do arquivo a ser usado.
+    command: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
     volumes:
+      - ./backend:/code
       - ./backend/app:/code/app # Mapeia o código para desenvolvimento
     env_file:
       - .env
@@ -34,6 +36,8 @@ services:
 
 volumes:
   postgres_data:
+       
+
 
 networks:
   higiplas_network:
