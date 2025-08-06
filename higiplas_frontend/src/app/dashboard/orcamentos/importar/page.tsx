@@ -52,7 +52,8 @@ export default function ImportarNotaPage() {
     const formData = new FormData();
     formData.append('file', file);
     
-    const promise = apiService.post('/invoices/parse-and-match', formData);
+    // --- CORREÇÃO: USAR A NOVA FUNÇÃO postFormData ---
+    const promise = apiService.postFormData('/invoices/parse-and-match', formData);
 
     toast.promise(promise, {
       loading: 'Analisando nota fiscal com IA...',
