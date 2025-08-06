@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product, ProdutoCreateData, ProdutoUpdateData } from '@/types';
 import { apiService } from '@/services/apiService';
+import toast from 'react-hot-toast';
+
 
 export function useProducts() {
   const router = useRouter();
@@ -44,14 +46,49 @@ export function useProducts() {
   }, [products.length, handleApiError]);
 
   const createProduct = async (newProductData: ProdutoCreateData) => {
-    try {
-      await apiService.post('/produtos/', newProductData);
-      await fetchProducts();
-      alert("Produto criado com sucesso!");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido";
-      alert(`Erro ao criar produto: ${message}`);
-    }
+    const promise = apiService.post('/produtos/', newProductData).then(() => {
+      // Força a busca de produtos apenas após o sucesso
+      return fetchProducts(true);
+    });
+
+    toast.promise(promise, {
+      loading: 'Criando produto...',
+      success: 'Produto criado com sucesso!',
+      error: (err) => `Erro ao criar: ${err.message}`,
+    });
+  };
+
+  const removeProduct = async (productId: number) => {
+    if (!confirm("Tem certeza que deseja remover este produto? A ação não pode ser desfeita.")) return;
+    
+    const promise = apiService.delete(`/produtos/${productId}`).then(() => {
+      // Atualiza o estado localmente para uma resposta mais rápida na UI
+      setProducts(current => current.filter(p => p.id !== productId));
+    });
+
+    toast.promise(promise, {
+        loading: 'Removendo produto...',
+        success: 'Produto removido com sucesso!',
+        error: (err) => `Erro ao remover: ${err.message}`,
+    });
+  };
+
+  const moveStock = async (productId: number, tipo: 'entrada' | 'saida', quantidade: number, observacao?: string) => {
+    const promise = apiService.post('/movimentacoes/', {
+      produto_id: productId,
+      tipo_movimentacao: tipo.toUpperCase(),
+      quantidade,
+      observacao,
+    }).then(() => {
+      // Força a busca de produtos para atualizar o estoque
+      return fetchProducts(true);
+    });
+
+    toast.promise(promise, {
+        loading: 'Registrando movimentação...',
+        success: 'Estoque atualizado com sucesso!',
+        error: (err) => `Erro na movimentação: ${err.message}`,
+    });
   };
 
   const updateProduct = async (productId: number, updateData: ProdutoUpdateData) => {
@@ -64,41 +101,8 @@ export function useProducts() {
     }
   };
 
-  const removeProduct = async (productId: number) => {
-    if (!confirm("Tem certeza que deseja remover este produto? A ação não pode ser desfeita.")) return;
-    try {
-      await apiService.delete(`/produtos/${productId}`);
-      setProducts(current => current.filter(p => p.id !== productId));
-      alert("Produto removido com sucesso!");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido";
-      alert(`Erro ao remover produto: ${message}`);
-    }
-  };
-
-  const moveStock = async (productId: number, tipo: 'entrada' | 'saida', quantidade: number) => {
-    try {
-      await apiService.post('/movimentacoes/', {
-        produto_id: productId,
-        tipo_movimentacao: tipo.toUpperCase(),
-        quantidade,
-      });
-      await fetchProducts();
-      alert("Movimentação registrada com sucesso!");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido";
-      alert(`Erro na movimentação: ${message}`);
-    }
-  };
-
   return {
-    products,
-    loading,
-    error,
-    fetchProducts,
-    createProduct,
-    updateProduct,
-    removeProduct,
-    moveStock,
+    products, loading, error, fetchProducts,
+    createProduct, updateProduct, removeProduct, moveStock,
   };
 }

@@ -73,3 +73,28 @@ def generate_analysis_from_data(user_question: str, system_data: str) -> str:
     except Exception as e:
         print(f"❌ Erro na comunicação com a API do Gemini: {e}")
         return f"Ocorreu um erro ao comunicar com a IA: {e}"
+
+def extract_products_from_invoice_image(image_bytes: bytes) -> str:
+    """
+    Usa o Gemini Pro Vision para extrair uma lista de produtos de uma imagem de nota fiscal.
+    """
+    if not model:
+        raise Exception("Modelo de IA não inicializado.")
+
+    image_part = {"mime_type": "image/jpeg", "data": image_bytes}
+    
+    prompt = """
+    Analise a imagem desta Nota Fiscal (DANFE) e extraia APENAS a tabela de produtos.
+    Sua resposta deve ser um JSON contendo uma lista de objetos.
+    Cada objeto deve ter as chaves "descricao" e "quantidade".
+    Ignore impostos, totais e outras informações. Foque apenas na lista de itens.
+    Se um produto não tiver um código óbvio, use o nome/descrição como identificador.
+    Exemplo de resposta: [{"descricao": "LUVA NITRILICA PRETA SEM PO TALGE CX 100UN.G", "quantidade": 60.0}, {"descricao": "SABAO EM PO OMO", "quantidade": 10.0}]
+    """
+    
+    try:
+        response = model.generate_content([prompt, image_part])
+        return response.text
+    except Exception as e:
+        print(f"Erro na API Gemini Vision: {e}")
+        raise
