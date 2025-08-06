@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, ArrowUpOnSquareIcon, CheckCircleIcon, ExclamationTriangleIcon, PlusCircleIcon, DocumentMagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
-import { OrcamentoItem, Product } from '@/types'; // Supondo que você tenha esses tipos
 
 // Definições de tipo para os dados da NF-e
 interface MatchedProduct {

@@ -12,7 +12,7 @@ import { ClipboardDocumentListIcon, DocumentPlusIcon } from '@heroicons/react/24
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
-import { ArrowLeftIcon, CheckCircleIcon, DocumentMagnifyingGlassIcon, ExclamationTriangleIcon, PlusCircleIcon, ArrowUpOnSquareIcon } from '@heroicons/react/24/outline';
+import {ArrowUpOnSquareIcon } from '@heroicons/react/24/outline';
 
 // O conteúdo principal da página foi movido para cá.
 function OrcamentosPageContent() {
