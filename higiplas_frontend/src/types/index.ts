@@ -52,12 +52,33 @@ export interface User {
   email: string;
   perfil: 'ADMIN' | 'GESTOR' | 'OPERADOR';
   is_active: boolean;
-  xp?: number; // Opcional, caso o backend não envie
-  level?: number; // Opcional
+  xp?: number;
+  level?: number;
 }
 
+export interface OrdemDeCompraItem {
+  id: number;
+  produto_id: number;
+  quantidade_solicitada: number;
+  custo_unitario_registrado: number;
+  produto: Product; // Inclui os dados completos do produto
+}
+
+export interface OrdemDeCompra {
+  id: number;
+  status: string;
+  data_criacao: string;
+  data_recebimento?: string | null;
+  usuario_id: number;
+  fornecedor: {
+    id: number;
+    nome: string;
+  };
+  itens: OrdemDeCompraItem[];
+}
+
+
 // Dados necessários para criar um novo produto (sem os campos gerados pelo DB).
-// Omit é uma forma mais segura de garantir que campos indesejados não sejam enviados.
 export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>;
 
 // Dados para a atualização de um produto, onde todos os campos são opcionais.

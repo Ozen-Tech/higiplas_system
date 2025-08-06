@@ -2,25 +2,17 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Product } from '@/types';
+// Importe os novos tipos de OrdemDeCompra junto com o Product
+import { Product, OrdemDeCompra } from '@/types';
 import { apiService } from '@/services/apiService';
 import { Header } from '@/components/dashboard/Header';
-// Importe os tipos que acabamos de exportar
 import { CustomTable, Column } from '@/components/dashboard/CustomTable';
 import Button from '@/components/Button';
-
-// Supondo que você crie tipos para OrdemDeCompra também
-interface OrdemDeCompra {
-  id: number;
-  status: string;
-  data_criacao: string;
-  fornecedor: { nome: string };
-  itens: any[]; // Simplificado por brevidade
-}
 
 export default function ComprasPage() {
   const [activeTab, setActiveTab] = useState<'baixoEstoque' | 'historico'>('baixoEstoque');
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+  // Use o novo tipo importado para o estado das ordens de compra
   const [orders, setOrders] = useState<OrdemDeCompra[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
@@ -66,22 +58,28 @@ export default function ComprasPage() {
     router.push(`/dashboard/compras/nova-oc?productIds=${ids}`);
   };
 
-  // APLIQUE O TIPO EXPLÍCITO AQUI
   const lowStockColumns: Column<Product>[] = useMemo(() => [
-    { header: '', accessor: 'actions', render: (p: Product) => <input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => handleSelectProduct(p.id)} /> },
-    { header: 'Produto', accessor: 'nome' },
+    { header: '', accessor: 'actions', render: (p: Product) => <input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => handleSelectProduct(p.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /> },
+    { header: 'Produto', accessor: 'nome', render: (p) => <span className="font-medium text-gray-900 dark:text-gray-100">{p.nome}</span> },
     { header: 'Código', accessor: 'codigo' },
-    { header: 'Estoque Atual', accessor: 'quantidade_em_estoque' },
+    { header: 'Estoque Atual', accessor: 'quantidade_em_estoque', render: (p) => <span className="font-bold text-red-600 dark:text-red-400">{p.quantidade_em_estoque}</span> },
     { header: 'Estoque Mínimo', accessor: 'estoque_minimo' },
   ], [selectedProducts]);
-
-  // E APLIQUE O TIPO EXPLÍCITO AQUI TAMBÉM
+  
   const orderColumns: Column<OrdemDeCompra>[] = useMemo(() => [
-    { header: 'ID', accessor: 'id' },
+    { header: 'ID da OC', accessor: 'id', render: (o) => <span className="font-mono text-xs text-gray-500">#{o.id}</span> },
     { header: 'Fornecedor', accessor: 'fornecedor', render: (o: OrdemDeCompra) => o.fornecedor.nome },
-    { header: 'Status', accessor: 'status' },
+    { header: 'Status', accessor: 'status', render: (o) => (
+      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+        o.status === 'RECEBIDA' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+        o.status === 'RASCUNHO' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+      }`}>
+        {o.status}
+      </span>
+    )},
     { header: 'Data Criação', accessor: 'data_criacao', render: (o: OrdemDeCompra) => new Date(o.data_criacao).toLocaleDateString('pt-BR') },
-    // Adicionar botão de detalhes no futuro
+    { header: 'Itens', accessor: 'itens', render: (o) => <span>{o.itens.length}</span> }
   ], []);
 
   return (
@@ -89,12 +87,12 @@ export default function ComprasPage() {
       <Header>
         <h1 className="text-xl font-bold">Gestão de Compras</h1>
       </Header>
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button onClick={() => setActiveTab('baixoEstoque')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'baixoEstoque' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-                Ponto de Pedido
+                Ponto de Pedido ({lowStockProducts.length})
               </button>
               <button onClick={() => setActiveTab('historico')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'historico' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                 Histórico de Ordens
@@ -102,11 +100,12 @@ export default function ComprasPage() {
             </nav>
           </div>
 
-          {loading ? <p>Carregando...</p> : (
-            <div>
+          {loading ? <div className="text-center p-8">Carregando dados...</div> : (
+            <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md border dark:border-gray-700">
               {activeTab === 'baixoEstoque' && (
                 <div>
-                  <div className="flex justify-end mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Produtos Precisando de Reposição</h3>
                     <Button onClick={handleCreateOrder} disabled={selectedProducts.size === 0}>
                       Criar Ordem de Compra ({selectedProducts.size})
                     </Button>
@@ -115,7 +114,10 @@ export default function ComprasPage() {
                 </div>
               )}
               {activeTab === 'historico' && (
-                <CustomTable columns={orderColumns} data={orders} />
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Histórico de Ordens de Compra</h3>
+                  <CustomTable columns={orderColumns} data={orders} />
+                </div>
               )}
             </div>
           )}
