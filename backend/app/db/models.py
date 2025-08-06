@@ -46,6 +46,8 @@ class Produto(Base):
     
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa", back_populates="produtos")
+    fornecedor_id = Column(Integer, ForeignKey("fornecedores.id"), nullable=True)
+    fornecedor = relationship("Fornecedor", back_populates="produtos")
     
     # --- AQUI ESTÁ A ALTERAÇÃO PRINCIPAL ---
     # Adicionamos a opção cascade="all, delete-orphan".
@@ -115,4 +117,40 @@ class OrcamentoItem(Base):
     orcamento = relationship("Orcamento", back_populates="itens")
     
     produto_id = Column(Integer, ForeignKey("produtos.id"))
+    produto = relationship("Produto")
+
+class Fornecedor(Base):
+    __tablename__ = "fornecedores"
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, unique=True, index=True, nullable=False)
+    cnpj = Column(String, unique=True, nullable=True)
+    contato_email = Column(String, nullable=True)
+    contato_telefone = Column(String, nullable=True)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"))
+
+    # Relacionamento para saber quais produtos este fornecedor vende
+    produtos = relationship("Produto", back_populates="fornecedor")
+
+class OrdemDeCompra(Base):
+    __tablename__ = "ordens_compra"
+    id = Column(Integer, primary_key=True, index=True)
+    fornecedor_id = Column(Integer, ForeignKey("fornecedores.id"))
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    status = Column(String, default="RASCUNHO") # RASCUNHO, ENVIADA, RECEBIDA
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    data_recebimento = Column(DateTime(timezone=True), nullable=True)
+    
+    fornecedor = relationship("Fornecedor")
+    usuario = relationship("Usuario")
+    itens = relationship("OrdemDeCompraItem", back_populates="ordem", cascade="all, delete-orphan")
+
+class OrdemDeCompraItem(Base):
+    __tablename__ = "ordens_compra_itens"
+    id = Column(Integer, primary_key=True, index=True)
+    ordem_id = Column(Integer, ForeignKey("ordens_compra.id"))
+    produto_id = Column(Integer, ForeignKey("produtos.id"))
+    quantidade_solicitada = Column(Integer, nullable=False)
+    custo_unitario_registrado = Column(Float, nullable=False)
+
+    ordem = relationship("OrdemDeCompra", back_populates="itens")
     produto = relationship("Produto")

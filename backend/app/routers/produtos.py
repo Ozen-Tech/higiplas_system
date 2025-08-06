@@ -12,8 +12,9 @@ from ..db import models
 from ..crud import produto as crud_produto
 from ..db.connection import get_db
 from ..schemas import produto as schemas_produto
-from ..schemas import usuario as schemas_usuario # Necessário para o tipo do current_user
+from ..schemas import usuario as schemas_usuario
 from app.dependencies import get_current_user
+from sqlalchemy import func, case
 
 # Define o prefixo e as tags para todas as rotas neste arquivo
 router = APIRouter(
@@ -141,3 +142,14 @@ def delete_produto_endpoint(
     if deleted_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/baixo-estoque", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo ou zerado")
+def read_low_stock_produtos(db: Session = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):
+    """
+    Retorna uma lista de produtos onde a quantidade em estoque é menor ou igual ao estoque mínimo.
+    """
+    produtos = db.query(models.Produto).filter(
+        models.Produto.empresa_id == current_user.empresa_id,
+        models.Produto.quantidade_em_estoque <= models.Produto.estoque_minimo
+    ).all()
+    return produtos

@@ -3,12 +3,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
+import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
 import Image from 'next/image'; 
 
 // Define a estrutura de cada item do menu
 const navigation = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
+  { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
 ];
