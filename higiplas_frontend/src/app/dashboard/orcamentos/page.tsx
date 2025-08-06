@@ -12,6 +12,7 @@ import { ClipboardDocumentListIcon, DocumentPlusIcon } from '@heroicons/react/24
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
+import { ArrowLeftIcon, CheckCircleIcon, DocumentMagnifyingGlassIcon, ExclamationTriangleIcon, PlusCircleIcon, ArrowUpOnSquareIcon } from '@heroicons/react/24/outline';
 
 // O conteúdo principal da página foi movido para cá.
 function OrcamentosPageContent() {
@@ -62,6 +63,16 @@ function OrcamentosPageContent() {
                </div>
             </div>
           </div>
+          {/* --- NOVO CARD PARA IMPORTAÇÃO --- */}
+          <Link href="/dashboard/orcamentos/importar" className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
+               <div className="flex items-center gap-4">
+                  <ArrowUpOnSquareIcon className="w-10 h-10 text-green-500" />
+                   <div>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Criar a partir de NF-e</h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Faça upload de uma nota fiscal e dê baixa no estoque.</p>
+                  </div>
+               </div>
+            </Link>
           
           {/* Tabela de Orçamentos Recentes */}
           <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">

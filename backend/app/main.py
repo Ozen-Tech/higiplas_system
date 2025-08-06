@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 # Nossos routers
-from app.routers import auth, empresas, produtos, movimentacoes, upload_excel, insights, orcamentos
+from app.routers import auth, empresas, produtos, movimentacoes, upload_excel, insights, orcamentos, dashboard_kpis, invoice_processing
 
 # Criação da instância principal do FastAPI
 app = FastAPI(
@@ -32,8 +32,10 @@ app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
 app.include_router(produtos.router, tags=["Produtos"])
 app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
 app.include_router(upload_excel.router, tags=["Upload Excel"])
-app.include_router(insights.router, tags=["Insights"]) # Incluindo o router da IA
+app.include_router(insights.router, tags=["Insights"])
 app.include_router(orcamentos.router)
+app.include_router(dashboard_kpis.router, tags=["Dashboard"])
+app.include_router(invoice_processing.router) 
 
 @app.get("/", tags=["Root"], summary="Verifica a saúde da API")
 async def read_root():
