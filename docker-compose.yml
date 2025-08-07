@@ -17,6 +17,7 @@ services:
       - higiplas_postgres
     networks:
       - higiplas_network
+    
 
 
   # Serviço do Banco de Dados PostgreSQL
