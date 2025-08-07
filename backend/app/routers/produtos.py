@@ -33,6 +33,21 @@ def read_all_produtos(
     """Retorna uma lista de todos os produtos da empresa do usuário logado."""
     return crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
 
+@router.get("/baixo-estoque", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo")
+def read_low_stock_produtos(
+    db: Session = Depends(get_db), 
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna uma lista de produtos onde a quantidade em estoque é menor ou igual ao estoque mínimo.
+    Trata casos onde o estoque mínimo é nulo.
+    """
+    produtos = db.query(models.Produto).filter(
+        models.Produto.empresa_id == current_user.empresa_id,
+        models.Produto.quantidade_em_estoque <= models.Produto.estoque_minimo
+    ).all()
+    return produtos
+
 @router.get("/download/excel", response_description="Retorna um arquivo Excel com todos os produtos", summary="Exportar produtos para Excel")
 def download_produtos_excel(
     db: Session = Depends(get_db),
@@ -143,17 +158,3 @@ def delete_produto_endpoint(
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.get("/baixo-estoque", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo")
-def read_low_stock_produtos(
-    db: Session = Depends(get_db), 
-    current_user: models.Usuario = Depends(get_current_user)
-):
-    """
-    Retorna uma lista de produtos onde a quantidade em estoque é menor ou igual ao estoque mínimo.
-    Trata casos onde o estoque mínimo é nulo.
-    """
-    produtos = db.query(models.Produto).filter(
-        models.Produto.empresa_id == current_user.empresa_id,
-        models.Produto.quantidade_em_estoque <= models.Produto.estoque_minimo
-    ).all()
-    return produtos
