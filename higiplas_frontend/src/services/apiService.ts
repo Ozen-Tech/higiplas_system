@@ -10,9 +10,6 @@ async function request(endpoint: string, options: RequestInit = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // --- CORREÇÃO IMPORTANTE AQUI ---
-  // Só definimos Content-Type como JSON se o corpo NÃO for FormData.
-  // O navegador definirá o Content-Type correto para FormData automaticamente.
   if (options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
@@ -23,14 +20,21 @@ async function request(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(`[${response.status}] ${errorData.detail}` || "Ocorreu um erro na requisição.");
+    // Tenta extrair a mensagem de erro detalhada do corpo da resposta da API
+    const errorBody = await response.json().catch(() => null); // Retorna null se o corpo não for JSON
+    
+    // Prioriza a mensagem de `detail` do FastAPI, senão usa o texto de status
+    const errorDetail = errorBody?.detail ? JSON.stringify(errorBody.detail) : response.statusText;
+    
+    throw new Error(`[${response.status}] ${errorDetail}`);
   }
   
+  // Retorna null para respostas "No Content"
   if (response.status === 204) {
     return null;
   }
 
+  // Retorna o JSON para respostas de sucesso
   return response.json();
 }
 
@@ -39,7 +43,5 @@ export const apiService = {
   post: (endpoint: string, body: unknown) => request(endpoint, { method: 'POST', body: JSON.stringify(body) }),
   put: (endpoint: string, body: unknown) => request(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (endpoint: string) => request(endpoint, { method: 'DELETE' }),
-
-  // --- NOVA FUNÇÃO PARA UPLOAD DE ARQUIVOS ---
   postFormData: (endpoint: string, formData: FormData) => request(endpoint, { method: 'POST', body: formData }),
 };

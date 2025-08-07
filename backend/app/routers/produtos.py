@@ -143,10 +143,14 @@ def delete_produto_endpoint(
         raise HTTPException(status_code=404, detail="Produto não encontrado")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.get("/baixo-estoque", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo ou zerado")
-def read_low_stock_produtos(db: Session = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):
+@router.get("/baixo-estoque", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo")
+def read_low_stock_produtos(
+    db: Session = Depends(get_db), 
+    current_user: models.Usuario = Depends(get_current_user)
+):
     """
     Retorna uma lista de produtos onde a quantidade em estoque é menor ou igual ao estoque mínimo.
+    Trata casos onde o estoque mínimo é nulo.
     """
     produtos = db.query(models.Produto).filter(
         models.Produto.empresa_id == current_user.empresa_id,
