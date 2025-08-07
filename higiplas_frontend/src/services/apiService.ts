@@ -22,6 +22,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
     headers,
   });
 
+
   if (!response.ok) {
     // --- INÍCIO DA MELHORIA ---
     let errorDetail = response.statusText;
@@ -35,7 +36,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
             errorDetail = JSON.stringify(errorData.detail);
         }
     } catch (e) {
-        // O corpo do erro não era JSON, continue com o statusText.
+      const errorData = await response.json().catch(() => ({ detail: response.statusText }));
     }
     throw new Error(`[${response.status}] ${errorDetail}`);
     // --- FIM DA MELHORIA ---
