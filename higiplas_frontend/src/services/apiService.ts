@@ -23,8 +23,22 @@ async function request(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(`[${response.status}] ${errorData.detail}` || "Ocorreu um erro na requisição.");
+    // --- INÍCIO DA MELHORIA ---
+    let errorDetail = response.statusText;
+    try {
+        const errorData = await response.json();
+        // O FastAPI geralmente retorna erros em `errorData.detail`
+        // Se for uma string, use-a. Se for um objeto, serialize-o para visualização.
+        if (typeof errorData.detail === 'string') {
+            errorDetail = errorData.detail;
+        } else if (errorData.detail) {
+            errorDetail = JSON.stringify(errorData.detail);
+        }
+    } catch (e) {
+        // O corpo do erro não era JSON, continue com o statusText.
+    }
+    throw new Error(`[${response.status}] ${errorDetail}`);
+    // --- FIM DA MELHORIA ---
   }
   
   if (response.status === 204) {
