@@ -91,7 +91,7 @@ export function useClientes() {
       const response = await apiService.get(`/clientes/${id}`);
       return response.data;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'detail' in err.response.data ? (err.response.data as any).detail : 'Erro ao buscar cliente';
+      const errorMessage = err instanceof Error && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'detail' in err.response.data && typeof (err.response.data as Record<string, unknown>).detail === 'string' ? (err.response.data as Record<string, unknown>).detail as string : 'Erro ao buscar cliente';
       setError(errorMessage);
       return null;
     } finally {
