@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 from .produto import Produto as SchemaProduto
 from .usuario import Usuario as SchemaUsuario
+from .cliente import Cliente as SchemaCliente
 
 # Item do Orçamento
 class OrcamentoItemBase(BaseModel):
@@ -24,17 +25,39 @@ class OrcamentoItem(OrcamentoItemBase):
 
 # Orçamento Completo
 class OrcamentoBase(BaseModel):
-    nome_cliente: str
     data_validade: Optional[date] = None
+    condicao_pagamento: str
+    preco_minimo: Optional[float] = None
+    preco_maximo: Optional[float] = None
+    numero_nf: Optional[str] = None
 
 class OrcamentoCreate(OrcamentoBase):
+    cliente_id: int
     itens: List[OrcamentoItemCreate]
+
+class OrcamentoUpdate(BaseModel):
+    data_validade: Optional[date] = None
+    condicao_pagamento: Optional[str] = None
+    preco_minimo: Optional[float] = None
+    preco_maximo: Optional[float] = None
+    numero_nf: Optional[str] = None
+    status: Optional[str] = None
 
 class Orcamento(OrcamentoBase):
     id: int
     status: str
     data_criacao: datetime
     usuario: SchemaUsuario
+    cliente: SchemaCliente
     itens: List[OrcamentoItem]
 
+    model_config = ConfigDict(from_attributes=True)
+
+# Schema para resumo de vendas do cliente
+class ResumoVendasCliente(BaseModel):
+    mes: str
+    ano: int
+    total_vendas: float
+    quantidade_orcamentos: int
+    
     model_config = ConfigDict(from_attributes=True)

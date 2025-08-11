@@ -48,6 +48,36 @@ def read_one_orcamento(
         raise HTTPException(status_code=404, detail="Orçamento não encontrado ou não pertence a este usuário.")
     return orcamento
 
+@router.put("/{orcamento_id}", response_model=schemas_orcamento.Orcamento)
+def update_orcamento(
+    orcamento_id: int,
+    orcamento_update: schemas_orcamento.OrcamentoUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Atualiza um orçamento existente."""
+    return crud_orcamento.update_orcamento(
+        db=db,
+        orcamento_id=orcamento_id,
+        orcamento_update=orcamento_update,
+        usuario_id=current_user.id,
+        empresa_id=current_user.empresa_id
+    )
+
+@router.delete("/{orcamento_id}")
+def delete_orcamento(
+    orcamento_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Exclui um orçamento (apenas se não estiver finalizado)."""
+    return crud_orcamento.delete_orcamento(
+        db=db,
+        orcamento_id=orcamento_id,
+        usuario_id=current_user.id,
+        empresa_id=current_user.empresa_id
+    )
+
 # --- NOVA ROTA PARA FINALIZAR UM ORÇAMENTO ---
 @router.post("/{orcamento_id}/finalizar", response_model=schemas_orcamento.Orcamento, summary="Finaliza um orçamento e dá baixa no estoque")
 def finalizar_orcamento_endpoint(
@@ -73,3 +103,64 @@ def finalizar_orcamento_endpoint(
     except Exception as e:
         # Captura erros inesperados
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro interno no servidor: {e}")
+
+@router.post("/{orcamento_id}/finalizar-com-nf", response_model=schemas_orcamento.Orcamento)
+def finalizar_orcamento_com_nf(
+    orcamento_id: int,
+    numero_nf: str,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Finaliza um orçamento com número da NF."""
+    try:
+        return crud_orcamento.finalizar_orcamento_com_nf(
+            db=db,
+            orcamento_id=orcamento_id,
+            numero_nf=numero_nf,
+            usuario_id=current_user.id,
+            empresa_id=current_user.empresa_id
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro interno no servidor: {e}")
+
+# Rotas para dashboard de admins
+@router.get("/empresa/todos", response_model=List[schemas_orcamento.Orcamento])
+def get_orcamentos_empresa(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Lista todos os orçamentos da empresa (para dashboard de admins)."""
+    # Verificar se o usuário é admin poderia ser adicionado aqui
+    return crud_orcamento.get_orcamentos_by_empresa(
+        db=db,
+        empresa_id=current_user.empresa_id,
+        skip=skip,
+        limit=limit
+    )
+
+@router.get("/empresa/stats")
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Retorna estatísticas para o dashboard de admins."""
+    return crud_orcamento.get_dashboard_stats(db=db, empresa_id=current_user.empresa_id)
+
+@router.get("/produtos-mais-vendidos")
+def get_produtos_mais_vendidos(
+    ano: int = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Retorna os produtos mais vendidos do ano."""
+    return crud_orcamento.get_produtos_mais_vendidos(
+        db=db,
+        empresa_id=current_user.empresa_id,
+        ano=ano,
+        limit=limit
+    )
