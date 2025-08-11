@@ -18,7 +18,7 @@ import {
   PencilIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+
 
 function ClientesPageContent() {
   const { clientes, loading, searchClientes, deleteCliente } = useClientes();
@@ -51,7 +51,7 @@ function ClientesPageContent() {
     if (window.confirm(`Tem certeza que deseja excluir o cliente "${cliente.nome}"?`)) {
       try {
         await deleteCliente(cliente.id);
-      } catch (error) {
+      } catch {
         // Erro já tratado no hook
       }
     }
