@@ -2,7 +2,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers'; // Importa nosso componente de providers
-import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'Higiplas Estoque',
@@ -18,16 +17,6 @@ export default function RootLayout({
     <html lang="pt-br" suppressHydrationWarning>
       <body>
         <Providers>
-        <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 5000,
-              style: {
-                background: '#333',
-                color: '#fff',
-              },
-            }}
-          />
           {children}
         </Providers>
       </body>

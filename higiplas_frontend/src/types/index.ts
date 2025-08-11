@@ -83,3 +83,110 @@ export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_
 
 // Dados para a atualização de um produto, onde todos os campos são opcionais.
 export type ProdutoUpdateData = Partial<Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>>;
+
+// Tipos para Clientes
+export interface Endereco {
+  id: number;
+  logradouro: string;
+  numero: string;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  tipo: 'RESIDENCIAL' | 'COMERCIAL' | 'ENTREGA';
+}
+
+export interface Cliente {
+  id: number;
+  nome: string;
+  email?: string | null;
+  telefone?: string | null;
+  cpf_cnpj?: string | null;
+  tipo_pessoa: 'FISICA' | 'JURIDICA';
+  data_cadastro: string;
+  ativo: boolean;
+  observacoes?: string | null;
+  empresa_id: number;
+  endereco?: {
+    logradouro?: string;
+    numero?: string;
+    complemento?: string | null;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    tipo?: 'RESIDENCIAL' | 'COMERCIAL' | 'ENTREGA';
+  };
+  enderecos: Endereco[];
+}
+
+export interface ClienteCreate {
+  nome: string;
+  email?: string | null;
+  telefone?: string | null;
+  cpf_cnpj?: string | null;
+  tipo_pessoa: 'FISICA' | 'JURIDICA';
+  observacoes?: string | null;
+  ativo?: boolean;
+  endereco?: {
+    logradouro?: string;
+    numero?: string;
+    complemento?: string | null;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    tipo?: 'RESIDENCIAL' | 'COMERCIAL' | 'ENTREGA';
+  };
+}
+
+export interface ClienteUpdate {
+  nome?: string;
+  email?: string | null;
+  telefone?: string | null;
+  cpf_cnpj?: string | null;
+  tipo_pessoa?: 'FISICA' | 'JURIDICA';
+  observacoes?: string | null;
+  ativo?: boolean;
+  endereco?: {
+    logradouro?: string;
+    numero?: string;
+    complemento?: string | null;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    tipo?: 'RESIDENCIAL' | 'COMERCIAL' | 'ENTREGA';
+  };
+}
+
+export interface HistoricoPagamento {
+  id: number;
+  cliente_id: number;
+  valor: number;
+  data_pagamento: string;
+  metodo_pagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | 'TRANSFERENCIA' | 'BOLETO' | 'CHEQUE';
+  observacoes?: string | null;
+  orcamento_id?: number | null;
+  status?: string;
+}
+
+export interface HistoricoPagamentoCreate {
+  cliente_id: number;
+  valor: number;
+  data_pagamento: string;
+  metodo_pagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | 'TRANSFERENCIA' | 'BOLETO' | 'CHEQUE';
+  observacoes?: string | null;
+  orcamento_id?: number | null;
+}
+
+export interface ResumoVendasCliente {
+  mes: string;
+  total_vendas: number;
+  quantidade_orcamentos: number;
+  total_orcamentos?: number;
+  valor_total_vendas?: number;
+  valor_medio_orcamento?: number;
+  ultimo_orcamento?: string;
+}

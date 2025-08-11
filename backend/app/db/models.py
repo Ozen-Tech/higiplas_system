@@ -91,17 +91,61 @@ class VendaHistorica(Base):
     produto_atual_id = Column(Integer, ForeignKey("produtos.id"), nullable=True)
     produto = relationship("Produto")
 
+class Cliente(Base):
+    __tablename__ = "clientes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    razao_social = Column(String, nullable=False, index=True)
+    cnpj = Column(String, unique=True, index=True, nullable=True)
+    endereco = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    telefone = Column(String, nullable=True)
+    empresa_vinculada = Column(Enum('HIGIPLAS', 'HIGITEC', name='empresa_vinculada_enum'), nullable=False)
+    status_pagamento = Column(Enum('BOM_PAGADOR', 'MAU_PAGADOR', name='status_pagamento_enum'), default='BOM_PAGADOR')
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    
+    empresa_id = Column(Integer, ForeignKey("empresas.id"))
+    empresa = relationship("Empresa")
+    
+    # Relacionamentos
+    orcamentos = relationship("Orcamento", back_populates="cliente")
+    historico_pagamentos = relationship("HistoricoPagamento", back_populates="cliente", cascade="all, delete-orphan")
+
+class HistoricoPagamento(Base):
+    __tablename__ = "historico_pagamentos"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    valor = Column(Float, nullable=False)
+    data_vencimento = Column(Date, nullable=False)
+    data_pagamento = Column(Date, nullable=True)
+    status = Column(Enum('PENDENTE', 'PAGO', 'ATRASADO', name='status_pagamento_historico_enum'), default='PENDENTE')
+    numero_nf = Column(String, nullable=True)
+    observacoes = Column(String, nullable=True)
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    
+    cliente_id = Column(Integer, ForeignKey("clientes.id"))
+    cliente = relationship("Cliente", back_populates="historico_pagamentos")
+    
+    orcamento_id = Column(Integer, ForeignKey("orcamentos.id"), nullable=True)
+    orcamento = relationship("Orcamento")
+
 class Orcamento(Base):
     __tablename__ = "orcamentos"
 
     id = Column(Integer, primary_key=True, index=True)
-    nome_cliente = Column(String, nullable=False)
-    status = Column(String, default="RASCUNHO")  # Ex: RASCUNHO, ENVIADO, APROVADO, REJEITADO
+    status = Column(String, default="RASCUNHO")  # Ex: RASCUNHO, ENVIADO, APROVADO, REJEITADO, FINALIZADO
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     data_validade = Column(Date, nullable=True)
+    condicao_pagamento = Column(String, nullable=False)  # Ex: "À vista", "30 dias", "60 dias"
+    preco_minimo = Column(Float, nullable=True)
+    preco_maximo = Column(Float, nullable=True)
+    numero_nf = Column(String, nullable=True)  # NF para dar baixa no orçamento
     
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     usuario = relationship("Usuario")
+    
+    cliente_id = Column(Integer, ForeignKey("clientes.id"))
+    cliente = relationship("Cliente", back_populates="orcamentos")
     
     # Relação com os itens do orçamento
     itens = relationship("OrcamentoItem", back_populates="orcamento", cascade="all, delete-orphan")
@@ -130,6 +174,22 @@ class Fornecedor(Base):
 
     # Relacionamento para saber quais produtos este fornecedor vende
     produtos = relationship("Produto", back_populates="fornecedor")
+
+class ProdutoMaisVendido(Base):
+    __tablename__ = "produtos_mais_vendidos"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"))
+    produto = relationship("Produto")
+    
+    ano = Column(Integer, nullable=False)
+    quantidade_vendida = Column(Integer, default=0)
+    valor_total_vendido = Column(Float, default=0.0)
+    numero_vendas = Column(Integer, default=0)
+    ultima_atualizacao = Column(DateTime(timezone=True), server_default=func.now())
+    
+    empresa_id = Column(Integer, ForeignKey("empresas.id"))
+    empresa = relationship("Empresa")
 
 class OrdemDeCompra(Base):
     __tablename__ = "ordens_compra"

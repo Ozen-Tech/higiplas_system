@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     auth, empresas, produtos, movimentacoes, 
     upload_excel, insights, orcamentos, dashboard_kpis, 
-    invoice_processing, fornecedores, ordens_compra
+    invoice_processing, fornecedores, ordens_compra, clientes
 )
 
 # Criação da instância principal do FastAPI
@@ -17,7 +17,7 @@ app = FastAPI(
 # Configuração do CORS (já estava correta)
 origins = [
     "http://localhost",
-    "http://localhost:3000",
+    "http://localhost:3001",
     "https://higiplas-system.vercel.app",
 ]
 
@@ -38,6 +38,7 @@ app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimen
 app.include_router(upload_excel.router, tags=["Upload Excel"])
 app.include_router(insights.router, tags=["Insights"])
 app.include_router(orcamentos.router)
+app.include_router(clientes.router)
 app.include_router(dashboard_kpis.router, tags=["Dashboard"])
 app.include_router(invoice_processing.router) 
 app.include_router(fornecedores.router)
