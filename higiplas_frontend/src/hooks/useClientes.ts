@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/apiService';
-import { Cliente } from '@/types';
+import { Cliente, ClienteCreate } from '@/types';
 import toast from 'react-hot-toast';
 
 export function useClientes() {
@@ -41,7 +41,7 @@ export function useClientes() {
     }
   };
 
-  const createCliente = async (clienteData: Omit<Cliente, 'id'>) => {
+  const createCliente = async (clienteData: ClienteCreate) => {
     try {
       const newCliente = await apiService.post('/clientes', clienteData);
       setClientes(prev => [...prev, newCliente]);
