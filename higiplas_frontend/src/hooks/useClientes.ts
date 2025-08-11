@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/apiService';
-import { Cliente } from '@/types';
+import { Cliente, ClienteCreate } from '@/types';
 import toast from 'react-hot-toast';
 
 export function useClientes() {
@@ -41,7 +41,7 @@ export function useClientes() {
     }
   };
 
-  const createCliente = async (clienteData: any) => {
+  const createCliente = async (clienteData: ClienteCreate) => {
     try {
       const newCliente = await apiService.post('/clientes', clienteData);
       setClientes(prev => [...prev, newCliente]);
@@ -54,7 +54,7 @@ export function useClientes() {
     }
   };
 
-  const updateCliente = async (id: number, clienteData: any) => {
+  const updateCliente = async (id: number, clienteData: Partial<Cliente>) => {
     try {
       const updatedCliente = await apiService.put(`/clientes/${id}`, clienteData);
       setClientes(prev => prev.map(cliente => 
@@ -90,8 +90,9 @@ export function useClientes() {
       setLoading(true);
       const response = await apiService.get(`/clientes/${id}`);
       return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao buscar cliente');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'detail' in err.response.data ? (err.response.data as any).detail : 'Erro ao buscar cliente';
+      setError(errorMessage);
       return null;
     } finally {
       setLoading(false);

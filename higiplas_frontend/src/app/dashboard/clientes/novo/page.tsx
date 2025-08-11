@@ -15,7 +15,6 @@ import {
   ArrowLeftIcon,
   UserIcon,
   EnvelopeIcon,
-  PhoneIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -116,7 +115,7 @@ function NovoClientePageContent() {
     try {
       // Limpar campos vazios do endereço
       const enderecoLimpo = formData.endereco ? Object.fromEntries(
-        Object.entries(formData.endereco).filter(([_, value]) => value && value.trim() !== '')
+        Object.entries(formData.endereco).filter(([, value]) => value && value.trim() !== '')
       ) : {};
       
       const clienteData = {
@@ -132,7 +131,7 @@ function NovoClientePageContent() {
       await createCliente(clienteData);
       toast.success('Cliente criado com sucesso!');
       router.push('/dashboard/clientes');
-    } catch (error) {
+    } catch {
       // Erro já tratado no hook
     } finally {
       setLoading(false);

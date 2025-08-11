@@ -18,9 +18,7 @@ import {
   MapPinIcon,
   CalendarIcon,
   CurrencyDollarIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  XCircleIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
