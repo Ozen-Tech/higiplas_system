@@ -26,14 +26,13 @@ origins = [
     "http://localhost:3001", 
     "http://127.0.0.1:3000",
     "https://higiplas-system.vercel.app",
-    "https://higiplas-system.onrender.com",
-    "*"  # Permitir todas as origens para resolver o problema
+    "https://higiplas-system.onrender.com"
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=False,  # Mudado para False quando usando *
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"]
@@ -77,12 +76,25 @@ async def cors_test():
 # Handler para requisições OPTIONS (preflight CORS)
 @app.options("/{path:path}")
 async def options_handler(request: Request):
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "https://higiplas-system.vercel.app",
+        "https://higiplas-system.onrender.com"
+    ]
+    
+    # Verificar se a origem está na lista permitida
+    allow_origin = origin if origin in allowed_origins else "https://higiplas-system.vercel.app"
+    
     return Response(
         status_code=200,
         headers={
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Credentials": "false"
+            "Access-Control-Allow-Credentials": "true"
         }
     )
