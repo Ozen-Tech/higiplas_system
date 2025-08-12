@@ -1,36 +1,44 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-# Nossos routers
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.routers import (
     auth, empresas, produtos, movimentacoes, 
     upload_excel, insights, orcamentos, dashboard_kpis, 
     invoice_processing, fornecedores, ordens_compra, clientes
 )
+import logging
+import os
 
-# Criação da instância principal do FastAPI
-app = FastAPI(
-    title="API Higiplas",
-    description="Sistema de Gestão de Estoque para a Higiplas.",
-    version="1.0.0"
-)
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Configuração do CORS
+app = FastAPI(title="Higiplas System API", version="1.0.0")
+
+# Configuração de CORS mais robusta
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "http://localhost:3001",
+    "http://localhost:3001", 
     "http://127.0.0.1:3000",
     "https://higiplas-system.vercel.app",
     "https://higiplas-system.onrender.com",
-    "*",  # Temporariamente permitir todas as origens para debug
+    "*"  # Permitir todas as origens para resolver o problema
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,  # Mudado para False quando usando *
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
+)
+
+# Middleware de hosts confiáveis
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["*"]
 )
 
 # Incluindo todas as nossas rotas de forma limpa
@@ -54,3 +62,23 @@ async def read_root():
     Endpoint principal para verificar se a API está online.
     """
     return {"status": "ok", "message": "Bem-vindo à API da Higiplas!"}
+
+@app.get("/cors-test")
+async def cors_test():
+    return {
+        "status": "CORS funcionando!",
+        "environment": "production" if os.getenv("RENDER") else "development"
+    }
+
+# Handler para requisições OPTIONS (preflight CORS)
+@app.options("/{path:path}")
+async def options_handler(request: Request):
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "false"
+        }
+    )
