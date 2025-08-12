@@ -4,19 +4,24 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProducts } from '@/hooks/useProducts';
-import { Product, OrcamentoItem } from '@/types'; // Importe os tipos
+import { useClientes } from '@/hooks/useClientes';
+import { Product, OrcamentoItem, Cliente } from '@/types'; // Importe os tipos
 import { apiService } from '@/services/apiService';
 import { Header } from '@/components/dashboard/Header';
 import ClientLayout from '@/components/ClientLayout';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import Select from '@/components/Select';
 
 function NovoOrcamentoPageContent() {
   const router = useRouter();
-  const { products: allProducts, fetchProducts } = useProducts(); 
+  const { products: allProducts, fetchProducts } = useProducts();
+  const { clientes, fetchClientes } = useClientes();
 
   // Estado do formulário
-  const [nomeCliente, setNomeCliente] = useState('');
+  const [clienteId, setClienteId] = useState('');
+  const [nomeCliente, setNomeCliente] = useState(''); // Mantido para compatibilidade
+  const [usarClienteExistente, setUsarClienteExistente] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [itensOrcamento, setItensOrcamento] = useState<OrcamentoItem[]>([]);
   const [error, setError] = useState('');
@@ -24,7 +29,8 @@ function NovoOrcamentoPageContent() {
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchClientes();
+  }, [fetchProducts, fetchClientes]);
 
   // Filtra os produtos com base na busca E que ainda não foram adicionados
   const produtosFiltrados = useMemo(() => {
@@ -74,10 +80,17 @@ function NovoOrcamentoPageContent() {
   // Função para submeter o orçamento
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nomeCliente.trim()) {
+    
+    // Validação do cliente
+    if (usarClienteExistente && !clienteId) {
+        setError("Por favor, selecione um cliente.");
+        return;
+    }
+    if (!usarClienteExistente && !nomeCliente.trim()) {
         setError("Por favor, informe o nome do cliente.");
         return;
     }
+    
     if (itensOrcamento.length === 0) {
         setError("Adicione pelo menos um produto ao orçamento.");
         return;
@@ -86,10 +99,17 @@ function NovoOrcamentoPageContent() {
     setIsLoading(true);
     setError('');
 
-    const payload = {
-        nome_cliente: nomeCliente,
+    // Monta o payload baseado no tipo de cliente
+    const payload: any = {
+        condicao_pagamento: "À vista", // Valor padrão
         itens: itensOrcamento.map(({ produto_id, quantidade }) => ({ produto_id, quantidade })),
     };
+    
+    if (usarClienteExistente) {
+        payload.cliente_id = parseInt(clienteId);
+    } else {
+        payload.nome_cliente = nomeCliente;
+    }
     
     try {
         await apiService.post('/orcamentos/', payload);
@@ -114,13 +134,64 @@ function NovoOrcamentoPageContent() {
             {/* Seção Cliente */}
             <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
                 <h2 className="text-lg font-semibold mb-4">Dados do Cliente</h2>
-                <Input
-                    label="Nome do Cliente"
-                    id="nomeCliente"
-                    value={nomeCliente}
-                    onChange={(e) => setNomeCliente(e.target.value)}
-                    required
-                />
+                
+                {/* Seleção do tipo de cliente */}
+                <div className="space-y-4">
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="tipoCliente"
+                        checked={usarClienteExistente}
+                        onChange={() => {
+                          setUsarClienteExistente(true);
+                          setNomeCliente('');
+                          setError('');
+                        }}
+                        className="mr-2"
+                      />
+                      Cliente Existente
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="tipoCliente"
+                        checked={!usarClienteExistente}
+                        onChange={() => {
+                          setUsarClienteExistente(false);
+                          setClienteId('');
+                          setError('');
+                        }}
+                        className="mr-2"
+                      />
+                      Novo Cliente
+                    </label>
+                  </div>
+
+                  {/* Campo de seleção de cliente existente */}
+                  {usarClienteExistente ? (
+                    <Select
+                      label="Cliente"
+                      value={clienteId}
+                      onChange={(e) => setClienteId(e.target.value)}
+                      options={clientes.map((cliente: Cliente) => ({
+                        value: cliente.id.toString(),
+                        label: `${cliente.nome} - ${cliente.cpf_cnpj || 'Sem CPF/CNPJ'}`
+                      }))}
+                      placeholder="Selecione um cliente"
+                      required
+                    />
+                  ) : (
+                    <Input
+                      label="Nome do Cliente"
+                      id="nomeCliente"
+                      value={nomeCliente}
+                      onChange={(e) => setNomeCliente(e.target.value)}
+                      placeholder="Digite o nome do novo cliente"
+                      required
+                    />
+                  )}
+                </div>
             </div>
 
             {/* Seção Itens do Orçamento */}

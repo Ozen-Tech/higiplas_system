@@ -14,6 +14,7 @@ export interface Product {
   empresa_id: number;
   quantidade_em_estoque: number;
   data_validade?: string | null;
+  creationDate: string; // Adicionado para corrigir o erro de lint
 }
 
 export interface OrcamentoItem {

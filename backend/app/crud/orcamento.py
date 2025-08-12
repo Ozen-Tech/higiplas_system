@@ -11,21 +11,49 @@ from ..schemas import movimentacao_estoque as schemas_movimentacao
 
 def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, usuario_id: int, empresa_id: int):
     try:
-        # Verifica se o cliente existe e pertence à empresa
-        cliente = db.query(models.Cliente).filter(
-            models.Cliente.id == orcamento.cliente_id,
-            models.Cliente.empresa_id == empresa_id
-        ).first()
+        cliente = None
         
-        if not cliente:
+        # Se cliente_id foi fornecido, busca o cliente existente
+        if orcamento.cliente_id:
+            cliente = db.query(models.Cliente).filter(
+                models.Cliente.id == orcamento.cliente_id,
+                models.Cliente.empresa_id == empresa_id
+            ).first()
+            
+            if not cliente:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Cliente não encontrado ou não pertence a esta empresa."
+                )
+        
+        # Se nome_cliente foi fornecido, busca ou cria o cliente
+        elif orcamento.nome_cliente:
+            # Primeiro tenta encontrar um cliente existente com esse nome
+            cliente = db.query(models.Cliente).filter(
+                models.Cliente.razao_social == orcamento.nome_cliente,
+                models.Cliente.empresa_id == empresa_id
+            ).first()
+            
+            # Se não encontrou, cria um novo cliente
+            if not cliente:
+                cliente = models.Cliente(
+                    razao_social=orcamento.nome_cliente,
+                    empresa_id=empresa_id,
+                    status_pagamento='BOM_PAGADOR',
+                    empresa_vinculada='HIGIPLAS'
+                )
+                db.add(cliente)
+                db.flush()  # Para obter o ID do cliente
+        
+        else:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado ou não pertence a esta empresa."
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="É necessário fornecer cliente_id ou nome_cliente."
             )
         
         # 1. Cria o registro principal do orçamento
         db_orcamento = models.Orcamento(
-            cliente_id=orcamento.cliente_id,
+            cliente_id=cliente.id,
             data_validade=orcamento.data_validade,
             condicao_pagamento=orcamento.condicao_pagamento,
             preco_minimo=orcamento.preco_minimo,
