@@ -106,15 +106,23 @@ def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, 
 
 def get_orcamentos_by_user(db: Session, usuario_id: int):
     """Busca todos os orçamentos criados por um usuário específico."""
-    return db.query(models.Orcamento).options(
-        joinedload(models.Orcamento.cliente),
-        joinedload(models.Orcamento.usuario),
-        joinedload(models.Orcamento.itens)
-    ).filter(
-        models.Orcamento.usuario_id == usuario_id
-    ).order_by(
-        models.Orcamento.data_criacao.desc()
-    ).all()
+    try:
+        return db.query(models.Orcamento).options(
+            joinedload(models.Orcamento.cliente),
+            joinedload(models.Orcamento.usuario),
+            joinedload(models.Orcamento.itens).joinedload(models.OrcamentoItem.produto)
+        ).filter(
+            models.Orcamento.usuario_id == usuario_id
+        ).order_by(
+            models.Orcamento.data_criacao.desc()
+        ).all()
+    except Exception as e:
+        # Fallback sem eager loading se houver problema
+        return db.query(models.Orcamento).filter(
+            models.Orcamento.usuario_id == usuario_id
+        ).order_by(
+            models.Orcamento.data_criacao.desc()
+        ).all()
 
 def get_orcamentos_by_empresa(db: Session, empresa_id: int, skip: int = 0, limit: int = 100):
     """Busca todos os orçamentos de uma empresa (para dashboard de admins)."""

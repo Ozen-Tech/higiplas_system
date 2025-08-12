@@ -34,6 +34,7 @@ def read_all_produtos(
     return crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
 
 @router.get("/baixo-estoque", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo")
+@router.get("/baixo-estoque/", response_model=List[schemas_produto.Produto], summary="Listar produtos com estoque baixo")
 def read_low_stock_produtos(
     db: Session = Depends(get_db), 
     current_user: models.Usuario = Depends(get_current_user)

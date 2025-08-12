@@ -29,12 +29,22 @@ def create_new_orcamento(
     )
 
 @router.get("/", response_model=List[schemas_orcamento.Orcamento], summary="Lista os orçamentos do usuário logado")
+@router.get("", response_model=List[schemas_orcamento.Orcamento], summary="Lista os orçamentos do usuário logado")
 def read_user_orcamentos(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Retorna uma lista de todos os orçamentos criados pelo vendedor logado."""
-    return crud_orcamento.get_orcamentos_by_user(db=db, usuario_id=current_user.id)
+    try:
+        return crud_orcamento.get_orcamentos_by_user(db=db, usuario_id=current_user.id)
+    except Exception as e:
+        import traceback
+        print(f"Erro ao buscar orçamentos: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro interno ao buscar orçamentos: {str(e)}"
+        )
 
 @router.get("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Busca um orçamento específico")
 def read_one_orcamento(

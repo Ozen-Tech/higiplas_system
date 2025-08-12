@@ -47,6 +47,7 @@ def create_cliente(
     return crud_cliente.create_cliente(db, cliente_data, current_user.empresa_id)
 
 @router.get("/", response_model=List[schemas_cliente.Cliente])
+@router.get("", response_model=List[schemas_cliente.Cliente])  # Rota sem barra final
 def list_clientes(
     skip: int = 0,
     limit: int = 100,

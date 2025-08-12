@@ -13,7 +13,11 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Higiplas System API", version="1.0.0")
+app = FastAPI(
+    title="Higiplas System API", 
+    version="1.0.0",
+    redirect_slashes=True  # Permite URLs com e sem barra final
+)
 
 # Configuração de CORS mais robusta
 origins = [
