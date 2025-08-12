@@ -33,9 +33,9 @@ def upgrade() -> None:
     
     if not clientes_exists:
         print("Creating clientes table...")
-        # Create enums first
-        op.execute("CREATE TYPE empresa_vinculada_enum AS ENUM ('HIGIPLAS', 'HIGITEC')")
-        op.execute("CREATE TYPE status_pagamento_enum AS ENUM ('BOM_PAGADOR', 'MAU_PAGADOR')")
+        # Create enums first (only if they don't exist)
+        op.execute("CREATE TYPE IF NOT EXISTS empresa_vinculada_enum AS ENUM ('HIGIPLAS', 'HIGITEC')")
+        op.execute("CREATE TYPE IF NOT EXISTS status_pagamento_enum AS ENUM ('BOM_PAGADOR', 'MAU_PAGADOR')")
         
         # Create clientes table
         op.create_table('clientes',
