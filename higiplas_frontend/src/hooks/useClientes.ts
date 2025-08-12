@@ -3,19 +3,36 @@
 
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/apiService';
-import { Cliente, ClienteCreate, ClienteUpdate } from '@/types';
+import { Cliente, ClienteCreate, ClienteUpdate, Endereco } from '@/types';
 import toast from 'react-hot-toast';
 
+// Interface para a resposta da API
+interface ApiCliente {
+  id: number;
+  razao_social: string;
+  email?: string;
+  telefone?: string;
+  cnpj?: string;
+  data_criacao: string;
+  status_pagamento: string;
+  observacoes?: string;
+  empresa_id: number;
+  endereco?: string | object;
+  enderecos?: unknown[];
+}
+
 // Função para mapear a resposta da API para o tipo Cliente do frontend
-const mapClienteFromApi = (apiCliente: Record<string, any>): Cliente => {
-  let parsedEndereco = apiCliente.endereco;
+const mapClienteFromApi = (apiCliente: ApiCliente): Cliente => {
+  let parsedEndereco: object | undefined = undefined;
   if (typeof apiCliente.endereco === 'string') {
     try {
       parsedEndereco = JSON.parse(apiCliente.endereco);
     } catch {
       console.error("Falha ao analisar o JSON do endereço:", apiCliente.endereco);
-      parsedEndereco = null;
+      parsedEndereco = undefined;
     }
+  } else if (typeof apiCliente.endereco === 'object') {
+    parsedEndereco = apiCliente.endereco;
   }
 
   return {
@@ -29,15 +46,15 @@ const mapClienteFromApi = (apiCliente: Record<string, any>): Cliente => {
     ativo: apiCliente.status_pagamento === 'BOM_PAGADOR',
     observacoes: apiCliente.observacoes || null,
     empresa_id: apiCliente.empresa_id,
-    endereco: parsedEndereco,
-    enderecos: apiCliente.enderecos || [],
+    endereco: parsedEndereco as unknown as Endereco | undefined,
+     enderecos: (apiCliente.enderecos || []) as unknown as Endereco[]
   };
 };
 
 // Função para mapear o objeto do cliente do frontend para o formato da API
-const mapToApi = (clienteData: Partial<ClienteCreate & ClienteUpdate>): Record<string, any> => {
+const mapToApi = (clienteData: Partial<ClienteCreate & ClienteUpdate>): Record<string, unknown> => {
   const { nome, cpf_cnpj, ativo, ...rest } = clienteData;
-  const apiPayload: Record<string, any> = { ...rest };
+  const apiPayload: Record<string, unknown> = { ...rest };
 
   if (nome) apiPayload.razao_social = nome;
   if (cpf_cnpj) apiPayload.cnpj = cpf_cnpj;
@@ -54,8 +71,8 @@ const mapToApi = (clienteData: Partial<ClienteCreate & ClienteUpdate>): Record<s
 
 export function useClientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchClientes = async () => {
     try {
@@ -72,16 +89,19 @@ export function useClientes() {
     }
   };
 
-  const searchClientes = async (query: string) => {
+  const searchClientes = async (query: string): Promise<Cliente[]> => {
     try {
       setLoading(true);
       setError(null);
       const data = await apiService.get(`/clientes/search?q=${encodeURIComponent(query)}`);
-      setClientes(Array.isArray(data) ? data.map(mapClienteFromApi) : []);
-    } catch (err) {
+      const results = Array.isArray(data) ? data.map(mapClienteFromApi) : [];
+       return results;
+    } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar clientes';
+      console.error('Erro ao buscar clientes:', err);
       setError(errorMessage);
       toast.error(errorMessage);
+      return [];
     } finally {
       setLoading(false);
     }

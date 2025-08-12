@@ -6,24 +6,41 @@ import { Product, ProdutoCreateData, ProdutoUpdateData } from '@/types';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 
+// Interface para produto da API
+interface ApiProduct {
+  id: number;
+  nome: string;
+  codigo_barras?: string;
+  categoria?: string;
+  descricao?: string;
+  preco_compra?: number;
+  preco_venda?: number;
+  unidade?: string;
+  estoque_minimo?: number;
+  empresa_id: number;
+  estoque_atual?: number;
+  data_validade?: string;
+  data_criacao: string;
+}
+
 // Funções de mapeamento de dados
-const mapProductFromApi = (apiProduct: Record<string, any>): Product => ({
+const mapProductFromApi = (apiProduct: ApiProduct): Product => ({
   id: apiProduct.id,
   nome: apiProduct.nome,
-  codigo: apiProduct.codigo_barras,
-  categoria: apiProduct.categoria,
+  codigo: apiProduct.codigo_barras || '',
+  categoria: apiProduct.categoria || '',
   descricao: apiProduct.descricao,
-  preco_custo: apiProduct.preco_compra,
-  preco_venda: apiProduct.preco_venda,
-  unidade_medida: apiProduct.unidade,
+  preco_custo: apiProduct.preco_compra || 0,
+  preco_venda: apiProduct.preco_venda || 0,
+  unidade_medida: apiProduct.unidade || '',
   estoque_minimo: apiProduct.estoque_minimo,
   empresa_id: apiProduct.empresa_id,
-  quantidade_em_estoque: apiProduct.estoque_atual,
+  quantidade_em_estoque: apiProduct.estoque_atual || 0,
   data_validade: apiProduct.data_validade,
   creationDate: apiProduct.data_criacao,
 });
 
-const mapToApiData = (data: Partial<ProdutoCreateData | ProdutoUpdateData>): Record<string, any> => ({
+const mapToApiData = (data: Partial<ProdutoCreateData | ProdutoUpdateData>): Record<string, unknown> => ({
   nome: data.nome,
   descricao: data.descricao,
   preco_compra: data.preco_custo,
@@ -41,6 +58,7 @@ export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
 
   // Envolvemos a função de erro em useCallback para estabilizar sua referência
   const handleApiError = useCallback((err: unknown) => {
@@ -131,8 +149,25 @@ export function useProducts() {
     }
   };
 
+  const searchProducts = async (query: string): Promise<Product[]> => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return [];
+    }
+
+    try {
+      const data = await apiService.get(`/produtos/buscar/?q=${encodeURIComponent(query)}`);
+      const results = data.map(mapProductFromApi);
+      setSearchResults(results);
+      return results;
+    } catch (err) {
+      handleApiError(err);
+      return [];
+    }
+  };
+
   return {
-    products, loading, error, fetchProducts,
-    createProduct, updateProduct, removeProduct, moveStock,
+    products, loading, error, searchResults, fetchProducts,
+    createProduct, updateProduct, removeProduct, moveStock, searchProducts,
   };
 }
