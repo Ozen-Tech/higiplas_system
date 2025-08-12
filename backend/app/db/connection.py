@@ -1,7 +1,11 @@
 # backend/app/db/connection.py
 
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
+
+# Load environment variables from .env file
+load_dotenv()
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import psycopg2
@@ -42,16 +46,11 @@ DB_PORT_SA = "5432"
 # Montando a string de conexão que o SQLAlchemy entende
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+# Se DATABASE_URL não estiver disponível ou não funcionar localmente, construir a URL
+if not SQLALCHEMY_DATABASE_URL or "higiplas_postgres" in SQLALCHEMY_DATABASE_URL:
+    # Para desenvolvimento local, usar localhost
+    SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER_SA}:{DB_PASSWORD_SA}@localhost:{DB_PORT_SA}/{DB_NAME_SA}"
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 # ===================================================================
 # <<< ADICIONADO: Câmera de Debug para a URL de Conexão >>>
 # Esta linha vai nos mostrar no log do Docker exatamente como a URL
@@ -63,6 +62,15 @@ print("-------------------------------------")
 
 # O 'engine' do SQLAlchemy usa a URL acima para se conectar.
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # A fábrica de sessões que o CRUD precisa
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

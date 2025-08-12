@@ -34,8 +34,19 @@ def upgrade() -> None:
     if not clientes_exists:
         print("Creating clientes table...")
         # Create enums first (only if they don't exist)
-        op.execute("CREATE TYPE IF NOT EXISTS empresa_vinculada_enum AS ENUM ('HIGIPLAS', 'HIGITEC')")
-        op.execute("CREATE TYPE IF NOT EXISTS status_pagamento_enum AS ENUM ('BOM_PAGADOR', 'MAU_PAGADOR')")
+        # Check if empresa_vinculada_enum exists
+        enum_result = connection.execute(sa.text(
+            "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'empresa_vinculada_enum')"
+        ))
+        if not enum_result.scalar():
+            op.execute("CREATE TYPE empresa_vinculada_enum AS ENUM ('HIGIPLAS', 'HIGITEC')")
+        
+        # Check if status_pagamento_enum exists
+        enum_result = connection.execute(sa.text(
+            "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_pagamento_enum')"
+        ))
+        if not enum_result.scalar():
+            op.execute("CREATE TYPE status_pagamento_enum AS ENUM ('BOM_PAGADOR', 'MAU_PAGADOR')")
         
         # Create clientes table
         op.create_table('clientes',
@@ -68,7 +79,12 @@ def upgrade() -> None:
     if not historico_exists:
         print("Creating historico_pagamentos table...")
         # Create enum for historico_pagamentos if it doesn't exist
-        op.execute("CREATE TYPE IF NOT EXISTS status_pagamento_historico_enum AS ENUM ('PAGO', 'PENDENTE', 'ATRASADO')")
+        # Check if status_pagamento_historico_enum exists
+        enum_result = connection.execute(sa.text(
+            "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_pagamento_historico_enum')"
+        ))
+        if not enum_result.scalar():
+            op.execute("CREATE TYPE status_pagamento_historico_enum AS ENUM ('PAGO', 'PENDENTE', 'ATRASADO')")
         
         # Create historico_pagamentos table
         op.create_table('historico_pagamentos',
