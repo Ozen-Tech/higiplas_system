@@ -28,8 +28,17 @@ const mapClienteFromApi = (apiCliente: ApiCliente): Cliente => {
     try {
       parsedEndereco = JSON.parse(apiCliente.endereco);
     } catch {
-      console.error("Falha ao analisar o JSON do endereço:", apiCliente.endereco);
-      parsedEndereco = undefined;
+      // Se não conseguir fazer parse do JSON, trata como endereço em formato de string simples
+      // Cria um objeto básico com a string como logradouro
+      parsedEndereco = {
+        logradouro: apiCliente.endereco,
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: ''
+      };
     }
   } else if (typeof apiCliente.endereco === 'object') {
     parsedEndereco = apiCliente.endereco;
