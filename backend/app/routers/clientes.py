@@ -15,12 +15,36 @@ router = APIRouter(prefix="/clientes", tags=["clientes"])
 
 @router.post("/", response_model=schemas_cliente.Cliente)
 def create_cliente(
-    cliente: schemas_cliente.ClienteCreate,
+    cliente_req: schemas_cliente.ClienteCreateRequest,
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Cria um novo cliente."""
-    return crud_cliente.create_cliente(db, cliente, current_user.empresa_id)
+    """Cria um novo cliente a partir de uma requisição do frontend."""
+    
+    endereco_str = None
+    if cliente_req.endereco:
+        endereco = cliente_req.endereco
+        endereco_parts = [
+            endereco.logradouro,
+            endereco.numero,
+            endereco.complemento,
+            endereco.bairro,
+            endereco.cidade,
+            endereco.estado,
+            endereco.cep
+        ]
+        endereco_str = ", ".join(filter(None, endereco_parts))
+
+    cliente_data = schemas_cliente.ClienteCreate(
+        razao_social=cliente_req.nome,
+        cnpj=cliente_req.cpf_cnpj,
+        email=cliente_req.email,
+        telefone=cliente_req.telefone,
+        endereco=endereco_str,
+        empresa_vinculada=cliente_req.empresa_vinculada or schemas_cliente.EmpresaVinculada.HIGIPLAS,
+    )
+    
+    return crud_cliente.create_cliente(db, cliente_data, current_user.empresa_id)
 
 @router.get("/", response_model=List[schemas_cliente.Cliente])
 def list_clientes(
