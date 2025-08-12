@@ -6,48 +6,47 @@ import { Product, ProdutoCreateData, ProdutoUpdateData } from '@/types';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 
-// Interface para produto da API
+// Interface para produto da API (corrigida para corresponder à resposta real da API)
 interface ApiProduct {
   id: number;
   nome: string;
-  codigo_barras?: string;
-  categoria?: string;
+  codigo: string;
+  categoria: string;
   descricao?: string;
-  preco_compra?: number;
-  preco_venda?: number;
-  unidade?: string;
+  preco_custo?: number;
+  preco_venda: number;
+  unidade_medida: string;
   estoque_minimo?: number;
   empresa_id: number;
-  estoque_atual?: number;
+  quantidade_em_estoque: number;
   data_validade?: string;
-  data_criacao: string;
 }
 
 // Funções de mapeamento de dados
 const mapProductFromApi = (apiProduct: ApiProduct): Product => ({
   id: apiProduct.id,
   nome: apiProduct.nome,
-  codigo: apiProduct.codigo_barras || '',
-  categoria: apiProduct.categoria || '',
+  codigo: apiProduct.codigo,
+  categoria: apiProduct.categoria,
   descricao: apiProduct.descricao,
-  preco_custo: apiProduct.preco_compra || 0,
-  preco_venda: apiProduct.preco_venda || 0,
-  unidade_medida: apiProduct.unidade || '',
+  preco_custo: apiProduct.preco_custo,
+  preco_venda: apiProduct.preco_venda,
+  unidade_medida: apiProduct.unidade_medida,
   estoque_minimo: apiProduct.estoque_minimo,
   empresa_id: apiProduct.empresa_id,
-  quantidade_em_estoque: apiProduct.estoque_atual || 0,
+  quantidade_em_estoque: apiProduct.quantidade_em_estoque,
   data_validade: apiProduct.data_validade,
-  creationDate: apiProduct.data_criacao,
+  creationDate: new Date().toISOString(), // Usando data atual como fallback
 });
 
 const mapToApiData = (data: Partial<ProdutoCreateData | ProdutoUpdateData>): Record<string, unknown> => ({
   nome: data.nome,
   descricao: data.descricao,
-  preco_compra: data.preco_custo,
+  preco_custo: data.preco_custo,
   preco_venda: data.preco_venda,
-  unidade: data.unidade_medida,
+  unidade_medida: data.unidade_medida,
   categoria: data.categoria,
-  codigo_barras: data.codigo,
+  codigo: data.codigo,
   estoque_minimo: data.estoque_minimo,
   data_validade: data.data_validade,
 });

@@ -14,11 +14,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configuração do CORS (já estava correta)
+# Configuração do CORS
 origins = [
     "http://localhost",
+    "http://localhost:3000",
     "http://localhost:3001",
+    "http://127.0.0.1:3000",
     "https://higiplas-system.vercel.app",
+    "*",  # Temporariamente permitir todas as origens para debug
 ]
 
 app.add_middleware(
