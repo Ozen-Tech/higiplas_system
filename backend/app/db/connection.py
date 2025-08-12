@@ -1,16 +1,14 @@
 # backend/app/db/connection.py
 
 import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
-
-# Load environment variables from .env file
-load_dotenv()
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extensions import connection as PgConnection
+
+from app.core.config import settings
 
 
 connection_pool: SimpleConnectionPool | None = None
@@ -35,42 +33,20 @@ def close_connection_pool():
         connection_pool = None
         print("Pool psycopg2 fechado.")
 
-# --- CONFIGURAÇÃO DO SQLALCHEMY (A parte que estamos depurando) ---
-# Lendo as variáveis de ambiente para o SQLAlchemy
-DB_USER_SA = os.getenv("DB_USER")
-DB_PASSWORD_SA = os.getenv("DB_PASSWORD")
-DB_NAME_SA = os.getenv("DB_NAME")
-DB_HOST_SA = "postgres"  # O nome do serviço no docker-compose
-DB_PORT_SA = "5432"
-
-# Montando a string de conexão que o SQLAlchemy entende
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Se DATABASE_URL não estiver disponível ou não funcionar localmente, construir a URL
-if not SQLALCHEMY_DATABASE_URL or "higiplas_postgres" in SQLALCHEMY_DATABASE_URL:
-    # Para desenvolvimento local, usar localhost
-    SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER_SA}:{DB_PASSWORD_SA}@localhost:{DB_PORT_SA}/{DB_NAME_SA}"
+# --- CONFIGURAÇÃO DO SQLALCHEMY ---
+# A URL de conexão agora vem diretamente do objeto de configurações (settings),
+# que já possui a lógica correta para diferenciar ambientes de produção e desenvolvimento.
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 # ===================================================================
-# <<< ADICIONADO: Câmera de Debug para a URL de Conexão >>>
-# Esta linha vai nos mostrar no log do Docker exatamente como a URL
-# está sendo montada, revelando o problema.
-print("--- [DEBUG] URL DE CONEXÃO GERADA ---")
+# <<< Câmera de Debug para a URL de Conexão >>>
+print("--- [DEBUG] URL DE CONEXÃO VINDA DAS CONFIGURAÇÕES ---")
 print(f"--- [DEBUG] URL: {SQLALCHEMY_DATABASE_URL}")
-print("-------------------------------------")
+print("----------------------------------------------------")
 # ===================================================================
 
 # O 'engine' do SQLAlchemy usa a URL acima para se conectar.
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # A fábrica de sessões que o CRUD precisa
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -79,8 +55,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-# --- NOVA DEPENDÊNCIA get_db ---
-# Esta função agora retorna uma SESSÃO do SQLAlchemy,
+# --- DEPENDÊNCIA get_db ---
+# Esta função retorna uma SESSÃO do SQLAlchemy,
 # que é o que as nossas funções em `crud/` esperam receber.
 def get_db():
     db = SessionLocal()
