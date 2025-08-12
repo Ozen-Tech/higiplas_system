@@ -100,7 +100,12 @@ function NovoOrcamentoPageContent() {
     setError('');
 
     // Monta o payload baseado no tipo de cliente
-    const payload: any = {
+    const payload: {
+        condicao_pagamento: string;
+        itens: { produto_id: number; quantidade: number }[];
+        cliente_id?: number;
+        nome_cliente?: string;
+    } = {
         condicao_pagamento: "À vista", // Valor padrão
         itens: itensOrcamento.map(({ produto_id, quantidade }) => ({ produto_id, quantidade })),
     };
