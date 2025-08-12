@@ -6,6 +6,35 @@ import { Product, ProdutoCreateData, ProdutoUpdateData } from '@/types';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 
+// Funções de mapeamento de dados
+const mapProductFromApi = (apiProduct: Record<string, any>): Product => ({
+  id: apiProduct.id,
+  nome: apiProduct.nome,
+  codigo: apiProduct.codigo_barras,
+  categoria: apiProduct.categoria,
+  descricao: apiProduct.descricao,
+  preco_custo: apiProduct.preco_compra,
+  preco_venda: apiProduct.preco_venda,
+  unidade_medida: apiProduct.unidade,
+  estoque_minimo: apiProduct.estoque_minimo,
+  empresa_id: apiProduct.empresa_id,
+  quantidade_em_estoque: apiProduct.estoque_atual,
+  data_validade: apiProduct.data_validade,
+  creationDate: apiProduct.data_criacao,
+});
+
+const mapToApiData = (data: Partial<ProdutoCreateData | ProdutoUpdateData>): Record<string, any> => ({
+  nome: data.nome,
+  descricao: data.descricao,
+  preco_compra: data.preco_custo,
+  preco_venda: data.preco_venda,
+  unidade: data.unidade_medida,
+  categoria: data.categoria,
+  codigo_barras: data.codigo,
+  estoque_minimo: data.estoque_minimo,
+  data_validade: data.data_validade,
+});
+
 
 export function useProducts() {
   const router = useRouter();
@@ -36,7 +65,7 @@ export function useProducts() {
     setLoading(true);
     try {
       const data = await apiService.get('/produtos/');
-      setProducts(data);
+      setProducts(data.map(mapProductFromApi));
       setError(null);
     } catch (err) {
       handleApiError(err);
@@ -46,7 +75,7 @@ export function useProducts() {
   }, [products.length, handleApiError]);
 
   const createProduct = async (newProductData: ProdutoCreateData) => {
-    const promise = apiService.post('/produtos/', newProductData).then(() => {
+    const promise = apiService.post('/produtos/', mapToApiData(newProductData)).then(() => {
       // Força a busca de produtos apenas após o sucesso
       return fetchProducts(true);
     });
@@ -93,11 +122,12 @@ export function useProducts() {
 
   const updateProduct = async (productId: number, updateData: ProdutoUpdateData) => {
     try {
-      await apiService.put(`/produtos/${productId}`, updateData);
-      await fetchProducts();
+      await apiService.put(`/produtos/${productId}`, mapToApiData(updateData));
+      await fetchProducts(true); // Força a atualização para refletir as mudanças
+      toast.success('Produto atualizado com sucesso!');
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro desconhecido";
-      alert(`Erro ao salvar produto: ${message}`);
+      toast.error(`Erro ao salvar produto: ${message}`);
     }
   };
 

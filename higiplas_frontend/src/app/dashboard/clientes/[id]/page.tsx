@@ -388,7 +388,13 @@ function ClienteDetalhesPageContent() {
         // Carregar histórico de pagamentos
         try {
           const historico = await apiService.get(`/clientes/${clienteId}/historico-pagamentos`);
-          setHistoricoPagamentos(historico.data);
+          const historicoMapeado = historico.data.historico_pagamentos.map((p: HistoricoPagamento) => ({
+            ...p,
+            metodo_pagamento: p.metodo_pagamento || 'Não informado',
+            data_pagamento: p.data_pagamento || new Date().toISOString(),
+            status: p.status || 'Pendente',
+          }));
+          setHistoricoPagamentos(historicoMapeado);
         } catch (error) {
           console.error('Erro ao carregar histórico de pagamentos:', error);
           setHistoricoPagamentos([]);

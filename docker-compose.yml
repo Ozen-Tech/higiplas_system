@@ -19,7 +19,6 @@ services:
       - higiplas_network
     
 
-
   # Serviço do Banco de Dados PostgreSQL
   higiplas_postgres:
     image: postgres:15-alpine
@@ -37,10 +36,20 @@ services:
       - ./.env # Carrega as variáveis de ambiente do seu arquivo .env
     restart: unless-stopped
 
+  higiplas_frontend:
+    build:
+      context: ./higiplas_frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - higiplas_api
+    networks:
+      - higiplas_network
+
 volumes:
   postgres_data: {}
        
-
 
 networks:
   higiplas_network:

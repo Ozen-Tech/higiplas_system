@@ -44,6 +44,19 @@ export function EditableProductTableRow({ product, onSave, onRemove, onMoveStock
     await onSave(product.id, editedData);
     setIsEditing(false);
   };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Data inválida";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "Data inválida";
+    }
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+  };
   
   // Classes para os inputs de edição
   const inputClasses = "w-full rounded-md border-yellow-400 bg-yellow-50 dark:bg-gray-700 px-2 py-1 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500";
@@ -86,6 +99,10 @@ export function EditableProductTableRow({ product, onSave, onRemove, onMoveStock
         ) : (
             product.preco_venda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
         )}
+      </td>
+      {/* Coluna Data de Cadastro */}
+      <td className="px-4 py-3 text-sm text-center text-gray-500 dark:text-gray-400">
+        {formatDate(product.creationDate)}
       </td>
       {/* Ações */}
       <td className="px-4 py-3 text-right text-sm font-medium">

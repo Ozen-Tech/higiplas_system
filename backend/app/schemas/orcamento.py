@@ -32,7 +32,8 @@ class OrcamentoBase(BaseModel):
     numero_nf: Optional[str] = None
 
 class OrcamentoCreate(OrcamentoBase):
-    cliente_id: int
+    cliente_id: Optional[int] = None
+    nome_cliente: Optional[str] = None  # Para compatibilidade com código existente
     itens: List[OrcamentoItemCreate]
 
 class OrcamentoUpdate(BaseModel):
