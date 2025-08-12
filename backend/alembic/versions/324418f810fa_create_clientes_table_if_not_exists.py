@@ -1,7 +1,7 @@
 """Create clientes table if not exists
 
 Revision ID: 324418f810fa
-Revises: 07af028af52e
+Revises: 5ee30ffa9e84
 Create Date: 2025-08-11 20:45:00.379579
 
 """
