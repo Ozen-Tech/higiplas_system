@@ -13,6 +13,27 @@ class StatusPagamento(str, Enum):
     BOM_PAGADOR = "BOM_PAGADOR"
     MAU_PAGADOR = "MAU_PAGADOR"
 
+# Endereço como um objeto Pydantic
+class Endereco(BaseModel):
+    logradouro: str
+    numero: str
+    complemento: Optional[str] = None
+    bairro: str
+    cidade: str
+    estado: str
+    cep: str
+
+# Schema para a requisição de criação de cliente vinda do frontend
+class ClienteCreateRequest(BaseModel):
+    nome: str
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    cpf_cnpj: Optional[str] = None
+    tipo_pessoa: str
+    observacoes: Optional[str] = None
+    endereco: Optional[Endereco] = None
+    empresa_vinculada: Optional[EmpresaVinculada] = None
+
 # Cliente Base
 class ClienteBase(BaseModel):
     razao_social: str
