@@ -54,13 +54,17 @@ def upgrade() -> None:
             sa.Column('endereco', sa.String(), nullable=True),
             sa.Column('email', sa.String(), nullable=True),
             sa.Column('telefone', sa.String(), nullable=True),
-            sa.Column('empresa_vinculada', sa.Enum('HIGIPLAS', 'HIGITEC', name='empresa_vinculada_enum', create_type=False), nullable=False),
-            sa.Column('status_pagamento', sa.Enum('BOM_PAGADOR', 'MAU_PAGADOR', name='status_pagamento_enum', create_type=False), nullable=True),
+            sa.Column('empresa_vinculada', sa.String(), nullable=False),
+            sa.Column('status_pagamento', sa.String(), nullable=True),
             sa.Column('data_criacao', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
             sa.Column('empresa_id', sa.Integer(), nullable=True),
             sa.ForeignKeyConstraint(['empresa_id'], ['empresas.id'], ),
             sa.PrimaryKeyConstraint('id')
         )
+        
+        # Add ENUM constraints after table creation
+        op.execute("ALTER TABLE clientes ALTER COLUMN empresa_vinculada TYPE empresa_vinculada_enum USING empresa_vinculada::empresa_vinculada_enum")
+        op.execute("ALTER TABLE clientes ALTER COLUMN status_pagamento TYPE status_pagamento_enum USING status_pagamento::status_pagamento_enum")
         op.create_index(op.f('ix_clientes_id'), 'clientes', ['id'], unique=False)
         op.create_index(op.f('ix_clientes_razao_social'), 'clientes', ['razao_social'], unique=False)
         op.create_index(op.f('ix_clientes_cnpj'), 'clientes', ['cnpj'], unique=True)
@@ -90,11 +94,14 @@ def upgrade() -> None:
             sa.Column('cliente_id', sa.Integer(), nullable=False),
             sa.Column('data_pagamento', sa.Date(), nullable=False),
             sa.Column('valor', sa.Float(), nullable=False),
-            sa.Column('status', sa.Enum('PAGO', 'PENDENTE', 'ATRASADO', name='status_pagamento_historico_enum', create_type=False), nullable=False),
+            sa.Column('status', sa.String(), nullable=False),
             sa.Column('observacoes', sa.String(), nullable=True),
             sa.ForeignKeyConstraint(['cliente_id'], ['clientes.id'], ),
             sa.PrimaryKeyConstraint('id')
         )
+        
+        # Add ENUM constraint after table creation
+        op.execute("ALTER TABLE historico_pagamentos ALTER COLUMN status TYPE status_pagamento_historico_enum USING status::status_pagamento_historico_enum")
         print("Historico_pagamentos table created successfully!")
     else:
         print("Historico_pagamentos table already exists, skipping creation.")
