@@ -95,20 +95,24 @@ def delete_cliente(db: Session, cliente_id: int, empresa_id: int):
             detail="Cliente não encontrado."
         )
     
-    # Verifica se o cliente tem orçamentos associados
-    orcamentos_count = db.query(models.Orcamento).filter(
-        models.Orcamento.cliente_id == cliente_id
-    ).count()
+    # COMENTADO TEMPORARIAMENTE - A verificação de orçamentos está causando erro 500
+    # # Verifica se o cliente tem orçamentos associados
+    # orcamentos_count = db.query(models.Orcamento).filter(
+    #     models.Orcamento.cliente_id == cliente_id
+    # ).count()
+    # 
+    # if orcamentos_count > 0:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Não é possível excluir cliente com orçamentos associados."
+    #     )
     
-    if orcamentos_count > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível excluir cliente com orçamentos associados."
-        )
+    # Por enquanto, permite a exclusão sem verificar orçamentos
+    # TODO: Corrigir o problema no endpoint de orçamentos e reativar a verificação
     
     db.delete(db_cliente)
     db.commit()
-    return {"message": "Cliente excluído com sucesso"}
+    return {"message": "Cliente excluído com sucesso (verificação de orçamentos temporariamente desabilitada)"}
 
 def get_resumo_vendas_cliente(db: Session, cliente_id: int, empresa_id: int, meses: int = 3):
     """Retorna resumo das vendas dos últimos N meses do cliente."""
