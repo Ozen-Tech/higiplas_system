@@ -71,7 +71,7 @@ class StatusPagamentoHistorico(str, Enum):
 
 class HistoricoPagamentoBase(BaseModel):
     valor: float
-    # data_vencimento: date # Coluna ausente no banco de dados de produção
+    data_vencimento: date
     data_pagamento: Optional[date] = None
     status: StatusPagamentoHistorico = StatusPagamentoHistorico.PENDENTE
     numero_nf: Optional[str] = None
