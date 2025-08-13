@@ -97,6 +97,52 @@ def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, 
         
         return db_orcamento
 
+def update_orcamento(db: Session, orcamento_id: int, orcamento_update: schemas_orcamento.OrcamentoUpdate, usuario_id: int, empresa_id: int):
+    """Atualiza um orçamento existente."""
+    try:
+        print(f"[DEBUG] Atualizando orçamento ID {orcamento_id} para usuario_id: {usuario_id}")
+        
+        # Busca o orçamento
+        db_orcamento = db.query(models.Orcamento).filter(
+            models.Orcamento.id == orcamento_id,
+            models.Orcamento.usuario_id == usuario_id
+        ).first()
+        
+        if not db_orcamento:
+            print(f"[ERROR] Orçamento ID {orcamento_id} não encontrado para usuario_id {usuario_id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Orçamento não encontrado ou não pertence a este usuário"
+            )
+        
+        # Atualiza apenas os campos fornecidos
+        update_data = orcamento_update.model_dump(exclude_unset=True)
+        print(f"[DEBUG] Dados para atualização: {update_data}")
+        
+        for field, value in update_data.items():
+            if hasattr(db_orcamento, field):
+                setattr(db_orcamento, field, value)
+                print(f"[DEBUG] Campo {field} atualizado para: {value}")
+        
+        db.commit()
+        db.refresh(db_orcamento)
+        
+        print(f"[DEBUG] Orçamento ID {orcamento_id} atualizado com sucesso")
+        return db_orcamento
+        
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        print(f"[ERROR] Erro ao atualizar orçamento: {e}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro interno ao atualizar orçamento: {str(e)}"
+        )
+
     except HTTPException as e:
         db.rollback()
         raise e
