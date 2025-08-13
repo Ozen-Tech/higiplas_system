@@ -113,10 +113,11 @@ def delete_cliente(db: Session, cliente_id: int, empresa_id: int):
             )
         
         # Exclui manualmente os registros relacionados para evitar problemas de cascade
-        # Exclui histórico de pagamentos
-        db.query(models.HistoricoPagamento).filter(
-            models.HistoricoPagamento.cliente_id == cliente_id
-        ).delete(synchronize_session=False)
+        # Exclui histórico de pagamentos usando SQL bruto para evitar problemas de coluna
+        db.execute(
+            "DELETE FROM historico_pagamentos WHERE cliente_id = :cliente_id",
+            {"cliente_id": cliente_id}
+        )
         
         # Exclui orçamentos e seus itens (se houver)
         orcamentos = db.query(models.Orcamento).filter(
