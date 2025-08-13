@@ -100,41 +100,43 @@ def update_cliente(db: Session, cliente_id: int, cliente_update: schemas_cliente
 def delete_cliente(db: Session, cliente_id: int, empresa_id: int):
     """Exclui um cliente."""
     try:
-        # Busca o cliente diretamente sem usar get_cliente_by_id para evitar problemas de relacionamento
-        db_cliente = db.query(models.Cliente).filter(
-            models.Cliente.id == cliente_id,
-            models.Cliente.empresa_id == empresa_id
-        ).first()
+        # Verifica se o cliente existe usando SQL bruto para evitar problemas de relacionamento
+        result = db.execute(
+            text("SELECT id FROM clientes WHERE id = :cliente_id AND empresa_id = :empresa_id"),
+            {"cliente_id": cliente_id, "empresa_id": empresa_id}
+        ).fetchone()
         
-        if not db_cliente:
+        if not result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Cliente não encontrado."
             )
         
-        # Exclui manualmente os registros relacionados para evitar problemas de cascade
-        # Exclui histórico de pagamentos usando SQL bruto para evitar problemas de coluna
+        # Exclui manualmente os registros relacionados usando SQL bruto
+        # Exclui histórico de pagamentos
         db.execute(
             text("DELETE FROM historico_pagamentos WHERE cliente_id = :cliente_id"),
             {"cliente_id": cliente_id}
         )
         
-        # Exclui orçamentos e seus itens (se houver)
-        orcamentos = db.query(models.Orcamento).filter(
-            models.Orcamento.cliente_id == cliente_id
-        ).all()
+        # Exclui itens de orçamentos primeiro
+        db.execute(
+            text("DELETE FROM orcamento_itens WHERE orcamento_id IN (SELECT id FROM orcamentos WHERE cliente_id = :cliente_id)"),
+            {"cliente_id": cliente_id}
+        )
         
-        for orcamento in orcamentos:
-            # Exclui itens do orçamento
-            db.query(models.OrcamentoItem).filter(
-                models.OrcamentoItem.orcamento_id == orcamento.id
-            ).delete(synchronize_session=False)
-            
-            # Exclui o orçamento
-            db.delete(orcamento)
+        # Exclui orçamentos
+        db.execute(
+            text("DELETE FROM orcamentos WHERE cliente_id = :cliente_id"),
+            {"cliente_id": cliente_id}
+        )
         
-        # Agora exclui o cliente
-        db.delete(db_cliente)
+        # Finalmente exclui o cliente
+        db.execute(
+            text("DELETE FROM clientes WHERE id = :cliente_id AND empresa_id = :empresa_id"),
+            {"cliente_id": cliente_id, "empresa_id": empresa_id}
+        )
+        
         db.commit()
         return {"message": "Cliente excluído com sucesso"}
         
