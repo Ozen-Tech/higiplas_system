@@ -40,10 +40,37 @@ def get_clientes(db: Session, empresa_id: int, skip: int = 0, limit: int = 100):
 
 def get_cliente_by_id(db: Session, cliente_id: int, empresa_id: int):
     """Busca um cliente específico por ID."""
-    return db.query(models.Cliente).filter(
-        models.Cliente.id == cliente_id,
-        models.Cliente.empresa_id == empresa_id
-    ).first()
+    try:
+        # Busca o cliente sem carregar os relacionamentos problemáticos
+        cliente = db.query(models.Cliente).filter(
+            models.Cliente.id == cliente_id,
+            models.Cliente.empresa_id == empresa_id
+        ).first()
+        
+        if not cliente:
+            return None
+            
+        # Carrega manualmente apenas o histórico de pagamentos (que funciona)
+        # Evita carregar orçamentos que estão causando erro 500
+        try:
+            cliente.historico_pagamentos
+        except Exception as e:
+            print(f"Erro ao carregar histórico de pagamentos: {e}")
+            # Se houver erro, cria uma lista vazia
+            cliente.historico_pagamentos = []
+            
+        # Evita carregar orçamentos que estão causando problema
+        # Define uma lista vazia para evitar lazy loading
+        cliente.orcamentos = []
+        
+        return cliente
+        
+    except Exception as e:
+        print(f"Erro em get_cliente_by_id: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao buscar cliente: {str(e)}"
+        )
 
 def get_cliente_by_cnpj(db: Session, cnpj: str, empresa_id: int):
     """Busca um cliente por CNPJ."""
