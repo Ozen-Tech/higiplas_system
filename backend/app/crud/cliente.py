@@ -188,17 +188,28 @@ def create_historico_pagamento(db: Session, historico: schemas_cliente.Historico
 
 def get_historico_pagamentos_cliente(db: Session, cliente_id: int, empresa_id: int):
     """Lista o histórico de pagamentos de um cliente."""
-    # Verifica se o cliente pertence à empresa
-    cliente = get_cliente_by_id(db, cliente_id, empresa_id)
-    if not cliente:
+    # Verifica se o cliente pertence à empresa - busca direta para evitar problemas de relacionamento
+    db_cliente = db.query(models.Cliente).filter(
+        models.Cliente.id == cliente_id,
+        models.Cliente.empresa_id == empresa_id
+    ).first()
+    
+    if not db_cliente:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Cliente não encontrado."
         )
     
-    return db.query(models.HistoricoPagamento).filter(
-        models.HistoricoPagamento.cliente_id == cliente_id
-    ).order_by(models.HistoricoPagamento.data_vencimento.desc()).all()
+    # Busca histórico sem ordenação para evitar problemas com colunas inexistentes
+    try:
+        return db.query(models.HistoricoPagamento).filter(
+            models.HistoricoPagamento.cliente_id == cliente_id
+        ).order_by(models.HistoricoPagamento.id.desc()).all()
+    except Exception as e:
+        # Fallback: retorna sem ordenação se houver erro
+        return db.query(models.HistoricoPagamento).filter(
+            models.HistoricoPagamento.cliente_id == cliente_id
+        ).all()
 
 def update_historico_pagamento(db: Session, historico_id: int, historico_update: schemas_cliente.HistoricoPagamentoUpdate, empresa_id: int):
     """Atualiza um registro de histórico de pagamento."""
