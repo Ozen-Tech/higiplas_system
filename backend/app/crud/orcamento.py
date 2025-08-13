@@ -96,6 +96,12 @@ def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, 
             db.commit()
         
         return db_orcamento
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro interno ao criar orçamento: {e}")
 
 def update_orcamento(db: Session, orcamento_id: int, orcamento_update: schemas_orcamento.OrcamentoUpdate, usuario_id: int, empresa_id: int):
     """Atualiza um orçamento existente."""
@@ -142,13 +148,6 @@ def update_orcamento(db: Session, orcamento_id: int, orcamento_update: schemas_o
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro interno ao atualizar orçamento: {str(e)}"
         )
-
-    except HTTPException as e:
-        db.rollback()
-        raise e
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro interno ao criar orçamento: {e}")
 
 def get_orcamentos_by_user(db: Session, usuario_id: int):
     """Busca todos os orçamentos criados por um usuário específico."""
