@@ -66,13 +66,13 @@ def search_clientes(
     """Busca clientes por nome ou CNPJ."""
     return crud_cliente.search_clientes(db, current_user.empresa_id, q)
 
-@router.get("/{cliente_id}", response_model=schemas_cliente.ClienteCompleto)
+@router.get("/{cliente_id}", response_model=schemas_cliente.Cliente)
 def get_cliente(
     cliente_id: int,
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Busca um cliente específico com histórico de pagamentos."""
+    """Busca um cliente específico (dados básicos apenas)."""
     cliente = crud_cliente.get_cliente_by_id(db, cliente_id, current_user.empresa_id)
     if not cliente:
         raise HTTPException(
