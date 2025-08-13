@@ -14,4 +14,4 @@ services:
           name: higiplas-db
           property: connectionString
     healthCheckPath: "/"
-    autoDeploy: false
+    autoDeploy: true
