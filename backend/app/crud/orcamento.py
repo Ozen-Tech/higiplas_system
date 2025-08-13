@@ -153,24 +153,6 @@ def update_orcamento(db: Session, orcamento_id: int, orcamento_update: schemas_o
 def get_orcamentos_by_user(db: Session, usuario_id: int):
     """Busca todos os orçamentos criados por um usuário específico."""
     try:
-        print(f"[DEBUG] Buscando orçamentos para usuario_id: {usuario_id}")
-        
-        # Primeiro, tenta buscar sem eager loading para verificar se há orçamentos
-        orcamentos_simples = db.query(models.Orcamento).filter(
-            models.Orcamento.usuario_id == usuario_id
-        ).all()
-        
-        print(f"[DEBUG] Encontrados {len(orcamentos_simples)} orçamentos simples")
-        
-        # Se não há orçamentos, retorna lista vazia
-        if not orcamentos_simples:
-            return []
-        
-        # Verifica se há orçamentos com problemas de dados
-        for orcamento in orcamentos_simples:
-            print(f"[DEBUG] Orçamento ID {orcamento.id}: condicao_pagamento={orcamento.condicao_pagamento}, cliente_id={orcamento.cliente_id}")
-        
-        # Agora tenta com eager loading
         return db.query(models.Orcamento).options(
             joinedload(models.Orcamento.cliente),
             joinedload(models.Orcamento.usuario),
@@ -180,26 +162,13 @@ def get_orcamentos_by_user(db: Session, usuario_id: int):
         ).order_by(
             models.Orcamento.data_criacao.desc()
         ).all()
-        
     except Exception as e:
-        print(f"[ERROR] Erro ao buscar orçamentos: {e}")
-        import traceback
-        print(f"[ERROR] Traceback: {traceback.format_exc()}")
-        
         # Fallback sem eager loading se houver problema
-        try:
-            print(f"[DEBUG] Tentando fallback sem eager loading")
-            return db.query(models.Orcamento).filter(
-                models.Orcamento.usuario_id == usuario_id
-            ).order_by(
-                models.Orcamento.data_criacao.desc()
-            ).all()
-        except Exception as fallback_error:
-            print(f"[ERROR] Erro no fallback: {fallback_error}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Erro ao buscar orçamentos: {str(e)}"
-            )
+        return db.query(models.Orcamento).filter(
+            models.Orcamento.usuario_id == usuario_id
+        ).order_by(
+            models.Orcamento.data_criacao.desc()
+        ).all()
 
 def get_orcamentos_by_empresa(db: Session, empresa_id: int, skip: int = 0, limit: int = 100):
     """Busca todos os orçamentos de uma empresa (para dashboard de admins)."""
