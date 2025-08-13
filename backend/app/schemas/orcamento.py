@@ -44,12 +44,17 @@ class OrcamentoUpdate(BaseModel):
     numero_nf: Optional[str] = None
     status: Optional[str] = None
 
-class Orcamento(OrcamentoBase):
+class Orcamento(BaseModel):
     id: int
     status: str
     data_criacao: datetime
+    data_validade: Optional[date] = None
+    condicao_pagamento: Optional[str] = None  # Temporariamente opcional para corrigir erro 500
+    preco_minimo: Optional[float] = None
+    preco_maximo: Optional[float] = None
+    numero_nf: Optional[str] = None
     usuario: SchemaUsuario
-    cliente: SchemaCliente
+    cliente: Optional[SchemaCliente] = None  # Temporariamente opcional para corrigir erro 500
     itens: List[OrcamentoItem]
 
     model_config = ConfigDict(from_attributes=True)
