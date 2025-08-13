@@ -99,31 +99,34 @@ def update_cliente(db: Session, cliente_id: int, cliente_update: schemas_cliente
 
 def delete_cliente(db: Session, cliente_id: int, empresa_id: int):
     """Exclui um cliente."""
-    db_cliente = get_cliente_by_id(db, cliente_id, empresa_id)
-    if not db_cliente:
+    try:
+        # Busca o cliente diretamente sem usar get_cliente_by_id para evitar problemas de relacionamento
+        db_cliente = db.query(models.Cliente).filter(
+            models.Cliente.id == cliente_id,
+            models.Cliente.empresa_id == empresa_id
+        ).first()
+        
+        if not db_cliente:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Cliente não encontrado."
+            )
+        
+        # Exclui o cliente diretamente
+        db.delete(db_cliente)
+        db.commit()
+        return {"message": "Cliente excluído com sucesso"}
+        
+    except HTTPException:
+        # Re-raise HTTPExceptions (como 404)
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Erro ao excluir cliente: {e}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Cliente não encontrado."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao excluir cliente: {str(e)}"
         )
-    
-    # COMENTADO TEMPORARIAMENTE - A verificação de orçamentos está causando erro 500
-    # # Verifica se o cliente tem orçamentos associados
-    # orcamentos_count = db.query(models.Orcamento).filter(
-    #     models.Orcamento.cliente_id == cliente_id
-    # ).count()
-    # 
-    # if orcamentos_count > 0:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Não é possível excluir cliente com orçamentos associados."
-    #     )
-    
-    # Por enquanto, permite a exclusão sem verificar orçamentos
-    # TODO: Corrigir o problema no endpoint de orçamentos e reativar a verificação
-    
-    db.delete(db_cliente)
-    db.commit()
-    return {"message": "Cliente excluído com sucesso (verificação de orçamentos temporariamente desabilitada)"}
 
 def get_resumo_vendas_cliente(db: Session, cliente_id: int, empresa_id: int, meses: int = 3):
     """Retorna resumo das vendas dos últimos N meses do cliente."""

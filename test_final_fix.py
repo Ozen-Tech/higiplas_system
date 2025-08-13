@@ -7,6 +7,7 @@ Testa GET e DELETE de clientes após a correção dos relacionamentos problemát
 import requests
 import time
 import json
+from datetime import datetime
 
 BASE_URL = "https://higiplas-system.onrender.com"
 
@@ -65,11 +66,15 @@ def create_test_cliente(token):
     """Cria um cliente de teste."""
     headers = {"Authorization": f"Bearer {token}"}
     
+    # Gera um CNPJ único baseado no timestamp
+    timestamp = int(datetime.now().timestamp())
+    cnpj_unico = f"{timestamp:011d}0001{(timestamp % 100):02d}"
+    
     cliente_data = {
-        "nome": "Cliente Teste Final",
-        "email": "teste.final@exemplo.com",
+        "nome": f"Cliente Teste Final {timestamp}",
+        "email": f"teste.final{timestamp}@exemplo.com",
         "telefone": "(11) 99999-9999",
-        "cpf_cnpj": "12.345.678/0001-99",
+        "cpf_cnpj": cnpj_unico,
         "tipo_pessoa": "juridica",
         "observacoes": "Cliente criado para teste final",
         "empresa_vinculada": "HIGIPLAS"
