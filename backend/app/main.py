@@ -6,6 +6,8 @@ from app.routers import (
     upload_excel, insights, orcamentos, dashboard_kpis, 
     invoice_processing, fornecedores, ordens_compra, clientes
 )
+from app.create_superuser import create_initial_superuser
+from contextlib import asynccontextmanager
 import logging
 import os
 
@@ -13,10 +15,21 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Iniciando aplicação...")
+    create_initial_superuser()
+    logger.info("Superusuário criado/verificado com sucesso")
+    yield
+    # Shutdown
+    logger.info("Encerrando aplicação...")
+
 app = FastAPI(
     title="Higiplas System API", 
     version="1.0.0",
-    redirect_slashes=True  # Permite URLs com e sem barra final
+    redirect_slashes=True,  # Permite URLs com e sem barra final
+    lifespan=lifespan
 )
 
 # Configuração de CORS mais robusta
