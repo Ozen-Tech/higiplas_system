@@ -25,7 +25,7 @@ origins = [
     "http://localhost:3000",
     "http://localhost:3001", 
     "http://127.0.0.1:3000",
-    "https://higiplas-frontend.vercel.app",
+    "https://higiplas-system.vercel.app",
     "https://higiplas-system.onrender.com"
 ]
 
