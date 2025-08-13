@@ -96,9 +96,7 @@ def create_orcamento(db: Session, orcamento: schemas_orcamento.OrcamentoCreate, 
             db.commit()
         
         return db_orcamento
-    except HTTPException as e:
-        db.rollback()
-        raise e
+    
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro interno ao criar orçamento: {e}")
@@ -257,3 +255,59 @@ def finalizar_orcamento(db: Session, orcamento_id: int, usuario_id: int, empresa
     db.refresh(db_orcamento)
     
     return db_orcamento
+
+
+def get_produtos_mais_vendidos(db: Session, empresa_id: int, ano: int = None, limit: int = 50):
+    """
+    Retorna os produtos mais vendidos no último ano (ou ano específico).
+    Baseado nos orçamentos finalizados.
+    """
+    from datetime import datetime, timedelta
+    
+    # Se não especificar ano, usa o último ano (365 dias)
+    if ano is None:
+        data_inicio = datetime.now() - timedelta(days=365)
+        query_filter = models.Orcamento.data_criacao >= data_inicio
+    else:
+        query_filter = extract('year', models.Orcamento.data_criacao) == ano
+    
+    # Query para somar as quantidades vendidas por produto
+    resultado = db.query(
+        models.Produto.id,
+        models.Produto.nome,
+        models.Produto.codigo,
+        models.Produto.preco_venda,
+        func.sum(models.OrcamentoItem.quantidade).label('total_vendido'),
+        func.sum(models.OrcamentoItem.quantidade * models.OrcamentoItem.preco_unitario_congelado).label('valor_total_vendas'),
+        func.count(models.Orcamento.id.distinct()).label('numero_orcamentos')
+    ).join(
+        models.OrcamentoItem, models.Produto.id == models.OrcamentoItem.produto_id
+    ).join(
+        models.Orcamento, models.OrcamentoItem.orcamento_id == models.Orcamento.id
+    ).filter(
+        models.Orcamento.status == 'FINALIZADO',
+        models.Produto.empresa_id == empresa_id,
+        query_filter
+    ).group_by(
+        models.Produto.id,
+        models.Produto.nome,
+        models.Produto.codigo,
+        models.Produto.preco_venda
+    ).order_by(
+        func.sum(models.OrcamentoItem.quantidade).desc()
+    ).limit(limit).all()
+    
+    # Formatar o resultado
+    produtos_mais_vendidos = []
+    for item in resultado:
+        produtos_mais_vendidos.append({
+            "id": item.id,
+            "nome": item.nome,
+            "codigo": item.codigo,
+            "preco_venda": float(item.preco_venda) if item.preco_venda else 0.0,
+            "total_vendido": float(item.total_vendido),
+            "valor_total_vendas": float(item.valor_total_vendas),
+            "numero_orcamentos": item.numero_orcamentos
+        })
+    
+    return produtos_mais_vendidos

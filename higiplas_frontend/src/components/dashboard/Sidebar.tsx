@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
+import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
 import Image from 'next/image'; 
 
 // Define a estrutura de cada item do menu
@@ -13,6 +13,7 @@ const navigation = [
   { name: 'Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
+  { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
 ];
 
 export function Sidebar() {
