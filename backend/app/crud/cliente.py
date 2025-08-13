@@ -112,7 +112,27 @@ def delete_cliente(db: Session, cliente_id: int, empresa_id: int):
                 detail="Cliente não encontrado."
             )
         
-        # Exclui o cliente diretamente
+        # Exclui manualmente os registros relacionados para evitar problemas de cascade
+        # Exclui histórico de pagamentos
+        db.query(models.HistoricoPagamento).filter(
+            models.HistoricoPagamento.cliente_id == cliente_id
+        ).delete(synchronize_session=False)
+        
+        # Exclui orçamentos e seus itens (se houver)
+        orcamentos = db.query(models.Orcamento).filter(
+            models.Orcamento.cliente_id == cliente_id
+        ).all()
+        
+        for orcamento in orcamentos:
+            # Exclui itens do orçamento
+            db.query(models.OrcamentoItem).filter(
+                models.OrcamentoItem.orcamento_id == orcamento.id
+            ).delete(synchronize_session=False)
+            
+            # Exclui o orçamento
+            db.delete(orcamento)
+        
+        # Agora exclui o cliente
         db.delete(db_cliente)
         db.commit()
         return {"message": "Cliente excluído com sucesso"}
