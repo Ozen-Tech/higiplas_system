@@ -14,7 +14,7 @@ class PDFSalesProcessor:
     def __init__(self):
         self.backend_path = Path(__file__).parent.parent.parent  # Vai para /backend
         self.pdf_files = [
-            "HIGIPLAS - MAIO - JULHO.pdf",
+            "HIGIPLAS - MAIO - JULHO (1).pdf",
             "HIGITEC - MAIO - JULHO.pdf"
         ]
         # Os PDFs estão diretamente no diretório backend
