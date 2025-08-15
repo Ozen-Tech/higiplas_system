@@ -1,12 +1,12 @@
 {
   "metadata": {
     "files_processed": 2,
-    "total_sales_records": 422,
+    "total_sales_records": 244,
     "companies": [
       "HIGIPLAS",
       "HIGITEC"
     ],
-    "processing_date": "2025-08-15T09:12:28.323331",
+    "processing_date": "2025-08-15T09:52:09.835064",
     "period": "2025-05-01 a 2025-07-31"
   },
   "sales_data": [
@@ -17,7 +17,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BOX COMERCIO DE VEICULOS LTDA",
       "quantidade": 12.0,
-      "valor": 25.2
+      "valor": 25.2,
+      "custo_compra": 28.2,
+      "lucro_bruto": -3.0,
+      "percentual_lucro": -10.6383
     },
     {
       "codigo": "231",
@@ -26,16 +29,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 160.0,
-      "valor": 526.4
-    },
-    {
-      "codigo": "231",
-      "produto": "ÁGUA SANITÁRIA  CLORITO 1L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 551.6,
-      "valor": 172.0
+      "valor": 526.4,
+      "custo_compra": 376.0,
+      "lucro_bruto": 150.4,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "3",
@@ -44,7 +41,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 16.0,
-      "valor": 484.0
+      "valor": 484.0,
+      "custo_compra": 292.8,
+      "lucro_bruto": 191.2,
+      "percentual_lucro": 65.3005
     },
     {
       "codigo": "529",
@@ -53,16 +53,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 8.0,
-      "valor": 362.19
-    },
-    {
-      "codigo": "529",
-      "produto": "ARMAÇAO PARA MOP PO 40 CM",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 362.19,
-      "valor": 8.0
+      "valor": 362.19,
+      "custo_compra": 294.0,
+      "lucro_bruto": 68.19,
+      "percentual_lucro": 23.1939
     },
     {
       "codigo": "530",
@@ -71,16 +65,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 118.8
-    },
-    {
-      "codigo": "530",
-      "produto": "ARMAÇAO PARA MOP PO 60 CM",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 118.8,
-      "valor": 3.0
+      "valor": 118.8,
+      "custo_compra": 115.5,
+      "lucro_bruto": 3.3,
+      "percentual_lucro": 2.8571
     },
     {
       "codigo": "296",
@@ -89,16 +77,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 5.0,
-      "valor": 126.0
-    },
-    {
-      "codigo": "296",
-      "produto": "CABO DE ALUMINIO 22X1,40M (NOBRE)",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 126.0,
-      "valor": 5.0
+      "valor": 126.0,
+      "custo_compra": 63.0,
+      "lucro_bruto": 63.0,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "775",
@@ -107,7 +89,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 9.0,
-      "valor": 239.64
+      "valor": 239.64,
+      "custo_compra": 123.84,
+      "lucro_bruto": 115.8,
+      "percentual_lucro": 93.5078
     },
     {
       "codigo": "775",
@@ -116,7 +101,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 1.0,
-      "valor": 27.52
+      "valor": 27.52,
+      "custo_compra": 13.76,
+      "lucro_bruto": 13.76,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "775",
@@ -125,16 +113,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 2.0,
-      "valor": 50.4
-    },
-    {
-      "codigo": "775",
-      "produto": "CABO DE ALUMINIO 22X1,40M C/ PONTEIRA (NOBRE)",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 317.56,
-      "valor": 12.0
+      "valor": 50.4,
+      "custo_compra": 27.52,
+      "lucro_bruto": 22.88,
+      "percentual_lucro": 83.1395
     },
     {
       "codigo": "543",
@@ -143,16 +125,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 48.3
-    },
-    {
-      "codigo": "543",
-      "produto": "CABO EXTENSOR CHAPA  AÇO 3 M BETANNI",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 48.3,
-      "valor": 1.0
+      "valor": 48.3,
+      "custo_compra": 29.9,
+      "lucro_bruto": 18.4,
+      "percentual_lucro": 61.5385
     },
     {
       "codigo": "6",
@@ -161,16 +137,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 1.0,
-      "valor": 240.0
-    },
-    {
-      "codigo": "6",
-      "produto": "CERACRIL BB 5 L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "L L FROTA E CIA LTDA - ME",
-      "quantidade": 4.0,
-      "valor": 717.66
+      "valor": 240.0,
+      "custo_compra": 115.01,
+      "lucro_bruto": 124.99,
+      "percentual_lucro": 108.6775
     },
     {
       "codigo": "6",
@@ -179,7 +149,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 888.27
+      "valor": 888.27,
+      "custo_compra": 345.03,
+      "lucro_bruto": 543.24,
+      "percentual_lucro": 157.4472
     },
     {
       "codigo": "699",
@@ -188,16 +161,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 25.0,
-      "valor": 125.75
-    },
-    {
-      "codigo": "699",
-      "produto": "COPO KEROCOPO 100X180",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 125.75,
-      "valor": 25.0
+      "valor": 125.75,
+      "custo_compra": 89.75,
+      "lucro_bruto": 36.0,
+      "percentual_lucro": 40.1114
     },
     {
       "codigo": "8",
@@ -206,16 +173,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 5.0,
-      "valor": 957.05
-    },
-    {
-      "codigo": "8",
-      "produto": "DESINCROST BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "EXPRESSO SALADA LTDA -ME",
-      "quantidade": 10.0,
-      "valor": 134.37
+      "valor": 957.05,
+      "custo_compra": 408.35,
+      "lucro_bruto": 548.7,
+      "percentual_lucro": 134.37
     },
     {
       "codigo": "8",
@@ -224,7 +185,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 4.0,
-      "valor": 704.0
+      "valor": 704.0,
+      "custo_compra": 326.68,
+      "lucro_bruto": 377.32,
+      "percentual_lucro": 115.5014
     },
     {
       "codigo": "8",
@@ -233,7 +197,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 623.36
+      "valor": 623.36,
+      "custo_compra": 245.01,
+      "lucro_bruto": 378.35,
+      "percentual_lucro": 154.4223
     },
     {
       "codigo": "44",
@@ -242,16 +209,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 95.05
-    },
-    {
-      "codigo": "44",
-      "produto": "DESINFETANTE SANIFLOR BREEZE BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 95.05,
-      "valor": 1.0
+      "valor": 95.05,
+      "custo_compra": 37.13,
+      "lucro_bruto": 57.92,
+      "percentual_lucro": 155.9925
     },
     {
       "codigo": "138",
@@ -260,7 +221,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 2.0,
-      "valor": 226.02
+      "valor": 226.02,
+      "custo_compra": 110.34,
+      "lucro_bruto": 115.68,
+      "percentual_lucro": 104.8396
     },
     {
       "codigo": "138",
@@ -269,7 +233,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 3.0,
-      "valor": 423.71
+      "valor": 423.71,
+      "custo_compra": 165.51,
+      "lucro_bruto": 258.2,
+      "percentual_lucro": 156.0027
     },
     {
       "codigo": "138",
@@ -278,16 +245,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 6.0,
-      "valor": 760.02
-    },
-    {
-      "codigo": "48",
-      "produto": "DESINFETANTE SANIFLOR MAX SOFT BB 5L REND 250L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
-      "quantidade": 10.0,
-      "valor": 578.4
+      "valor": 760.02,
+      "custo_compra": 331.02,
+      "lucro_bruto": 429.0,
+      "percentual_lucro": 129.5994
     },
     {
       "codigo": "48",
@@ -296,7 +257,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 267.24
+      "valor": 267.24,
+      "custo_compra": 110.34,
+      "lucro_bruto": 156.9,
+      "percentual_lucro": 142.1968
     },
     {
       "codigo": "48",
@@ -305,16 +269,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "IGREJA PRESBITERIANA INDEPENDENTE EM VICENTE FIALHO",
       "quantidade": 1.0,
-      "valor": 135.39
-    },
-    {
-      "codigo": "48",
-      "produto": "DESINFETANTE SANIFLOR MAX SOFT BB 5L REND 250L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "L L FROTA E CIA LTDA - ME",
-      "quantidade": 9.0,
-      "valor": 643.5
+      "valor": 135.39,
+      "custo_compra": 55.17,
+      "lucro_bruto": 80.22,
+      "percentual_lucro": 145.4051
     },
     {
       "codigo": "48",
@@ -323,16 +281,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 6.0,
-      "valor": 847.42
-    },
-    {
-      "codigo": "43",
-      "produto": "DETERGENTE CLORADO BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
-      "quantidade": 11.0,
-      "valor": 920.81
+      "valor": 847.42,
+      "custo_compra": 331.02,
+      "lucro_bruto": 516.4,
+      "percentual_lucro": 156.0027
     },
     {
       "codigo": "43",
@@ -341,7 +293,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 3.0,
-      "valor": 447.36
+      "valor": 447.36,
+      "custo_compra": 159.63,
+      "lucro_bruto": 287.73,
+      "percentual_lucro": 180.2481
     },
     {
       "codigo": "43",
@@ -350,7 +305,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 7.0,
-      "valor": 958.44
+      "valor": 958.44,
+      "custo_compra": 372.47,
+      "lucro_bruto": 585.97,
+      "percentual_lucro": 157.3201
     },
     {
       "codigo": "249",
@@ -359,16 +317,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 60.0,
-      "valor": 162.12
-    },
-    {
-      "codigo": "249",
-      "produto": "DETERGENTE NEUTRO FC 500ML",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 162.12,
-      "valor": 60.0
+      "valor": 162.12,
+      "custo_compra": 115.8,
+      "lucro_bruto": 46.32,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "884",
@@ -377,16 +329,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 90.76
-    },
-    {
-      "codigo": "884",
-      "produto": "DISCO LIMPADOR VERDE 350M",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 90.76,
-      "valor": 3.0
+      "valor": 90.76,
+      "custo_compra": 64.83,
+      "lucro_bruto": 25.93,
+      "percentual_lucro": 39.9969
     },
     {
       "codigo": "883",
@@ -395,16 +341,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 191.52
-    },
-    {
-      "codigo": "883",
-      "produto": "DISCO LIMPADOR VERDE 510MM",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 191.52,
-      "valor": 3.0
+      "valor": 191.52,
+      "custo_compra": 136.8,
+      "lucro_bruto": 54.72,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "886",
@@ -413,16 +353,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 29.53
-    },
-    {
-      "codigo": "886",
-      "produto": "DISCO RESTAURADOR VERMELHO 350M",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 29.53,
-      "valor": 1.0
+      "valor": 29.53,
+      "custo_compra": 21.09,
+      "lucro_bruto": 8.44,
+      "percentual_lucro": 40.019
     },
     {
       "codigo": "885",
@@ -431,16 +365,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 61.18
-    },
-    {
-      "codigo": "885",
-      "produto": "DISCO RESTAURADOR VERMELHO 510M",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 61.18,
-      "valor": 1.0
+      "valor": 61.18,
+      "custo_compra": 43.7,
+      "lucro_bruto": 17.48,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "777",
@@ -449,16 +377,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 88.2
-    },
-    {
-      "codigo": "777",
-      "produto": "DISPENSER COPO AGUA  BRANCO",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 88.2,
-      "valor": 1.0
+      "valor": 88.2,
+      "custo_compra": 63.0,
+      "lucro_bruto": 25.2,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "338",
@@ -467,16 +389,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 33.6
-    },
-    {
-      "codigo": "338",
-      "produto": "DISPENSER COPO DE CAFÉ NOBRE",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 33.6,
-      "valor": 1.0
+      "valor": 33.6,
+      "custo_compra": 24.0,
+      "lucro_bruto": 9.6,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "286",
@@ -485,16 +401,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 111.6
-    },
-    {
-      "codigo": "286",
-      "produto": "DISPENSER P/ TOALHA  (NOBRE)",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 111.6,
-      "valor": 3.0
+      "valor": 111.6,
+      "custo_compra": 55.8,
+      "lucro_bruto": 55.8,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "102",
@@ -503,16 +413,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 75.0,
-      "valor": 72.45
-    },
-    {
-      "codigo": "102",
-      "produto": "ESPONJA DUPLA FACE",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 72.45,
-      "valor": 75.0
+      "valor": 72.45,
+      "custo_compra": 51.75,
+      "lucro_bruto": 20.7,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "704",
@@ -521,16 +425,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 25.6
-    },
-    {
-      "codigo": "704",
-      "produto": "FIBRA DE LIMPEZA GERAL BETTANIN",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 25.6,
-      "valor": 10.0
+      "valor": 25.6,
+      "custo_compra": 12.8,
+      "lucro_bruto": 12.8,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "298",
@@ -539,7 +437,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AÇOMETAL ADO MANUTENÇÃO INDUSTRIAL LTDA",
       "quantidade": 20.0,
-      "valor": 36.4
+      "valor": 36.4,
+      "custo_compra": 21.4,
+      "lucro_bruto": 15.0,
+      "percentual_lucro": 70.0935
     },
     {
       "codigo": "298",
@@ -548,7 +449,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 20.0,
-      "valor": 35.5
+      "valor": 35.5,
+      "custo_compra": 21.4,
+      "lucro_bruto": 14.1,
+      "percentual_lucro": 65.8879
     },
     {
       "codigo": "298",
@@ -557,16 +461,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 10.0,
-      "valor": 23.0
-    },
-    {
-      "codigo": "298",
-      "produto": "FIBRA DE LIMPEZA LEVE BETTANIN",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 94.9,
-      "valor": 50.0
+      "valor": 23.0,
+      "custo_compra": 10.7,
+      "lucro_bruto": 12.3,
+      "percentual_lucro": 114.9533
     },
     {
       "codigo": "103",
@@ -575,7 +473,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 31.2
+      "valor": 31.2,
+      "custo_compra": 15.6,
+      "lucro_bruto": 15.6,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "103",
@@ -584,7 +485,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 10.0,
-      "valor": 31.2
+      "valor": 31.2,
+      "custo_compra": 15.6,
+      "lucro_bruto": 15.6,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "103",
@@ -593,16 +497,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 15.0,
-      "valor": 46.8
-    },
-    {
-      "codigo": "103",
-      "produto": "FIBRA DE LIMPEZA PESADA BETTANIN",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 109.2,
-      "valor": 35.0
+      "valor": 46.8,
+      "custo_compra": 23.4,
+      "lucro_bruto": 23.4,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "576",
@@ -611,7 +509,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 28.6
+      "valor": 28.6,
+      "custo_compra": 14.3,
+      "lucro_bruto": 14.3,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "576",
@@ -620,16 +521,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 20.0,
-      "valor": 59.6
-    },
-    {
-      "codigo": "576",
-      "produto": "FIBRA LIMP. BETTAÇO 1X20X10",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 88.2,
-      "valor": 30.0
+      "valor": 59.6,
+      "custo_compra": 28.6,
+      "lucro_bruto": 31.0,
+      "percentual_lucro": 108.3916
     },
     {
       "codigo": "369",
@@ -638,25 +533,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 10.0,
-      "valor": 43.0
-    },
-    {
-      "codigo": "369",
-      "produto": "FIBRA PARA LIMPEZA LEVE AZUL EMB C/3",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 43.0,
-      "valor": 10.0
-    },
-    {
-      "codigo": "10",
-      "produto": "GEL SANITIZANTE BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
-      "quantidade": 12.0,
-      "valor": 909.0
+      "valor": 43.0,
+      "custo_compra": 30.7,
+      "lucro_bruto": 12.3,
+      "percentual_lucro": 40.0651
     },
     {
       "codigo": "10",
@@ -665,7 +545,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELO CONTACT CENTER SERVICOS LTDA",
       "quantidade": 1.0,
-      "valor": 128.11
+      "valor": 128.11,
+      "custo_compra": 61.77,
+      "lucro_bruto": 66.34,
+      "percentual_lucro": 107.3984
     },
     {
       "codigo": "796",
@@ -674,16 +557,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 247.26
-    },
-    {
-      "codigo": "796",
-      "produto": "HIGISEC BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 247.26,
-      "valor": 2.0
+      "valor": 247.26,
+      "custo_compra": 93.92,
+      "lucro_bruto": 153.34,
+      "percentual_lucro": 163.2666
     },
     {
       "codigo": "313",
@@ -692,16 +569,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 20.0,
-      "valor": 32.0
-    },
-    {
-      "codigo": "313",
-      "produto": "LÃ DE AÇO ASSOLAN",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 32.0,
-      "valor": 20.0
+      "valor": 32.0,
+      "custo_compra": 22.8,
+      "lucro_bruto": 9.2,
+      "percentual_lucro": 40.3509
     },
     {
       "codigo": "12",
@@ -710,16 +581,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AÇOMETAL ADO MANUTENÇÃO INDUSTRIAL LTDA",
       "quantidade": 2.0,
-      "valor": 427.06
-    },
-    {
-      "codigo": "12",
-      "produto": "LAVESSOL ORANGE BB 5 L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 427.06,
-      "valor": 2.0
+      "valor": 427.06,
+      "custo_compra": 166.82,
+      "lucro_bruto": 260.24,
+      "percentual_lucro": 156.0005
     },
     {
       "codigo": "391",
@@ -728,16 +593,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 2.0,
-      "valor": 353.0
-    },
-    {
-      "codigo": "391",
-      "produto": "LAVPRO BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 353.0,
-      "valor": 2.0
+      "valor": 353.0,
+      "custo_compra": 143.98,
+      "lucro_bruto": 209.02,
+      "percentual_lucro": 145.1729
     },
     {
       "codigo": "221",
@@ -746,7 +605,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "HARMONIC DAY CLINIC LTDA",
       "quantidade": 1.0,
-      "valor": 159.46
+      "valor": 159.46,
+      "custo_compra": 62.29,
+      "lucro_bruto": 97.17,
+      "percentual_lucro": 155.9961
     },
     {
       "codigo": "17",
@@ -755,25 +617,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 7.0,
-      "valor": 593.18
-    },
-    {
-      "codigo": "518",
-      "produto": "LIMPAX DX BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
-      "quantidade": 14.0,
-      "valor": 679.42
-    },
-    {
-      "codigo": "518",
-      "produto": "LIMPAX DX BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "EXPRESSO SALADA LTDA -ME",
-      "quantidade": 17.0,
-      "valor": 825.01
+      "valor": 593.18,
+      "custo_compra": 220.22,
+      "lucro_bruto": 372.96,
+      "percentual_lucro": 169.3579
     },
     {
       "codigo": "518",
@@ -782,25 +629,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 9.0,
-      "valor": 889.92
-    },
-    {
-      "codigo": "859",
-      "produto": "LIXEIRA PAPELEIRA 50L PLAST AZUL LS5PAZ BRALIMPA",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 4.0,
-      "valor": 40.0
-    },
-    {
-      "codigo": "860",
-      "produto": "LIXEIRA PAPELEIRA 50L PLAST CINZA LS5PCZ BRALIM",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 4.0,
-      "valor": 40.0
+      "valor": 889.92,
+      "custo_compra": 375.21,
+      "lucro_bruto": 514.71,
+      "percentual_lucro": 137.1792
     },
     {
       "codigo": "333",
@@ -809,7 +641,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 5.0,
-      "valor": 898.75
+      "valor": 898.75,
+      "custo_compra": 411.15,
+      "lucro_bruto": 487.6,
+      "percentual_lucro": 118.5942
     },
     {
       "codigo": "333",
@@ -818,7 +653,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 185.09
+      "valor": 185.09,
+      "custo_compra": 82.23,
+      "lucro_bruto": 102.86,
+      "percentual_lucro": 125.0882
     },
     {
       "codigo": "827",
@@ -827,16 +665,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 2.0,
-      "valor": 370.18
-    },
-    {
-      "codigo": "827",
-      "produto": "LOUÇA MAQ PRO BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 370.18,
-      "valor": 2.0
+      "valor": 370.18,
+      "custo_compra": 0.0,
+      "lucro_bruto": 370.18,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "856",
@@ -845,16 +677,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 15.0,
-      "valor": 136.5
-    },
-    {
-      "codigo": "856",
-      "produto": "LUSTRA MOVEIS PEROBA 200ML",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 136.5,
-      "valor": 15.0
+      "valor": 136.5,
+      "custo_compra": 119.85,
+      "lucro_bruto": 16.65,
+      "percentual_lucro": 13.8924
     },
     {
       "codigo": "848",
@@ -863,16 +689,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 30.0,
-      "valor": 273.0
-    },
-    {
-      "codigo": "848",
-      "produto": "LUSTRA MOVEIS YPE 200ML",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 273.0,
-      "valor": 30.0
+      "valor": 273.0,
+      "custo_compra": 0.0,
+      "lucro_bruto": 273.0,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "768",
@@ -881,16 +701,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 3.0,
-      "valor": 77.4
-    },
-    {
-      "codigo": "768",
-      "produto": "LUVA NITRILICA  CANO LONGO SLIM G",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 77.4,
-      "valor": 3.0
+      "valor": 77.4,
+      "custo_compra": 39.27,
+      "lucro_bruto": 38.13,
+      "percentual_lucro": 97.097
     },
     {
       "codigo": "289",
@@ -899,16 +713,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 4.0,
-      "valor": 65.32
-    },
-    {
-      "codigo": "289",
-      "produto": "MASCARA DESC. COM ELASTICO PCT C/50 UND (NOBRE)",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 65.32,
-      "valor": 4.0
+      "valor": 65.32,
+      "custo_compra": 30.68,
+      "lucro_bruto": 34.64,
+      "percentual_lucro": 112.9074
     },
     {
       "codigo": "62",
@@ -917,16 +725,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "HARMONIC DAY CLINIC LTDA",
       "quantidade": 1.0,
-      "valor": 293.63
-    },
-    {
-      "codigo": "62",
-      "produto": "MULTIBAC BP DOS 1L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 293.63,
-      "valor": 1.0
+      "valor": 293.63,
+      "custo_compra": 114.7,
+      "lucro_bruto": 178.93,
+      "percentual_lucro": 155.9983
     },
     {
       "codigo": "27",
@@ -935,16 +737,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BITAL AMBIENTAL LTDA",
       "quantidade": 2.0,
-      "valor": 748.0
-    },
-    {
-      "codigo": "27",
-      "produto": "MULTILUX BAC BREEZE BB 5L REND 750",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
-      "quantidade": 5.0,
-      "valor": 216.0693
+      "valor": 748.0,
+      "custo_compra": 325.34,
+      "lucro_bruto": 422.66,
+      "percentual_lucro": 129.9133
     },
     {
       "codigo": "780",
@@ -953,25 +749,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FAST SERVICOS LTDA",
       "quantidade": 2.0,
-      "valor": 660.3
-    },
-    {
-      "codigo": "780",
-      "produto": "MULTILUX BAC SEM FRAG BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 660.3,
-      "valor": 2.0
-    },
-    {
-      "codigo": "28",
-      "produto": "MULTILUX BAC SOFT BB 5L REND 750",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
-      "quantidade": 2.0,
-      "valor": 702.96
+      "valor": 660.3,
+      "custo_compra": 250.36,
+      "lucro_bruto": 409.94,
+      "percentual_lucro": 163.7402
     },
     {
       "codigo": "425",
@@ -980,16 +761,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 3.0,
-      "valor": 817.65
-    },
-    {
-      "codigo": "425",
-      "produto": "MULTILUX POWER BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 817.65,
-      "valor": 3.0
+      "valor": 817.65,
+      "custo_compra": 403.92,
+      "lucro_bruto": 413.73,
+      "percentual_lucro": 102.4287
     },
     {
       "codigo": "870",
@@ -998,16 +773,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 10.0,
-      "valor": 57.75
-    },
-    {
-      "codigo": "870",
-      "produto": "MULTIUSO VEJA 500ML",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 57.75,
-      "valor": 10.0
+      "valor": 57.75,
+      "custo_compra": 41.25,
+      "lucro_bruto": 16.5,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "527",
@@ -1016,16 +785,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 50.0,
-      "valor": 87.5
-    },
-    {
-      "codigo": "527",
-      "produto": "NAFTALINA",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 87.5,
-      "valor": 50.0
+      "valor": 87.5,
+      "custo_compra": 62.5,
+      "lucro_bruto": 25.0,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "124",
@@ -1034,7 +797,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 326.24
+      "valor": 326.24,
+      "custo_compra": 117.3,
+      "lucro_bruto": 208.94,
+      "percentual_lucro": 178.1245
     },
     {
       "codigo": "124",
@@ -1043,7 +809,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 251.5
+      "valor": 251.5,
+      "custo_compra": 117.3,
+      "lucro_bruto": 134.2,
+      "percentual_lucro": 114.4075
     },
     {
       "codigo": "124",
@@ -1052,7 +821,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "HARMONIC DAY CLINIC LTDA",
       "quantidade": 1.0,
-      "valor": 150.14
+      "valor": 150.14,
+      "custo_compra": 58.65,
+      "lucro_bruto": 91.49,
+      "percentual_lucro": 155.9932
     },
     {
       "codigo": "523",
@@ -1061,7 +833,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 251.5
+      "valor": 251.5,
+      "custo_compra": 102.86,
+      "lucro_bruto": 148.64,
+      "percentual_lucro": 144.5071
     },
     {
       "codigo": "25",
@@ -1070,7 +845,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 326.42
+      "valor": 326.42,
+      "custo_compra": 117.3,
+      "lucro_bruto": 209.12,
+      "percentual_lucro": 178.2779
     },
     {
       "codigo": "25",
@@ -1079,7 +857,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 4.0,
-      "valor": 503.0
+      "valor": 503.0,
+      "custo_compra": 234.6,
+      "lucro_bruto": 268.4,
+      "percentual_lucro": 114.4075
     },
     {
       "codigo": "25",
@@ -1088,7 +869,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "IGREJA PRESBITERIANA INDEPENDENTE EM VICENTE FIALHO",
       "quantidade": 1.0,
-      "valor": 158.04
+      "valor": 158.04,
+      "custo_compra": 58.65,
+      "lucro_bruto": 99.39,
+      "percentual_lucro": 169.4629
     },
     {
       "codigo": "259",
@@ -1097,16 +881,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 50.0,
-      "valor": 357.9
-    },
-    {
-      "codigo": "259",
-      "produto": "PANO DE CHÃO ALVEJA DO FLANELADO 48X68",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 357.9,
-      "valor": 50.0
+      "valor": 357.9,
+      "custo_compra": 274.5,
+      "lucro_bruto": 83.4,
+      "percentual_lucro": 30.3825
     },
     {
       "codigo": "325",
@@ -1115,16 +893,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 1.0,
-      "valor": 111.51
-    },
-    {
-      "codigo": "325",
-      "produto": "PANO MULTIUSO SLIM(rolo c/28cm x 300m nobre verde)",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 111.51,
-      "valor": 1.0
+      "valor": 111.51,
+      "custo_compra": 79.65,
+      "lucro_bruto": 31.86,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "795",
@@ -1133,16 +905,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 2.0,
-      "valor": 112.0
-    },
-    {
-      "codigo": "795",
-      "produto": "PAPEL HIGIÊNICO ECONOMICO 8X300 EXTRA LUXO",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 112.0,
-      "valor": 2.0
+      "valor": 112.0,
+      "custo_compra": 80.0,
+      "lucro_bruto": 32.0,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "520",
@@ -1151,16 +917,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 10.0,
-      "valor": 31.2
-    },
-    {
-      "codigo": "520",
-      "produto": "PEDRA SANITÁRIA  AZULIM FRAG VARIADA",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 31.2,
-      "valor": 10.0
+      "valor": 31.2,
+      "custo_compra": 20.8,
+      "lucro_bruto": 10.4,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "244",
@@ -1169,16 +929,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 2.0,
-      "valor": 295.32
-    },
-    {
-      "codigo": "244",
-      "produto": "PERFUMAR CAPIM LIMAO BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 295.32,
-      "valor": 2.0
+      "valor": 295.32,
+      "custo_compra": 115.28,
+      "lucro_bruto": 180.04,
+      "percentual_lucro": 156.1763
     },
     {
       "codigo": "37",
@@ -1187,16 +941,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 189.92
-    },
-    {
-      "codigo": "37",
-      "produto": "PERFUMAR LIRIOS DO CAMPO BB 5 L REND 50  L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 189.92,
-      "valor": 2.0
+      "valor": 189.92,
+      "custo_compra": 115.36,
+      "lucro_bruto": 74.56,
+      "percentual_lucro": 64.6325
     },
     {
       "codigo": "41",
@@ -1205,16 +953,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 10.0,
-      "valor": 736.3
-    },
-    {
-      "codigo": "41",
-      "produto": "PISOFLOR BB 5L REND 100L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 736.3,
-      "valor": 10.0
+      "valor": 736.3,
+      "custo_compra": 350.8,
+      "lucro_bruto": 385.5,
+      "percentual_lucro": 109.8917
     },
     {
       "codigo": "154",
@@ -1223,16 +965,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LABORATORIO CEDRO LTDA",
       "quantidade": 4.0,
-      "valor": 613.44
-    },
-    {
-      "codigo": "154",
-      "produto": "PLASTILUX BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 613.44,
-      "valor": 4.0
+      "valor": 613.44,
+      "custo_compra": 293.64,
+      "lucro_bruto": 319.8,
+      "percentual_lucro": 108.9089
     },
     {
       "codigo": "507",
@@ -1241,16 +977,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 12.0,
-      "valor": 176.88
-    },
-    {
-      "codigo": "507",
-      "produto": "PULVERIZADOR 1LT SPRAY PERFECT",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 176.88,
-      "valor": 12.0
+      "valor": 176.88,
+      "custo_compra": 104.04,
+      "lucro_bruto": 72.84,
+      "percentual_lucro": 70.0115
     },
     {
       "codigo": "508",
@@ -1259,16 +989,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 18.0,
-      "valor": 230.11
-    },
-    {
-      "codigo": "508",
-      "produto": "PULVERIZADOR 500ML SPRAY PERFECT",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 230.11,
-      "valor": 18.0
+      "valor": 230.11,
+      "custo_compra": 135.36,
+      "lucro_bruto": 94.75,
+      "percentual_lucro": 69.9985
     },
     {
       "codigo": "532",
@@ -1277,16 +1001,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 15.0,
-      "valor": 552.9
-    },
-    {
-      "codigo": "532",
-      "produto": "REFIL 40 CM MOP PÓ ALGODÃO NATURAL",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 552.9,
-      "valor": 15.0
+      "valor": 552.9,
+      "custo_compra": 394.95,
+      "lucro_bruto": 157.95,
+      "percentual_lucro": 39.9924
     },
     {
       "codigo": "224",
@@ -1295,16 +1013,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 1.0,
-      "valor": 235.0
-    },
-    {
-      "codigo": "224",
-      "produto": "REMOCRIL POWER BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "L L FROTA E CIA LTDA - ME",
-      "quantidade": 4.0,
-      "valor": 658.2
+      "valor": 235.0,
+      "custo_compra": 105.48,
+      "lucro_bruto": 129.52,
+      "percentual_lucro": 122.7911
     },
     {
       "codigo": "224",
@@ -1313,7 +1025,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 855.0
+      "valor": 855.0,
+      "custo_compra": 316.44,
+      "lucro_bruto": 538.56,
+      "percentual_lucro": 170.1934
     },
     {
       "codigo": "215",
@@ -1322,7 +1037,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 3.0,
-      "valor": 507.6
+      "valor": 507.6,
+      "custo_compra": 220.41,
+      "lucro_bruto": 287.19,
+      "percentual_lucro": 130.2981
     },
     {
       "codigo": "215",
@@ -1331,16 +1049,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 1.0,
-      "valor": 153.0
-    },
-    {
-      "codigo": "215",
-      "produto": "REMOX  BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
-      "quantidade": 12.0,
-      "valor": 916.56
+      "valor": 153.0,
+      "custo_compra": 73.47,
+      "lucro_bruto": 79.53,
+      "percentual_lucro": 108.2483
     },
     {
       "codigo": "215",
@@ -1349,7 +1061,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 2.0,
-      "valor": 376.29
+      "valor": 376.29,
+      "custo_compra": 146.94,
+      "lucro_bruto": 229.35,
+      "percentual_lucro": 156.0841
     },
     {
       "codigo": "141",
@@ -1358,16 +1073,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 7.0,
-      "valor": 605.85
-    },
-    {
-      "codigo": "141",
-      "produto": "RODO TWISTER SEM CABO BRALIMPIA",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 605.85,
-      "valor": 7.0
+      "valor": 605.85,
+      "custo_compra": 441.77,
+      "lucro_bruto": 164.08,
+      "percentual_lucro": 37.1415
     },
     {
       "codigo": "826",
@@ -1376,16 +1085,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 4.0,
-      "valor": 41.44
-    },
-    {
-      "codigo": "826",
-      "produto": "SABAO EM BARRA NUTRILAR 200G",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 41.44,
-      "valor": 4.0
+      "valor": 41.44,
+      "custo_compra": 29.6,
+      "lucro_bruto": 11.84,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "636",
@@ -1394,16 +1097,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 6.0,
-      "valor": 104.16
-    },
-    {
-      "codigo": "636",
-      "produto": "SABÃO EM BARRA YPÊ",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 104.16,
-      "valor": 6.0
+      "valor": 104.16,
+      "custo_compra": 74.4,
+      "lucro_bruto": 29.76,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "849",
@@ -1412,16 +1109,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 70.0,
-      "valor": 315.0
-    },
-    {
-      "codigo": "849",
-      "produto": "SABAO EM PO ALA FLOR DE LIS 400G",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 315.0,
-      "valor": 70.0
+      "valor": 315.0,
+      "custo_compra": 207.9,
+      "lucro_bruto": 107.1,
+      "percentual_lucro": 51.5152
     },
     {
       "codigo": "869",
@@ -1430,16 +1121,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 5.0,
-      "valor": 38.43
-    },
-    {
-      "codigo": "869",
-      "produto": "SABAO EM PO YPE 400G",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 38.43,
-      "valor": 5.0
+      "valor": 38.43,
+      "custo_compra": 27.45,
+      "lucro_bruto": 10.98,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "51",
@@ -1448,7 +1133,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 3.0,
-      "valor": 401.19
+      "valor": 401.19,
+      "custo_compra": 156.72,
+      "lucro_bruto": 244.47,
+      "percentual_lucro": 155.9916
     },
     {
       "codigo": "52",
@@ -1457,16 +1145,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BOX COMERCIO DE VEICULOS LTDA",
       "quantidade": 2.0,
-      "valor": 282.72
-    },
-    {
-      "codigo": "52",
-      "produto": "SABONETE DESENGRAXANTE MICRO ESFERA BB 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 282.72,
-      "valor": 2.0
+      "valor": 282.72,
+      "custo_compra": 160.74,
+      "lucro_bruto": 121.98,
+      "percentual_lucro": 75.8865
     },
     {
       "codigo": "345",
@@ -1475,25 +1157,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 90.47
-    },
-    {
-      "codigo": "345",
-      "produto": "SABONETE PRAXI ESPUMA  ANDIROBA 5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "MEGA SERVICOS E ALIMENTOS LTDA",
-      "quantidade": 12.0,
-      "valor": 699.24
-    },
-    {
-      "codigo": "344",
-      "produto": "SABONETE SUAVITEX BAC SP BOL 500ML",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
-      "quantidade": 42.0,
-      "valor": 861.42
+      "valor": 90.47,
+      "custo_compra": 37.01,
+      "lucro_bruto": 53.46,
+      "percentual_lucro": 144.4474
     },
     {
       "codigo": "60",
@@ -1502,16 +1169,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 10.0,
-      "valor": 896.0
-    },
-    {
-      "codigo": "60",
-      "produto": "SABONETE SUAVITEX PESSEGO BB 5 L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 896.0,
-      "valor": 10.0
+      "valor": 896.0,
+      "custo_compra": 350.0,
+      "lucro_bruto": 546.0,
+      "percentual_lucro": 156.0
     },
     {
       "codigo": "467",
@@ -1520,16 +1181,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 2.0,
-      "valor": 108.36
-    },
-    {
-      "codigo": "467",
-      "produto": "SABONETEIRA 600ML BRANCA C/ RESERVATORIO ESPUMA",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 108.36,
-      "valor": 2.0
+      "valor": 108.36,
+      "custo_compra": 54.18,
+      "lucro_bruto": 54.18,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "772",
@@ -1538,16 +1193,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 2.0,
-      "valor": 108.36
-    },
-    {
-      "codigo": "772",
-      "produto": "SABONETEIRA 600ML BRANCA C/ RESERVATORIO LIQ",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 108.36,
-      "valor": 2.0
+      "valor": 108.36,
+      "custo_compra": 0.0,
+      "lucro_bruto": 108.36,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "135",
@@ -1556,16 +1205,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BOX COMERCIO DE VEICULOS LTDA",
       "quantidade": 3.0,
-      "valor": 43.65
-    },
-    {
-      "codigo": "135",
-      "produto": "SACO P/ LIXO 55X55X0,25 - PRETO 40LT BETA PLASTIC",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 43.65,
-      "valor": 3.0
+      "valor": 43.65,
+      "custo_compra": 29.1,
+      "lucro_bruto": 14.55,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "134",
@@ -1574,16 +1217,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 40.0,
-      "valor": 810.0
-    },
-    {
-      "codigo": "134",
-      "produto": "SACO P/ LIXO 60X70X0,025 - PRETO 60LT BETA PLASTIC",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 810.0,
-      "valor": 40.0
+      "valor": 810.0,
+      "custo_compra": 540.0,
+      "lucro_bruto": 270.0,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "236",
@@ -1592,16 +1229,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 1.0,
-      "valor": 38.7
-    },
-    {
-      "codigo": "236",
-      "produto": "SACO P/ LIXO 75X90X0,03 - PRETO 100LT BETA PLASTIC",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 40.0,
-      "valor": 50.0
+      "valor": 38.7,
+      "custo_compra": 25.8,
+      "lucro_bruto": 12.9,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "654",
@@ -1610,16 +1241,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 2.0,
-      "valor": 187.66
-    },
-    {
-      "codigo": "654",
-      "produto": "SACO P/ LIXO 90X100X0,05 - PRETO 200LT BETAPLASTIC",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 187.66,
-      "valor": 2.0
+      "valor": 187.66,
+      "custo_compra": 125.1,
+      "lucro_bruto": 62.56,
+      "percentual_lucro": 50.008
     },
     {
       "codigo": "881",
@@ -1628,16 +1253,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LGR IND.COM.DE PR.DE LIMP.LTDA",
       "quantidade": 6.0,
-      "valor": 742.98
-    },
-    {
-      "codigo": "881",
-      "produto": "SANICLOR BB20L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 742.98,
-      "valor": 6.0
+      "valor": 742.98,
+      "custo_compra": 0.0,
+      "lucro_bruto": 742.98,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "191",
@@ -1646,7 +1265,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 668.0
+      "valor": 668.0,
+      "custo_compra": 309.3,
+      "lucro_bruto": 358.7,
+      "percentual_lucro": 115.9715
     },
     {
       "codigo": "191",
@@ -1655,7 +1277,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 3.0,
-      "valor": 210.72
+      "valor": 210.72,
+      "custo_compra": 92.79,
+      "lucro_bruto": 117.93,
+      "percentual_lucro": 127.0934
     },
     {
       "codigo": "191",
@@ -1664,7 +1289,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 8.0,
-      "valor": 489.36
+      "valor": 489.36,
+      "custo_compra": 247.44,
+      "lucro_bruto": 241.92,
+      "percentual_lucro": 97.7692
     },
     {
       "codigo": "191",
@@ -1673,7 +1301,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 140.48
+      "valor": 140.48,
+      "custo_compra": 61.86,
+      "lucro_bruto": 78.62,
+      "percentual_lucro": 127.0934
     },
     {
       "codigo": "191",
@@ -1682,16 +1313,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 3.0,
-      "valor": 208.86
-    },
-    {
-      "codigo": "763",
-      "produto": "SANICLOR DT BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "AGILE CORP SERVICOS ESPECIALIZADOS LTDA",
-      "quantidade": 20.0,
-      "valor": 20.5635
+      "valor": 208.86,
+      "custo_compra": 92.79,
+      "lucro_bruto": 116.07,
+      "percentual_lucro": 125.0889
     },
     {
       "codigo": "23",
@@ -1700,16 +1325,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 411.09
-    },
-    {
-      "codigo": "23",
-      "produto": "SANILUX BB 5 L REND 50L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 411.09,
-      "valor": 3.0
+      "valor": 411.09,
+      "custo_compra": 169.74,
+      "lucro_bruto": 241.35,
+      "percentual_lucro": 142.1881
     },
     {
       "codigo": "474",
@@ -1718,16 +1337,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 340.0
-    },
-    {
-      "codigo": "474",
-      "produto": "SANIMAX BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 340.0,
-      "valor": 1.0
+      "valor": 340.0,
+      "custo_compra": 166.57,
+      "lucro_bruto": 173.43,
+      "percentual_lucro": 104.1184
     },
     {
       "codigo": "334",
@@ -1736,25 +1349,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 555.27
-    },
-    {
-      "codigo": "334",
-      "produto": "SEC MAQ PRO BB5L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 555.27,
-      "valor": 3.0
-    },
-    {
-      "codigo": "222",
-      "produto": "SPRAY SANITIZANTE BOLSA 500ML",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "ELO CONTACT CENTER SERVICOS LTDA",
-      "quantidade": 48.0,
-      "valor": 750.24
+      "valor": 555.27,
+      "custo_compra": 207.21,
+      "lucro_bruto": 348.06,
+      "percentual_lucro": 167.9745
     },
     {
       "codigo": "882",
@@ -1763,16 +1361,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LGR IND.COM.DE PR.DE LIMP.LTDA",
       "quantidade": 12.0,
-      "valor": 712.68
-    },
-    {
-      "codigo": "882",
-      "produto": "SUAVITEX HIDR ANDIROBA BB 05L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 712.68,
-      "valor": 12.0
+      "valor": 712.68,
+      "custo_compra": 0.0,
+      "lucro_bruto": 712.68,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "297",
@@ -1781,7 +1373,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 5.0,
-      "valor": 95.14
+      "valor": 95.14,
+      "custo_compra": 47.57,
+      "lucro_bruto": 47.57,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "297",
@@ -1790,7 +1385,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 1.0,
-      "valor": 19.14
+      "valor": 19.14,
+      "custo_compra": 9.57,
+      "lucro_bruto": 9.57,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "297",
@@ -1799,25 +1397,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 7.0,
-      "valor": 130.72
-    },
-    {
-      "codigo": "297",
-      "produto": "SUPORTE LT S/ CABO C/ PINÇA P/ FIBRA (NOBRE)",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 245.0,
-      "valor": 13.0
-    },
-    {
-      "codigo": "861",
-      "produto": "SUPORTE METALICO P/1 LIXEIRA PAPELEIRA 50L ETM501",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 8.0,
-      "valor": 40.0
+      "valor": 130.72,
+      "custo_compra": 66.01,
+      "lucro_bruto": 64.71,
+      "percentual_lucro": 98.0306
     },
     {
       "codigo": "356",
@@ -1826,16 +1409,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 5.0,
-      "valor": 199.0
-    },
-    {
-      "codigo": "356",
-      "produto": "SUPORTE P/ MOP PÓ 60CM",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 199.0,
-      "valor": 5.0
+      "valor": 199.0,
+      "custo_compra": 99.5,
+      "lucro_bruto": 99.5,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "205",
@@ -1844,16 +1421,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 41.86
-    },
-    {
-      "codigo": "205",
-      "produto": "VASCULHADOR FIBRAS DE NYLON",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 41.86,
-      "valor": 1.0
+      "valor": 41.86,
+      "custo_compra": 24.5,
+      "lucro_bruto": 17.36,
+      "percentual_lucro": 70.8571
     },
     {
       "codigo": "460",
@@ -1862,16 +1433,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 30.0,
-      "valor": 315.62
-    },
-    {
-      "codigo": "460",
-      "produto": "VASSOURA PIAÇAVA RAINHA MAX",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 315.62,
-      "valor": 30.0
+      "valor": 315.62,
+      "custo_compra": 249.9,
+      "lucro_bruto": 65.72,
+      "percentual_lucro": 26.2985
     },
     {
       "codigo": "40",
@@ -1880,7 +1445,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 4.0,
-      "valor": 284.72
+      "valor": 284.72,
+      "custo_compra": 131.0,
+      "lucro_bruto": 153.72,
+      "percentual_lucro": 117.3435
     },
     {
       "codigo": "40",
@@ -1889,7 +1457,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 237.39
+      "valor": 237.39,
+      "custo_compra": 98.25,
+      "lucro_bruto": 139.14,
+      "percentual_lucro": 141.6183
     },
     {
       "codigo": "40",
@@ -1898,16 +1469,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LABORATORIO CEDRO LTDA",
       "quantidade": 4.0,
-      "valor": 277.04
-    },
-    {
-      "codigo": "40",
-      "produto": "VIDROLUX BB 5L REND 25L",
-      "empresa": "HIGIPLAS",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 799.15,
-      "valor": 11.0
+      "valor": 277.04,
+      "custo_compra": 131.0,
+      "lucro_bruto": 146.04,
+      "percentual_lucro": 111.4809
     },
     {
       "codigo": "231",
@@ -1916,7 +1481,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BOX COMERCIO DE VEICULOS LTDA",
       "quantidade": 12.0,
-      "valor": 25.2
+      "valor": 25.2,
+      "custo_compra": 28.2,
+      "lucro_bruto": -3.0,
+      "percentual_lucro": -10.6383
     },
     {
       "codigo": "231",
@@ -1925,16 +1493,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 160.0,
-      "valor": 526.4
-    },
-    {
-      "codigo": "231",
-      "produto": "ÁGUA SANITÁRIA  CLORITO 1L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 551.6,
-      "valor": 172.0
+      "valor": 526.4,
+      "custo_compra": 376.0,
+      "lucro_bruto": 150.4,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "3",
@@ -1943,7 +1505,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 16.0,
-      "valor": 484.0
+      "valor": 484.0,
+      "custo_compra": 292.8,
+      "lucro_bruto": 191.2,
+      "percentual_lucro": 65.3005
     },
     {
       "codigo": "529",
@@ -1952,16 +1517,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 8.0,
-      "valor": 362.19
-    },
-    {
-      "codigo": "529",
-      "produto": "ARMAÇAO PARA MOP PO 40 CM",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 362.19,
-      "valor": 8.0
+      "valor": 362.19,
+      "custo_compra": 294.0,
+      "lucro_bruto": 68.19,
+      "percentual_lucro": 23.1939
     },
     {
       "codigo": "530",
@@ -1970,16 +1529,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 118.8
-    },
-    {
-      "codigo": "530",
-      "produto": "ARMAÇAO PARA MOP PO 60 CM",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 118.8,
-      "valor": 3.0
+      "valor": 118.8,
+      "custo_compra": 115.5,
+      "lucro_bruto": 3.3,
+      "percentual_lucro": 2.8571
     },
     {
       "codigo": "296",
@@ -1988,16 +1541,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 5.0,
-      "valor": 126.0
-    },
-    {
-      "codigo": "296",
-      "produto": "CABO DE ALUMINIO 22X1,40M (NOBRE)",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 126.0,
-      "valor": 5.0
+      "valor": 126.0,
+      "custo_compra": 63.0,
+      "lucro_bruto": 63.0,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "775",
@@ -2006,7 +1553,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 9.0,
-      "valor": 239.64
+      "valor": 239.64,
+      "custo_compra": 123.84,
+      "lucro_bruto": 115.8,
+      "percentual_lucro": 93.5078
     },
     {
       "codigo": "775",
@@ -2015,7 +1565,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 1.0,
-      "valor": 27.52
+      "valor": 27.52,
+      "custo_compra": 13.76,
+      "lucro_bruto": 13.76,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "775",
@@ -2024,16 +1577,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 2.0,
-      "valor": 50.4
-    },
-    {
-      "codigo": "775",
-      "produto": "CABO DE ALUMINIO 22X1,40M C/ PONTEIRA (NOBRE)",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 317.56,
-      "valor": 12.0
+      "valor": 50.4,
+      "custo_compra": 27.52,
+      "lucro_bruto": 22.88,
+      "percentual_lucro": 83.1395
     },
     {
       "codigo": "543",
@@ -2042,16 +1589,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 48.3
-    },
-    {
-      "codigo": "543",
-      "produto": "CABO EXTENSOR CHAPA  AÇO 3 M BETANNI",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 48.3,
-      "valor": 1.0
+      "valor": 48.3,
+      "custo_compra": 29.9,
+      "lucro_bruto": 18.4,
+      "percentual_lucro": 61.5385
     },
     {
       "codigo": "6",
@@ -2060,16 +1601,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 1.0,
-      "valor": 240.0
-    },
-    {
-      "codigo": "6",
-      "produto": "CERACRIL BB 5 L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "L L FROTA E CIA LTDA - ME",
-      "quantidade": 4.0,
-      "valor": 717.66
+      "valor": 240.0,
+      "custo_compra": 115.01,
+      "lucro_bruto": 124.99,
+      "percentual_lucro": 108.6775
     },
     {
       "codigo": "6",
@@ -2078,7 +1613,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 888.27
+      "valor": 888.27,
+      "custo_compra": 345.03,
+      "lucro_bruto": 543.24,
+      "percentual_lucro": 157.4472
     },
     {
       "codigo": "699",
@@ -2087,16 +1625,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 25.0,
-      "valor": 125.75
-    },
-    {
-      "codigo": "699",
-      "produto": "COPO KEROCOPO 100X180",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 125.75,
-      "valor": 25.0
+      "valor": 125.75,
+      "custo_compra": 89.75,
+      "lucro_bruto": 36.0,
+      "percentual_lucro": 40.1114
     },
     {
       "codigo": "8",
@@ -2105,16 +1637,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 5.0,
-      "valor": 957.05
-    },
-    {
-      "codigo": "8",
-      "produto": "DESINCROST BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "EXPRESSO SALADA LTDA -ME",
-      "quantidade": 10.0,
-      "valor": 134.37
+      "valor": 957.05,
+      "custo_compra": 408.35,
+      "lucro_bruto": 548.7,
+      "percentual_lucro": 134.37
     },
     {
       "codigo": "8",
@@ -2123,7 +1649,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 4.0,
-      "valor": 704.0
+      "valor": 704.0,
+      "custo_compra": 326.68,
+      "lucro_bruto": 377.32,
+      "percentual_lucro": 115.5014
     },
     {
       "codigo": "8",
@@ -2132,7 +1661,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 623.36
+      "valor": 623.36,
+      "custo_compra": 245.01,
+      "lucro_bruto": 378.35,
+      "percentual_lucro": 154.4223
     },
     {
       "codigo": "44",
@@ -2141,16 +1673,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 95.05
-    },
-    {
-      "codigo": "44",
-      "produto": "DESINFETANTE SANIFLOR BREEZE BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 95.05,
-      "valor": 1.0
+      "valor": 95.05,
+      "custo_compra": 37.13,
+      "lucro_bruto": 57.92,
+      "percentual_lucro": 155.9925
     },
     {
       "codigo": "138",
@@ -2159,7 +1685,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 2.0,
-      "valor": 226.02
+      "valor": 226.02,
+      "custo_compra": 110.34,
+      "lucro_bruto": 115.68,
+      "percentual_lucro": 104.8396
     },
     {
       "codigo": "138",
@@ -2168,7 +1697,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 3.0,
-      "valor": 423.71
+      "valor": 423.71,
+      "custo_compra": 165.51,
+      "lucro_bruto": 258.2,
+      "percentual_lucro": 156.0027
     },
     {
       "codigo": "138",
@@ -2177,16 +1709,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 6.0,
-      "valor": 760.02
-    },
-    {
-      "codigo": "48",
-      "produto": "DESINFETANTE SANIFLOR MAX SOFT BB 5L REND 250L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
-      "quantidade": 10.0,
-      "valor": 578.4
+      "valor": 760.02,
+      "custo_compra": 331.02,
+      "lucro_bruto": 429.0,
+      "percentual_lucro": 129.5994
     },
     {
       "codigo": "48",
@@ -2195,7 +1721,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 267.24
+      "valor": 267.24,
+      "custo_compra": 110.34,
+      "lucro_bruto": 156.9,
+      "percentual_lucro": 142.1968
     },
     {
       "codigo": "48",
@@ -2204,16 +1733,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "IGREJA PRESBITERIANA INDEPENDENTE EM VICENTE FIALHO",
       "quantidade": 1.0,
-      "valor": 135.39
-    },
-    {
-      "codigo": "48",
-      "produto": "DESINFETANTE SANIFLOR MAX SOFT BB 5L REND 250L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "L L FROTA E CIA LTDA - ME",
-      "quantidade": 9.0,
-      "valor": 643.5
+      "valor": 135.39,
+      "custo_compra": 55.17,
+      "lucro_bruto": 80.22,
+      "percentual_lucro": 145.4051
     },
     {
       "codigo": "48",
@@ -2222,16 +1745,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 6.0,
-      "valor": 847.42
-    },
-    {
-      "codigo": "43",
-      "produto": "DETERGENTE CLORADO BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
-      "quantidade": 11.0,
-      "valor": 920.81
+      "valor": 847.42,
+      "custo_compra": 331.02,
+      "lucro_bruto": 516.4,
+      "percentual_lucro": 156.0027
     },
     {
       "codigo": "43",
@@ -2240,7 +1757,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 3.0,
-      "valor": 447.36
+      "valor": 447.36,
+      "custo_compra": 159.63,
+      "lucro_bruto": 287.73,
+      "percentual_lucro": 180.2481
     },
     {
       "codigo": "43",
@@ -2249,7 +1769,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 7.0,
-      "valor": 958.44
+      "valor": 958.44,
+      "custo_compra": 372.47,
+      "lucro_bruto": 585.97,
+      "percentual_lucro": 157.3201
     },
     {
       "codigo": "249",
@@ -2258,16 +1781,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 60.0,
-      "valor": 162.12
-    },
-    {
-      "codigo": "249",
-      "produto": "DETERGENTE NEUTRO FC 500ML",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 162.12,
-      "valor": 60.0
+      "valor": 162.12,
+      "custo_compra": 115.8,
+      "lucro_bruto": 46.32,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "884",
@@ -2276,16 +1793,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 90.76
-    },
-    {
-      "codigo": "884",
-      "produto": "DISCO LIMPADOR VERDE 350M",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 90.76,
-      "valor": 3.0
+      "valor": 90.76,
+      "custo_compra": 64.83,
+      "lucro_bruto": 25.93,
+      "percentual_lucro": 39.9969
     },
     {
       "codigo": "883",
@@ -2294,16 +1805,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 191.52
-    },
-    {
-      "codigo": "883",
-      "produto": "DISCO LIMPADOR VERDE 510MM",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 191.52,
-      "valor": 3.0
+      "valor": 191.52,
+      "custo_compra": 136.8,
+      "lucro_bruto": 54.72,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "886",
@@ -2312,16 +1817,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 29.53
-    },
-    {
-      "codigo": "886",
-      "produto": "DISCO RESTAURADOR VERMELHO 350M",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 29.53,
-      "valor": 1.0
+      "valor": 29.53,
+      "custo_compra": 21.09,
+      "lucro_bruto": 8.44,
+      "percentual_lucro": 40.019
     },
     {
       "codigo": "885",
@@ -2330,16 +1829,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 61.18
-    },
-    {
-      "codigo": "885",
-      "produto": "DISCO RESTAURADOR VERMELHO 510M",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 61.18,
-      "valor": 1.0
+      "valor": 61.18,
+      "custo_compra": 43.7,
+      "lucro_bruto": 17.48,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "777",
@@ -2348,16 +1841,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 88.2
-    },
-    {
-      "codigo": "777",
-      "produto": "DISPENSER COPO AGUA  BRANCO",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 88.2,
-      "valor": 1.0
+      "valor": 88.2,
+      "custo_compra": 63.0,
+      "lucro_bruto": 25.2,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "338",
@@ -2366,16 +1853,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 33.6
-    },
-    {
-      "codigo": "338",
-      "produto": "DISPENSER COPO DE CAFÉ NOBRE",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 33.6,
-      "valor": 1.0
+      "valor": 33.6,
+      "custo_compra": 24.0,
+      "lucro_bruto": 9.6,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "286",
@@ -2384,16 +1865,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 111.6
-    },
-    {
-      "codigo": "286",
-      "produto": "DISPENSER P/ TOALHA  (NOBRE)",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 111.6,
-      "valor": 3.0
+      "valor": 111.6,
+      "custo_compra": 55.8,
+      "lucro_bruto": 55.8,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "102",
@@ -2402,16 +1877,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 75.0,
-      "valor": 72.45
-    },
-    {
-      "codigo": "102",
-      "produto": "ESPONJA DUPLA FACE",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 72.45,
-      "valor": 75.0
+      "valor": 72.45,
+      "custo_compra": 51.75,
+      "lucro_bruto": 20.7,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "704",
@@ -2420,16 +1889,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 25.6
-    },
-    {
-      "codigo": "704",
-      "produto": "FIBRA DE LIMPEZA GERAL BETTANIN",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 25.6,
-      "valor": 10.0
+      "valor": 25.6,
+      "custo_compra": 12.8,
+      "lucro_bruto": 12.8,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "298",
@@ -2438,7 +1901,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AÇOMETAL ADO MANUTENÇÃO INDUSTRIAL LTDA",
       "quantidade": 20.0,
-      "valor": 36.4
+      "valor": 36.4,
+      "custo_compra": 21.4,
+      "lucro_bruto": 15.0,
+      "percentual_lucro": 70.0935
     },
     {
       "codigo": "298",
@@ -2447,7 +1913,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 20.0,
-      "valor": 35.5
+      "valor": 35.5,
+      "custo_compra": 21.4,
+      "lucro_bruto": 14.1,
+      "percentual_lucro": 65.8879
     },
     {
       "codigo": "298",
@@ -2456,16 +1925,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 10.0,
-      "valor": 23.0
-    },
-    {
-      "codigo": "298",
-      "produto": "FIBRA DE LIMPEZA LEVE BETTANIN",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 94.9,
-      "valor": 50.0
+      "valor": 23.0,
+      "custo_compra": 10.7,
+      "lucro_bruto": 12.3,
+      "percentual_lucro": 114.9533
     },
     {
       "codigo": "103",
@@ -2474,7 +1937,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 31.2
+      "valor": 31.2,
+      "custo_compra": 15.6,
+      "lucro_bruto": 15.6,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "103",
@@ -2483,7 +1949,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 10.0,
-      "valor": 31.2
+      "valor": 31.2,
+      "custo_compra": 15.6,
+      "lucro_bruto": 15.6,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "103",
@@ -2492,16 +1961,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 15.0,
-      "valor": 46.8
-    },
-    {
-      "codigo": "103",
-      "produto": "FIBRA DE LIMPEZA PESADA BETTANIN",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 109.2,
-      "valor": 35.0
+      "valor": 46.8,
+      "custo_compra": 23.4,
+      "lucro_bruto": 23.4,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "576",
@@ -2510,7 +1973,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 28.6
+      "valor": 28.6,
+      "custo_compra": 14.3,
+      "lucro_bruto": 14.3,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "576",
@@ -2519,16 +1985,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 20.0,
-      "valor": 59.6
-    },
-    {
-      "codigo": "576",
-      "produto": "FIBRA LIMP. BETTAÇO 1X20X10",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 88.2,
-      "valor": 30.0
+      "valor": 59.6,
+      "custo_compra": 28.6,
+      "lucro_bruto": 31.0,
+      "percentual_lucro": 108.3916
     },
     {
       "codigo": "369",
@@ -2537,25 +1997,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 10.0,
-      "valor": 43.0
-    },
-    {
-      "codigo": "369",
-      "produto": "FIBRA PARA LIMPEZA LEVE AZUL EMB C/3",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 43.0,
-      "valor": 10.0
-    },
-    {
-      "codigo": "10",
-      "produto": "GEL SANITIZANTE BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
-      "quantidade": 12.0,
-      "valor": 909.0
+      "valor": 43.0,
+      "custo_compra": 30.7,
+      "lucro_bruto": 12.3,
+      "percentual_lucro": 40.0651
     },
     {
       "codigo": "10",
@@ -2564,7 +2009,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELO CONTACT CENTER SERVICOS LTDA",
       "quantidade": 1.0,
-      "valor": 128.11
+      "valor": 128.11,
+      "custo_compra": 61.77,
+      "lucro_bruto": 66.34,
+      "percentual_lucro": 107.3984
     },
     {
       "codigo": "796",
@@ -2573,16 +2021,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 247.26
-    },
-    {
-      "codigo": "796",
-      "produto": "HIGISEC BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 247.26,
-      "valor": 2.0
+      "valor": 247.26,
+      "custo_compra": 93.92,
+      "lucro_bruto": 153.34,
+      "percentual_lucro": 163.2666
     },
     {
       "codigo": "313",
@@ -2591,16 +2033,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 20.0,
-      "valor": 32.0
-    },
-    {
-      "codigo": "313",
-      "produto": "LÃ DE AÇO ASSOLAN",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 32.0,
-      "valor": 20.0
+      "valor": 32.0,
+      "custo_compra": 22.8,
+      "lucro_bruto": 9.2,
+      "percentual_lucro": 40.3509
     },
     {
       "codigo": "12",
@@ -2609,16 +2045,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AÇOMETAL ADO MANUTENÇÃO INDUSTRIAL LTDA",
       "quantidade": 2.0,
-      "valor": 427.06
-    },
-    {
-      "codigo": "12",
-      "produto": "LAVESSOL ORANGE BB 5 L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 427.06,
-      "valor": 2.0
+      "valor": 427.06,
+      "custo_compra": 166.82,
+      "lucro_bruto": 260.24,
+      "percentual_lucro": 156.0005
     },
     {
       "codigo": "391",
@@ -2627,16 +2057,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 2.0,
-      "valor": 353.0
-    },
-    {
-      "codigo": "391",
-      "produto": "LAVPRO BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 353.0,
-      "valor": 2.0
+      "valor": 353.0,
+      "custo_compra": 143.98,
+      "lucro_bruto": 209.02,
+      "percentual_lucro": 145.1729
     },
     {
       "codigo": "221",
@@ -2645,7 +2069,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "HARMONIC DAY CLINIC LTDA",
       "quantidade": 1.0,
-      "valor": 159.46
+      "valor": 159.46,
+      "custo_compra": 62.29,
+      "lucro_bruto": 97.17,
+      "percentual_lucro": 155.9961
     },
     {
       "codigo": "17",
@@ -2654,25 +2081,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 7.0,
-      "valor": 593.18
-    },
-    {
-      "codigo": "518",
-      "produto": "LIMPAX DX BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
-      "quantidade": 14.0,
-      "valor": 679.42
-    },
-    {
-      "codigo": "518",
-      "produto": "LIMPAX DX BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "EXPRESSO SALADA LTDA -ME",
-      "quantidade": 17.0,
-      "valor": 825.01
+      "valor": 593.18,
+      "custo_compra": 220.22,
+      "lucro_bruto": 372.96,
+      "percentual_lucro": 169.3579
     },
     {
       "codigo": "518",
@@ -2681,25 +2093,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 9.0,
-      "valor": 889.92
-    },
-    {
-      "codigo": "859",
-      "produto": "LIXEIRA PAPELEIRA 50L PLAST AZUL LS5PAZ BRALIMPA",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 4.0,
-      "valor": 40.0
-    },
-    {
-      "codigo": "860",
-      "produto": "LIXEIRA PAPELEIRA 50L PLAST CINZA LS5PCZ BRALIM",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 4.0,
-      "valor": 40.0
+      "valor": 889.92,
+      "custo_compra": 375.21,
+      "lucro_bruto": 514.71,
+      "percentual_lucro": 137.1792
     },
     {
       "codigo": "333",
@@ -2708,7 +2105,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 5.0,
-      "valor": 898.75
+      "valor": 898.75,
+      "custo_compra": 411.15,
+      "lucro_bruto": 487.6,
+      "percentual_lucro": 118.5942
     },
     {
       "codigo": "333",
@@ -2717,7 +2117,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 185.09
+      "valor": 185.09,
+      "custo_compra": 82.23,
+      "lucro_bruto": 102.86,
+      "percentual_lucro": 125.0882
     },
     {
       "codigo": "827",
@@ -2726,16 +2129,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 2.0,
-      "valor": 370.18
-    },
-    {
-      "codigo": "827",
-      "produto": "LOUÇA MAQ PRO BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 370.18,
-      "valor": 2.0
+      "valor": 370.18,
+      "custo_compra": 0.0,
+      "lucro_bruto": 370.18,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "856",
@@ -2744,16 +2141,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 15.0,
-      "valor": 136.5
-    },
-    {
-      "codigo": "856",
-      "produto": "LUSTRA MOVEIS PEROBA 200ML",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 136.5,
-      "valor": 15.0
+      "valor": 136.5,
+      "custo_compra": 119.85,
+      "lucro_bruto": 16.65,
+      "percentual_lucro": 13.8924
     },
     {
       "codigo": "848",
@@ -2762,16 +2153,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 30.0,
-      "valor": 273.0
-    },
-    {
-      "codigo": "848",
-      "produto": "LUSTRA MOVEIS YPE 200ML",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 273.0,
-      "valor": 30.0
+      "valor": 273.0,
+      "custo_compra": 0.0,
+      "lucro_bruto": 273.0,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "768",
@@ -2780,16 +2165,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 3.0,
-      "valor": 77.4
-    },
-    {
-      "codigo": "768",
-      "produto": "LUVA NITRILICA  CANO LONGO SLIM G",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 77.4,
-      "valor": 3.0
+      "valor": 77.4,
+      "custo_compra": 39.27,
+      "lucro_bruto": 38.13,
+      "percentual_lucro": 97.097
     },
     {
       "codigo": "289",
@@ -2798,16 +2177,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 4.0,
-      "valor": 65.32
-    },
-    {
-      "codigo": "289",
-      "produto": "MASCARA DESC. COM ELASTICO PCT C/50 UND (NOBRE)",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 65.32,
-      "valor": 4.0
+      "valor": 65.32,
+      "custo_compra": 30.68,
+      "lucro_bruto": 34.64,
+      "percentual_lucro": 112.9074
     },
     {
       "codigo": "62",
@@ -2816,16 +2189,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "HARMONIC DAY CLINIC LTDA",
       "quantidade": 1.0,
-      "valor": 293.63
-    },
-    {
-      "codigo": "62",
-      "produto": "MULTIBAC BP DOS 1L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 293.63,
-      "valor": 1.0
+      "valor": 293.63,
+      "custo_compra": 114.7,
+      "lucro_bruto": 178.93,
+      "percentual_lucro": 155.9983
     },
     {
       "codigo": "27",
@@ -2834,16 +2201,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BITAL AMBIENTAL LTDA",
       "quantidade": 2.0,
-      "valor": 748.0
-    },
-    {
-      "codigo": "27",
-      "produto": "MULTILUX BAC BREEZE BB 5L REND 750",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
-      "quantidade": 5.0,
-      "valor": 216.0693
+      "valor": 748.0,
+      "custo_compra": 325.34,
+      "lucro_bruto": 422.66,
+      "percentual_lucro": 129.9133
     },
     {
       "codigo": "780",
@@ -2852,25 +2213,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FAST SERVICOS LTDA",
       "quantidade": 2.0,
-      "valor": 660.3
-    },
-    {
-      "codigo": "780",
-      "produto": "MULTILUX BAC SEM FRAG BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 660.3,
-      "valor": 2.0
-    },
-    {
-      "codigo": "28",
-      "produto": "MULTILUX BAC SOFT BB 5L REND 750",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
-      "quantidade": 2.0,
-      "valor": 702.96
+      "valor": 660.3,
+      "custo_compra": 250.36,
+      "lucro_bruto": 409.94,
+      "percentual_lucro": 163.7402
     },
     {
       "codigo": "425",
@@ -2879,16 +2225,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 3.0,
-      "valor": 817.65
-    },
-    {
-      "codigo": "425",
-      "produto": "MULTILUX POWER BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 817.65,
-      "valor": 3.0
+      "valor": 817.65,
+      "custo_compra": 403.92,
+      "lucro_bruto": 413.73,
+      "percentual_lucro": 102.4287
     },
     {
       "codigo": "870",
@@ -2897,16 +2237,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 10.0,
-      "valor": 57.75
-    },
-    {
-      "codigo": "870",
-      "produto": "MULTIUSO VEJA 500ML",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 57.75,
-      "valor": 10.0
+      "valor": 57.75,
+      "custo_compra": 41.25,
+      "lucro_bruto": 16.5,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "527",
@@ -2915,16 +2249,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 50.0,
-      "valor": 87.5
-    },
-    {
-      "codigo": "527",
-      "produto": "NAFTALINA",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 87.5,
-      "valor": 50.0
+      "valor": 87.5,
+      "custo_compra": 62.5,
+      "lucro_bruto": 25.0,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "124",
@@ -2933,7 +2261,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 326.24
+      "valor": 326.24,
+      "custo_compra": 117.3,
+      "lucro_bruto": 208.94,
+      "percentual_lucro": 178.1245
     },
     {
       "codigo": "124",
@@ -2942,7 +2273,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 251.5
+      "valor": 251.5,
+      "custo_compra": 117.3,
+      "lucro_bruto": 134.2,
+      "percentual_lucro": 114.4075
     },
     {
       "codigo": "124",
@@ -2951,7 +2285,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "HARMONIC DAY CLINIC LTDA",
       "quantidade": 1.0,
-      "valor": 150.14
+      "valor": 150.14,
+      "custo_compra": 58.65,
+      "lucro_bruto": 91.49,
+      "percentual_lucro": 155.9932
     },
     {
       "codigo": "523",
@@ -2960,7 +2297,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 251.5
+      "valor": 251.5,
+      "custo_compra": 102.86,
+      "lucro_bruto": 148.64,
+      "percentual_lucro": 144.5071
     },
     {
       "codigo": "25",
@@ -2969,7 +2309,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 326.42
+      "valor": 326.42,
+      "custo_compra": 117.3,
+      "lucro_bruto": 209.12,
+      "percentual_lucro": 178.2779
     },
     {
       "codigo": "25",
@@ -2978,7 +2321,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 4.0,
-      "valor": 503.0
+      "valor": 503.0,
+      "custo_compra": 234.6,
+      "lucro_bruto": 268.4,
+      "percentual_lucro": 114.4075
     },
     {
       "codigo": "25",
@@ -2987,7 +2333,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "IGREJA PRESBITERIANA INDEPENDENTE EM VICENTE FIALHO",
       "quantidade": 1.0,
-      "valor": 158.04
+      "valor": 158.04,
+      "custo_compra": 58.65,
+      "lucro_bruto": 99.39,
+      "percentual_lucro": 169.4629
     },
     {
       "codigo": "259",
@@ -2996,16 +2345,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 50.0,
-      "valor": 357.9
-    },
-    {
-      "codigo": "259",
-      "produto": "PANO DE CHÃO ALVEJA DO FLANELADO 48X68",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 357.9,
-      "valor": 50.0
+      "valor": 357.9,
+      "custo_compra": 274.5,
+      "lucro_bruto": 83.4,
+      "percentual_lucro": 30.3825
     },
     {
       "codigo": "325",
@@ -3014,16 +2357,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 1.0,
-      "valor": 111.51
-    },
-    {
-      "codigo": "325",
-      "produto": "PANO MULTIUSO SLIM(rolo c/28cm x 300m nobre verde)",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 111.51,
-      "valor": 1.0
+      "valor": 111.51,
+      "custo_compra": 79.65,
+      "lucro_bruto": 31.86,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "795",
@@ -3032,16 +2369,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 2.0,
-      "valor": 112.0
-    },
-    {
-      "codigo": "795",
-      "produto": "PAPEL HIGIÊNICO ECONOMICO 8X300 EXTRA LUXO",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 112.0,
-      "valor": 2.0
+      "valor": 112.0,
+      "custo_compra": 80.0,
+      "lucro_bruto": 32.0,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "520",
@@ -3050,16 +2381,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 10.0,
-      "valor": 31.2
-    },
-    {
-      "codigo": "520",
-      "produto": "PEDRA SANITÁRIA  AZULIM FRAG VARIADA",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 31.2,
-      "valor": 10.0
+      "valor": 31.2,
+      "custo_compra": 20.8,
+      "lucro_bruto": 10.4,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "244",
@@ -3068,16 +2393,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 2.0,
-      "valor": 295.32
-    },
-    {
-      "codigo": "244",
-      "produto": "PERFUMAR CAPIM LIMAO BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 295.32,
-      "valor": 2.0
+      "valor": 295.32,
+      "custo_compra": 115.28,
+      "lucro_bruto": 180.04,
+      "percentual_lucro": 156.1763
     },
     {
       "codigo": "37",
@@ -3086,16 +2405,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 2.0,
-      "valor": 189.92
-    },
-    {
-      "codigo": "37",
-      "produto": "PERFUMAR LIRIOS DO CAMPO BB 5 L REND 50  L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 189.92,
-      "valor": 2.0
+      "valor": 189.92,
+      "custo_compra": 115.36,
+      "lucro_bruto": 74.56,
+      "percentual_lucro": 64.6325
     },
     {
       "codigo": "41",
@@ -3104,16 +2417,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 10.0,
-      "valor": 736.3
-    },
-    {
-      "codigo": "41",
-      "produto": "PISOFLOR BB 5L REND 100L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 736.3,
-      "valor": 10.0
+      "valor": 736.3,
+      "custo_compra": 350.8,
+      "lucro_bruto": 385.5,
+      "percentual_lucro": 109.8917
     },
     {
       "codigo": "154",
@@ -3122,16 +2429,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LABORATORIO CEDRO LTDA",
       "quantidade": 4.0,
-      "valor": 613.44
-    },
-    {
-      "codigo": "154",
-      "produto": "PLASTILUX BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 613.44,
-      "valor": 4.0
+      "valor": 613.44,
+      "custo_compra": 293.64,
+      "lucro_bruto": 319.8,
+      "percentual_lucro": 108.9089
     },
     {
       "codigo": "507",
@@ -3140,16 +2441,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 12.0,
-      "valor": 176.88
-    },
-    {
-      "codigo": "507",
-      "produto": "PULVERIZADOR 1LT SPRAY PERFECT",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 176.88,
-      "valor": 12.0
+      "valor": 176.88,
+      "custo_compra": 104.04,
+      "lucro_bruto": 72.84,
+      "percentual_lucro": 70.0115
     },
     {
       "codigo": "508",
@@ -3158,16 +2453,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 18.0,
-      "valor": 230.11
-    },
-    {
-      "codigo": "508",
-      "produto": "PULVERIZADOR 500ML SPRAY PERFECT",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 230.11,
-      "valor": 18.0
+      "valor": 230.11,
+      "custo_compra": 135.36,
+      "lucro_bruto": 94.75,
+      "percentual_lucro": 69.9985
     },
     {
       "codigo": "532",
@@ -3176,16 +2465,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 15.0,
-      "valor": 552.9
-    },
-    {
-      "codigo": "532",
-      "produto": "REFIL 40 CM MOP PÓ ALGODÃO NATURAL",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 552.9,
-      "valor": 15.0
+      "valor": 552.9,
+      "custo_compra": 394.95,
+      "lucro_bruto": 157.95,
+      "percentual_lucro": 39.9924
     },
     {
       "codigo": "224",
@@ -3194,16 +2477,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 1.0,
-      "valor": 235.0
-    },
-    {
-      "codigo": "224",
-      "produto": "REMOCRIL POWER BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "L L FROTA E CIA LTDA - ME",
-      "quantidade": 4.0,
-      "valor": 658.2
+      "valor": 235.0,
+      "custo_compra": 105.48,
+      "lucro_bruto": 129.52,
+      "percentual_lucro": 122.7911
     },
     {
       "codigo": "224",
@@ -3212,7 +2489,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 3.0,
-      "valor": 855.0
+      "valor": 855.0,
+      "custo_compra": 316.44,
+      "lucro_bruto": 538.56,
+      "percentual_lucro": 170.1934
     },
     {
       "codigo": "215",
@@ -3221,7 +2501,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 3.0,
-      "valor": 507.6
+      "valor": 507.6,
+      "custo_compra": 220.41,
+      "lucro_bruto": 287.19,
+      "percentual_lucro": 130.2981
     },
     {
       "codigo": "215",
@@ -3230,16 +2513,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 1.0,
-      "valor": 153.0
-    },
-    {
-      "codigo": "215",
-      "produto": "REMOX  BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
-      "quantidade": 12.0,
-      "valor": 916.56
+      "valor": 153.0,
+      "custo_compra": 73.47,
+      "lucro_bruto": 79.53,
+      "percentual_lucro": 108.2483
     },
     {
       "codigo": "215",
@@ -3248,7 +2525,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 2.0,
-      "valor": 376.29
+      "valor": 376.29,
+      "custo_compra": 146.94,
+      "lucro_bruto": 229.35,
+      "percentual_lucro": 156.0841
     },
     {
       "codigo": "141",
@@ -3257,16 +2537,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 7.0,
-      "valor": 605.85
-    },
-    {
-      "codigo": "141",
-      "produto": "RODO TWISTER SEM CABO BRALIMPIA",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 605.85,
-      "valor": 7.0
+      "valor": 605.85,
+      "custo_compra": 441.77,
+      "lucro_bruto": 164.08,
+      "percentual_lucro": 37.1415
     },
     {
       "codigo": "826",
@@ -3275,16 +2549,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 4.0,
-      "valor": 41.44
-    },
-    {
-      "codigo": "826",
-      "produto": "SABAO EM BARRA NUTRILAR 200G",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 41.44,
-      "valor": 4.0
+      "valor": 41.44,
+      "custo_compra": 29.6,
+      "lucro_bruto": 11.84,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "636",
@@ -3293,16 +2561,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 6.0,
-      "valor": 104.16
-    },
-    {
-      "codigo": "636",
-      "produto": "SABÃO EM BARRA YPÊ",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 104.16,
-      "valor": 6.0
+      "valor": 104.16,
+      "custo_compra": 74.4,
+      "lucro_bruto": 29.76,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "849",
@@ -3311,16 +2573,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 70.0,
-      "valor": 315.0
-    },
-    {
-      "codigo": "849",
-      "produto": "SABAO EM PO ALA FLOR DE LIS 400G",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 315.0,
-      "valor": 70.0
+      "valor": 315.0,
+      "custo_compra": 207.9,
+      "lucro_bruto": 107.1,
+      "percentual_lucro": 51.5152
     },
     {
       "codigo": "869",
@@ -3329,16 +2585,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 5.0,
-      "valor": 38.43
-    },
-    {
-      "codigo": "869",
-      "produto": "SABAO EM PO YPE 400G",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 38.43,
-      "valor": 5.0
+      "valor": 38.43,
+      "custo_compra": 27.45,
+      "lucro_bruto": 10.98,
+      "percentual_lucro": 40.0
     },
     {
       "codigo": "51",
@@ -3347,7 +2597,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 3.0,
-      "valor": 401.19
+      "valor": 401.19,
+      "custo_compra": 156.72,
+      "lucro_bruto": 244.47,
+      "percentual_lucro": 155.9916
     },
     {
       "codigo": "52",
@@ -3356,16 +2609,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BOX COMERCIO DE VEICULOS LTDA",
       "quantidade": 2.0,
-      "valor": 282.72
-    },
-    {
-      "codigo": "52",
-      "produto": "SABONETE DESENGRAXANTE MICRO ESFERA BB 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 282.72,
-      "valor": 2.0
+      "valor": 282.72,
+      "custo_compra": 160.74,
+      "lucro_bruto": 121.98,
+      "percentual_lucro": 75.8865
     },
     {
       "codigo": "345",
@@ -3374,25 +2621,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 90.47
-    },
-    {
-      "codigo": "345",
-      "produto": "SABONETE PRAXI ESPUMA  ANDIROBA 5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "MEGA SERVICOS E ALIMENTOS LTDA",
-      "quantidade": 12.0,
-      "valor": 699.24
-    },
-    {
-      "codigo": "344",
-      "produto": "SABONETE SUAVITEX BAC SP BOL 500ML",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
-      "quantidade": 42.0,
-      "valor": 861.42
+      "valor": 90.47,
+      "custo_compra": 37.01,
+      "lucro_bruto": 53.46,
+      "percentual_lucro": 144.4474
     },
     {
       "codigo": "60",
@@ -3401,16 +2633,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 10.0,
-      "valor": 896.0
-    },
-    {
-      "codigo": "60",
-      "produto": "SABONETE SUAVITEX PESSEGO BB 5 L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 896.0,
-      "valor": 10.0
+      "valor": 896.0,
+      "custo_compra": 350.0,
+      "lucro_bruto": 546.0,
+      "percentual_lucro": 156.0
     },
     {
       "codigo": "467",
@@ -3419,16 +2645,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 2.0,
-      "valor": 108.36
-    },
-    {
-      "codigo": "467",
-      "produto": "SABONETEIRA 600ML BRANCA C/ RESERVATORIO ESPUMA",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 108.36,
-      "valor": 2.0
+      "valor": 108.36,
+      "custo_compra": 54.18,
+      "lucro_bruto": 54.18,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "772",
@@ -3437,16 +2657,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 2.0,
-      "valor": 108.36
-    },
-    {
-      "codigo": "772",
-      "produto": "SABONETEIRA 600ML BRANCA C/ RESERVATORIO LIQ",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 108.36,
-      "valor": 2.0
+      "valor": 108.36,
+      "custo_compra": 0.0,
+      "lucro_bruto": 108.36,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "135",
@@ -3455,16 +2669,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "BOX COMERCIO DE VEICULOS LTDA",
       "quantidade": 3.0,
-      "valor": 43.65
-    },
-    {
-      "codigo": "135",
-      "produto": "SACO P/ LIXO 55X55X0,25 - PRETO 40LT BETA PLASTIC",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 43.65,
-      "valor": 3.0
+      "valor": 43.65,
+      "custo_compra": 29.1,
+      "lucro_bruto": 14.55,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "134",
@@ -3473,16 +2681,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 40.0,
-      "valor": 810.0
-    },
-    {
-      "codigo": "134",
-      "produto": "SACO P/ LIXO 60X70X0,025 - PRETO 60LT BETA PLASTIC",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 810.0,
-      "valor": 40.0
+      "valor": 810.0,
+      "custo_compra": 540.0,
+      "lucro_bruto": 270.0,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "236",
@@ -3491,16 +2693,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "ELLO'S FITNESS LTDA",
       "quantidade": 1.0,
-      "valor": 38.7
-    },
-    {
-      "codigo": "236",
-      "produto": "SACO P/ LIXO 75X90X0,03 - PRETO 100LT BETA PLASTIC",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 40.0,
-      "valor": 50.0
+      "valor": 38.7,
+      "custo_compra": 25.8,
+      "lucro_bruto": 12.9,
+      "percentual_lucro": 50.0
     },
     {
       "codigo": "654",
@@ -3509,16 +2705,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 2.0,
-      "valor": 187.66
-    },
-    {
-      "codigo": "654",
-      "produto": "SACO P/ LIXO 90X100X0,05 - PRETO 200LT BETAPLASTIC",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 187.66,
-      "valor": 2.0
+      "valor": 187.66,
+      "custo_compra": 125.1,
+      "lucro_bruto": 62.56,
+      "percentual_lucro": 50.008
     },
     {
       "codigo": "881",
@@ -3527,16 +2717,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LGR IND.COM.DE PR.DE LIMP.LTDA",
       "quantidade": 6.0,
-      "valor": 742.98
-    },
-    {
-      "codigo": "881",
-      "produto": "SANICLOR BB20L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 742.98,
-      "valor": 6.0
+      "valor": 742.98,
+      "custo_compra": 0.0,
+      "lucro_bruto": 742.98,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "191",
@@ -3545,7 +2729,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 10.0,
-      "valor": 668.0
+      "valor": 668.0,
+      "custo_compra": 309.3,
+      "lucro_bruto": 358.7,
+      "percentual_lucro": 115.9715
     },
     {
       "codigo": "191",
@@ -3554,7 +2741,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 3.0,
-      "valor": 210.72
+      "valor": 210.72,
+      "custo_compra": 92.79,
+      "lucro_bruto": 117.93,
+      "percentual_lucro": 127.0934
     },
     {
       "codigo": "191",
@@ -3563,7 +2753,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COCO BAMBU SL COMERCIO DE ALIMENTOS LTDA",
       "quantidade": 8.0,
-      "valor": 489.36
+      "valor": 489.36,
+      "custo_compra": 247.44,
+      "lucro_bruto": 241.92,
+      "percentual_lucro": 97.7692
     },
     {
       "codigo": "191",
@@ -3572,7 +2765,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "EXPRESSO SALADA LTDA -ME",
       "quantidade": 2.0,
-      "valor": 140.48
+      "valor": 140.48,
+      "custo_compra": 61.86,
+      "lucro_bruto": 78.62,
+      "percentual_lucro": 127.0934
     },
     {
       "codigo": "191",
@@ -3581,16 +2777,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "FUNDAÇÃO ANTONIO JORGE DINO",
       "quantidade": 3.0,
-      "valor": 208.86
-    },
-    {
-      "codigo": "763",
-      "produto": "SANICLOR DT BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "AGILE CORP SERVICOS ESPECIALIZADOS LTDA",
-      "quantidade": 20.0,
-      "valor": 20.5635
+      "valor": 208.86,
+      "custo_compra": 92.79,
+      "lucro_bruto": 116.07,
+      "percentual_lucro": 125.0889
     },
     {
       "codigo": "23",
@@ -3599,16 +2789,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 411.09
-    },
-    {
-      "codigo": "23",
-      "produto": "SANILUX BB 5 L REND 50L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 411.09,
-      "valor": 3.0
+      "valor": 411.09,
+      "custo_compra": 169.74,
+      "lucro_bruto": 241.35,
+      "percentual_lucro": 142.1881
     },
     {
       "codigo": "474",
@@ -3617,16 +2801,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 1.0,
-      "valor": 340.0
-    },
-    {
-      "codigo": "474",
-      "produto": "SANIMAX BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 340.0,
-      "valor": 1.0
+      "valor": 340.0,
+      "custo_compra": 166.57,
+      "lucro_bruto": 173.43,
+      "percentual_lucro": 104.1184
     },
     {
       "codigo": "334",
@@ -3635,25 +2813,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 555.27
-    },
-    {
-      "codigo": "334",
-      "produto": "SEC MAQ PRO BB5L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 555.27,
-      "valor": 3.0
-    },
-    {
-      "codigo": "222",
-      "produto": "SPRAY SANITIZANTE BOLSA 500ML",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "ELO CONTACT CENTER SERVICOS LTDA",
-      "quantidade": 48.0,
-      "valor": 750.24
+      "valor": 555.27,
+      "custo_compra": 207.21,
+      "lucro_bruto": 348.06,
+      "percentual_lucro": 167.9745
     },
     {
       "codigo": "882",
@@ -3662,16 +2825,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LGR IND.COM.DE PR.DE LIMP.LTDA",
       "quantidade": 12.0,
-      "valor": 712.68
-    },
-    {
-      "codigo": "882",
-      "produto": "SUAVITEX HIDR ANDIROBA BB 05L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 712.68,
-      "valor": 12.0
+      "valor": 712.68,
+      "custo_compra": 0.0,
+      "lucro_bruto": 712.68,
+      "percentual_lucro": 0.0
     },
     {
       "codigo": "297",
@@ -3680,7 +2837,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "AD7 ALIMENTACAO INTELIGENTE LTDA",
       "quantidade": 5.0,
-      "valor": 95.14
+      "valor": 95.14,
+      "custo_compra": 47.57,
+      "lucro_bruto": 47.57,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "297",
@@ -3689,7 +2849,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "CATARINA PRODUÇÕES E COMUNICAÇÃO- LTDA",
       "quantidade": 1.0,
-      "valor": 19.14
+      "valor": 19.14,
+      "custo_compra": 9.57,
+      "lucro_bruto": 9.57,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "297",
@@ -3698,25 +2861,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "SLEA - SÃO LUIS ENGENHARIA AMBIENTAL S/A",
       "quantidade": 7.0,
-      "valor": 130.72
-    },
-    {
-      "codigo": "297",
-      "produto": "SUPORTE LT S/ CABO C/ PINÇA P/ FIBRA (NOBRE)",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 245.0,
-      "valor": 13.0
-    },
-    {
-      "codigo": "861",
-      "produto": "SUPORTE METALICO P/1 LIXEIRA PAPELEIRA 50L ETM501",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
-      "quantidade": 8.0,
-      "valor": 40.0
+      "valor": 130.72,
+      "custo_compra": 66.01,
+      "lucro_bruto": 64.71,
+      "percentual_lucro": 98.0306
     },
     {
       "codigo": "356",
@@ -3725,16 +2873,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 5.0,
-      "valor": 199.0
-    },
-    {
-      "codigo": "356",
-      "produto": "SUPORTE P/ MOP PÓ 60CM",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 199.0,
-      "valor": 5.0
+      "valor": 199.0,
+      "custo_compra": 99.5,
+      "lucro_bruto": 99.5,
+      "percentual_lucro": 100.0
     },
     {
       "codigo": "205",
@@ -3743,16 +2885,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 1.0,
-      "valor": 41.86
-    },
-    {
-      "codigo": "205",
-      "produto": "VASCULHADOR FIBRAS DE NYLON",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 41.86,
-      "valor": 1.0
+      "valor": 41.86,
+      "custo_compra": 24.5,
+      "lucro_bruto": 17.36,
+      "percentual_lucro": 70.8571
     },
     {
       "codigo": "460",
@@ -3761,16 +2897,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "UNIAO NORTE BRASILEIRA DE EDUCACAO E CULTURA",
       "quantidade": 30.0,
-      "valor": 315.62
-    },
-    {
-      "codigo": "460",
-      "produto": "VASSOURA PIAÇAVA RAINHA MAX",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 315.62,
-      "valor": 30.0
+      "valor": 315.62,
+      "custo_compra": 249.9,
+      "lucro_bruto": 65.72,
+      "percentual_lucro": 26.2985
     },
     {
       "codigo": "40",
@@ -3779,7 +2909,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "COLEGIO EDUCALLIS FIGUEIREDO LTDA",
       "quantidade": 4.0,
-      "valor": 284.72
+      "valor": 284.72,
+      "custo_compra": 131.0,
+      "lucro_bruto": 153.72,
+      "percentual_lucro": 117.3435
     },
     {
       "codigo": "40",
@@ -3788,7 +2921,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "L L FROTA E CIA LTDA - ME",
       "quantidade": 3.0,
-      "valor": 237.39
+      "valor": 237.39,
+      "custo_compra": 98.25,
+      "lucro_bruto": 139.14,
+      "percentual_lucro": 141.6183
     },
     {
       "codigo": "40",
@@ -3797,16 +2933,10 @@
       "periodo": "2025-05-01 a 2025-07-31",
       "cliente": "LABORATORIO CEDRO LTDA",
       "quantidade": 4.0,
-      "valor": 277.04
-    },
-    {
-      "codigo": "40",
-      "produto": "VIDROLUX BB 5L REND 25L",
-      "empresa": "HIGITEC",
-      "periodo": "2025-05-01 a 2025-07-31",
-      "cliente": "",
-      "quantidade": 799.15,
-      "valor": 11.0
+      "valor": 277.04,
+      "custo_compra": 131.0,
+      "lucro_bruto": 146.04,
+      "percentual_lucro": 111.4809
     }
   ]
 }

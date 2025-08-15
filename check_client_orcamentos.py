@@ -8,8 +8,8 @@ import json
 
 # Configurações
 BASE_URL = "https://higiplas-system.onrender.com"
-EMAIL = "enzo.alverde@gmail.com"
-PASSWORD = "enzolilia"
+EMAIL = "@gmail.com"
+PASSWORD = ""
 
 def check_client_orcamentos():
     print("🔍 Verificando orçamentos associados ao cliente...")

@@ -1,0 +1,141 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# next.js build output
+.next
+out/
+
+# production build
+build/
+dist/
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Alembic
+alembic/versions/*.py
+!alembic/versions/__init__.py
+
+# Test files
+test_*.py
+check_*.py
+create_test_*.py
+fix_*.py
+debug_*.py
+investigate_*.py
+simulate_*.py
+
+# Migration files
+migration_*.py
+data_migration.py
+deploy_migration.py
+
+# Temporary scripts
+*.sh
+!build.sh
+!start.sh
+!deploy.sh
+
+# JSON data files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!next.config.ts
+!vercel.json
+
+# PDF files
+*.pdf
+
+# HTML files
+*.html
+!public/*.html
+
+# Markdown files (keep README)
+*.md
+!README.md
+
+# Docker
+.dockerignore
+
+# Render
+render.yaml

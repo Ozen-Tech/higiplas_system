@@ -59,17 +59,26 @@ def main():
         empresa_id_map = {'HIGIPLAS': 1, 'HIGITEC': 2}
         
         for i, (key, dados) in enumerate(produtos_agrupados.items()):
-            # Cria um produto temporário
-            produto_temp = Produto(
-                nome=dados['produto'][:100],  # Limita o nome a 100 caracteres
-                codigo=f"TEMP_{i+1:04d}",
-                categoria="Extraído do PDF",
-                preco_venda=dados['valor'] / dados['quantidade'] if dados['quantidade'] > 0 else 0,
-                unidade_medida="UN",
-                empresa_id=empresa_id_map.get(dados['empresa'], 1)
-            )
-            session.add(produto_temp)
-            session.flush()  # Para obter o ID do produto
+            # Gera um código único baseado no nome e empresa
+            codigo_temp = f"TEMP_{hash(key) % 100000:05d}"
+            
+            # Verifica se já existe um produto com este código
+            produto_existente = session.query(Produto).filter_by(codigo=codigo_temp).first()
+            
+            if produto_existente:
+                produto_temp = produto_existente
+            else:
+                # Cria um produto temporário
+                produto_temp = Produto(
+                    nome=dados['produto'][:100],  # Limita o nome a 100 caracteres
+                    codigo=codigo_temp,
+                    categoria="Extraído do PDF",
+                    preco_venda=dados['valor'] / dados['quantidade'] if dados['quantidade'] > 0 else 0,
+                    unidade_medida="UN",
+                    empresa_id=empresa_id_map.get(dados['empresa'], 1)
+                )
+                session.add(produto_temp)
+                session.flush()  # Para obter o ID do produto
             
             # Cria o registro de produto mais vendido
             produto_mais_vendido = ProdutoMaisVendido(

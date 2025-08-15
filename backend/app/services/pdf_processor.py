@@ -12,11 +12,13 @@ class PDFSalesProcessor:
     """Processador de PDFs de vendas para extrair dados históricos."""
     
     def __init__(self):
-        self.backend_path = Path(__file__).parent.parent.parent
+        self.backend_path = Path(__file__).parent.parent.parent  # Vai para /backend
         self.pdf_files = [
             "HIGIPLAS - MAIO - JULHO.pdf",
             "HIGITEC - MAIO - JULHO.pdf"
         ]
+        # Os PDFs estão diretamente no diretório backend
+        self.pdf_dir = self.backend_path
         self.extracted_data = []
         
     def extract_text_from_pdf(self, pdf_path: str) -> str:
@@ -33,11 +35,12 @@ class PDFSalesProcessor:
             return ""
     
     def parse_sales_data(self, text: str, company: str) -> List[Dict[str, Any]]:
-        """Analisa o texto extraído e identifica dados de vendas baseado no formato específico dos PDFs."""
+        """Analisa o texto extraído baseado no formato tabular dos PDFs."""
         sales_data = []
         lines = text.split('\n')
         
         current_item = None
+        in_data_section = False
         
         for i, line in enumerate(lines):
             line = line.strip()
@@ -53,46 +56,77 @@ class PDFSalesProcessor:
                     'empresa': company,
                     'periodo': '2025-05-01 a 2025-07-31'
                 }
+                in_data_section = False
                 continue
             
-            # Se temos um item atual, procura por linhas de dados de venda
-            if current_item and not line.startswith('Cód.'):
-                # Formato: "CODIGO CLIENTE QUANTIDADE CUSTO VENDIDO LUCRO PERCENTUAL"
-                # Exemplo: "302 COLEGIO EDUCALLIS FIGUEIREDO LTDA 16,0000 292,8000 484,0000 191,2000 65,3005"
-                parts = line.split()
-                if len(parts) >= 5:
-                    try:
-                        # Tenta extrair os dados numéricos do final da linha
-                        numeric_parts = []
-                        cliente_parts = []
-                        
-                        for part in parts[1:]:  # Pula o código do cliente
-                            if re.match(r'^\d+[,.]\d+$', part):
-                                numeric_parts.append(float(part.replace(',', '.')))
-                            elif not numeric_parts:  # Ainda coletando nome do cliente
-                                cliente_parts.append(part)
-                        
-                        if len(numeric_parts) >= 3:  # quantidade, custo, vendido
-                            quantidade = numeric_parts[0]
-                            valor_vendido = numeric_parts[2]  # Valor vendido
-                            
-                            sale_record = current_item.copy()
-                            sale_record.update({
-                                'cliente': ' '.join(cliente_parts),
-                                'quantidade': quantidade,
-                                'valor': valor_vendido
-                            })
-                            
-                            sales_data.append(sale_record)
-                            
-                    except (ValueError, IndexError) as e:
-                        continue
+            # Identifica cabeçalho da tabela de dados
+            if current_item and ('Cód.' in line and 'Cliente' in line and 'Quantidade' in line):
+                in_data_section = True
+                continue
+            
+            # Processa linhas de dados da tabela
+            if current_item and in_data_section and not line.startswith('Totais:'):
+                self._extract_table_row(line, current_item, sales_data)
             
             # Verifica se chegou na linha de totais para resetar o item atual
             if 'Totais:' in line:
                 current_item = None
+                in_data_section = False
         
         return sales_data
+    
+    def _extract_table_row(self, line: str, current_item: Dict, sales_data: List):
+        """Extrai dados de uma linha da tabela de vendas."""
+        # Formato: Cód. Cliente Quantidade Custo Compra Vendido Por Lucro Bruto %
+        # Exemplo: "324 BOX COMERCIO DE VEICULOS LTDA 12,0000 28,2000 25,2000 -3,0000 -10,6383"
+        
+        parts = line.split()
+        if len(parts) < 6:  # Precisa ter pelo menos código, cliente, quantidade, custo, vendido, lucro
+            return
+        
+        try:
+            # Primeiro elemento é o código do cliente
+            codigo_cliente = parts[0]
+            
+            # Encontra onde começam os valores numéricos (da direita para esquerda)
+            numeric_values = []
+            cliente_parts = []
+            
+            # Processa da direita para esquerda para identificar valores numéricos
+            for i in range(len(parts) - 1, 0, -1):  # Pula o código do cliente (índice 0)
+                part = parts[i]
+                if re.match(r'^-?\d+[,.]\d+$', part):  # Inclui valores negativos
+                    numeric_values.insert(0, float(part.replace(',', '.')))
+                else:
+                    # Resto são partes do nome do cliente
+                    cliente_parts = parts[1:i+1]
+                    break
+            
+            if len(numeric_values) >= 5:  # quantidade, custo, vendido, lucro, percentual
+                quantidade = numeric_values[0]
+                custo_compra = numeric_values[1]
+                valor_vendido = numeric_values[2]
+                lucro_bruto = numeric_values[3]
+                percentual = numeric_values[4]
+                
+                cliente = ' '.join(cliente_parts)
+                
+                if cliente and quantidade > 0:  # Só adiciona se tiver cliente e quantidade válida
+                    sale_record = current_item.copy()
+                    sale_record.update({
+                        'cliente': cliente,
+                        'quantidade': quantidade,
+                        'valor': valor_vendido,
+                        'custo_compra': custo_compra,
+                        'lucro_bruto': lucro_bruto,
+                        'percentual_lucro': percentual
+                    })
+                    
+                    sales_data.append(sale_record)
+                    
+        except (ValueError, IndexError) as e:
+            # Ignora linhas que não conseguimos processar
+            pass
     
     def process_all_pdfs(self) -> Dict[str, Any]:
         """Processa todos os PDFs e retorna dados consolidados."""
@@ -106,7 +140,7 @@ class PDFSalesProcessor:
         }
         
         for pdf_file in self.pdf_files:
-            pdf_path = self.backend_path / pdf_file
+            pdf_path = self.pdf_dir / pdf_file
             
             if not pdf_path.exists():
                 print(f"Arquivo não encontrado: {pdf_path}")
