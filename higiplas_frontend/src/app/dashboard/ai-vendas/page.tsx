@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,8 +18,6 @@ import {
   BarChart3
 } from 'lucide-react';
 import { apiService } from '@/services/apiService';
-import { Header } from '@/components/dashboard/Header';
-import ClientLayout from '@/components/ClientLayout';
 
 interface TopProduct {
   produto: string;
@@ -74,8 +71,9 @@ export default function AIVendasPage() {
       
       setProcessingStatus(response.data.message);
       await loadTopProducts(); // Recarrega produtos após processamento
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao processar PDFs');
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || 'Erro ao processar PDFs');
     } finally {
       setIsProcessing(false);
     }
@@ -85,7 +83,7 @@ export default function AIVendasPage() {
     try {
       const response = await apiService.get('/ai-pdf/top-selling-products?limit=10');
       setTopProducts(response.data.products || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erro ao carregar produtos:', err);
     }
   };
@@ -94,7 +92,7 @@ export default function AIVendasPage() {
     try {
       const response = await apiService.get('/ai-pdf/pending-stock-approvals');
       setStockSuggestions(response.data.suggestions || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erro ao carregar aprovações:', err);
     }
   };
@@ -112,8 +110,9 @@ export default function AIVendasPage() {
       });
       
       setAiResponse(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao consultar IA');
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || 'Erro ao consultar IA');
     } finally {
       setIsQuerying(false);
     }
@@ -128,7 +127,7 @@ export default function AIVendasPage() {
       setProcessingStatus(response.data.message);
       await loadPendingApprovals(); // Recarrega sugestões
     } catch (err) {
-      const error = err as any;
+      const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || 'Erro ao gerar sugestões de estoque');
     } finally {
       setIsProcessing(false);
@@ -141,7 +140,7 @@ export default function AIVendasPage() {
       setProcessingStatus(response.data.message);
       await loadPendingApprovals(); // Recarrega sugestões
     } catch (err) {
-      const error = err as any;
+      const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || 'Erro ao aprovar sugestão');
     }
   };

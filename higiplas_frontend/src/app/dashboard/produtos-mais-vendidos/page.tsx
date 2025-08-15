@@ -58,7 +58,7 @@ export default function ProdutosMaisVendidos() {
 
   useEffect(() => {
     fetchProdutosMaisVendidos();
-  }, [ano, limit]);
+  }, [ano, limit, fetchProdutosMaisVendidos]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
