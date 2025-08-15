@@ -34,7 +34,7 @@ export default function ProdutosMaisVendidos() {
       params.append('limit', limit.toString());
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/top-selling-products?${params}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/ai-pdf/top-selling-products?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
