@@ -33,43 +33,64 @@ class PDFSalesProcessor:
             return ""
     
     def parse_sales_data(self, text: str, company: str) -> List[Dict[str, Any]]:
-        """Analisa o texto extraído e identifica dados de vendas."""
+        """Analisa o texto extraído e identifica dados de vendas baseado no formato específico dos PDFs."""
         sales_data = []
-        
-        # Padrões regex para identificar dados de vendas
-        patterns = {
-            'produto': r'(?i)(produto|item|código)\s*:?\s*([A-Z0-9\-\s]+)',
-            'quantidade': r'(?i)(qtd|quantidade|unid)\s*:?\s*(\d+(?:,\d+)?)',
-            'valor': r'(?i)(valor|preço|total)\s*:?\s*R?\$?\s*(\d+(?:,\d+)?(?:\.\d+)?)',
-            'data': r'(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
-            'cliente': r'(?i)(cliente|razão social)\s*:?\s*([A-Za-z\s]+)',
-        }
-        
         lines = text.split('\n')
-        current_sale = {}
         
-        for line in lines:
+        current_item = None
+        
+        for i, line in enumerate(lines):
             line = line.strip()
             if not line:
                 continue
-                
-            # Busca por padrões em cada linha
-            for key, pattern in patterns.items():
-                match = re.search(pattern, line)
-                if match:
-                    if key == 'quantidade':
-                        current_sale[key] = float(match.group(2).replace(',', '.'))
-                    elif key == 'valor':
-                        current_sale[key] = float(match.group(2).replace(',', '.'))
-                    else:
-                        current_sale[key] = match.group(2).strip()
             
-            # Se encontrou dados suficientes, adiciona à lista
-            if len(current_sale) >= 3:  # Pelo menos produto, quantidade e valor
-                current_sale['empresa'] = company
-                current_sale['periodo'] = '2025-05-01 a 2025-07-31'
-                sales_data.append(current_sale.copy())
-                current_sale = {}
+            # Identifica linha de item (formato: "Item: X - NOME DO PRODUTO")
+            item_match = re.match(r'Item:\s*(\d+)\s*-\s*(.+)', line)
+            if item_match:
+                current_item = {
+                    'codigo': item_match.group(1),
+                    'produto': item_match.group(2).strip(),
+                    'empresa': company,
+                    'periodo': '2025-05-01 a 2025-07-31'
+                }
+                continue
+            
+            # Se temos um item atual, procura por linhas de dados de venda
+            if current_item and not line.startswith('Cód.'):
+                # Formato: "CODIGO CLIENTE QUANTIDADE CUSTO VENDIDO LUCRO PERCENTUAL"
+                # Exemplo: "302 COLEGIO EDUCALLIS FIGUEIREDO LTDA 16,0000 292,8000 484,0000 191,2000 65,3005"
+                parts = line.split()
+                if len(parts) >= 5:
+                    try:
+                        # Tenta extrair os dados numéricos do final da linha
+                        numeric_parts = []
+                        cliente_parts = []
+                        
+                        for part in parts[1:]:  # Pula o código do cliente
+                            if re.match(r'^\d+[,.]\d+$', part):
+                                numeric_parts.append(float(part.replace(',', '.')))
+                            elif not numeric_parts:  # Ainda coletando nome do cliente
+                                cliente_parts.append(part)
+                        
+                        if len(numeric_parts) >= 3:  # quantidade, custo, vendido
+                            quantidade = numeric_parts[0]
+                            valor_vendido = numeric_parts[2]  # Valor vendido
+                            
+                            sale_record = current_item.copy()
+                            sale_record.update({
+                                'cliente': ' '.join(cliente_parts),
+                                'quantidade': quantidade,
+                                'valor': valor_vendido
+                            })
+                            
+                            sales_data.append(sale_record)
+                            
+                    except (ValueError, IndexError) as e:
+                        continue
+            
+            # Verifica se chegou na linha de totais para resetar o item atual
+            if 'Totais:' in line:
+                current_item = None
         
         return sales_data
     
