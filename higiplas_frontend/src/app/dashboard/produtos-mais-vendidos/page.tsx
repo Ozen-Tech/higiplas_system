@@ -156,7 +156,7 @@ export default function ProdutosMaisVendidos() {
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Qtd. Total Vendida</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {formatNumber(produtos.reduce((sum, p) => sum + p.total_vendido, 0))}
+                  {formatNumber(produtos.reduce((sum, p) => sum + p.total_quantidade, 0))}
                 </p>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function ProdutosMaisVendidos() {
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Valor Total</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {formatCurrency(produtos.reduce((sum, p) => sum + p.valor_total_vendas, 0))}
+                  {formatCurrency(produtos.reduce((sum, p) => sum + p.total_valor, 0))}
                 </p>
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function ProdutosMaisVendidos() {
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Orçamentos</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {formatNumber(produtos.reduce((sum, p) => sum + p.numero_orcamentos, 0))}
+                  {formatNumber(produtos.reduce((sum, p) => sum + p.numero_vendas, 0))}
                 </p>
               </div>
             </div>
