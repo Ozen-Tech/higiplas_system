@@ -9,7 +9,7 @@ from datetime import datetime
 from ..services.pdf_processor import pdf_processor
 from ..services.ai_service import generate_analysis_from_data
 from ..dependencies import get_current_user
-from ..models.user import User
+from ..db.models import Usuario
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ class MinimumStockSuggestion(BaseModel):
 @router.post("/process-pdfs")
 async def process_sales_pdfs(
     request: PDFProcessRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Processa os PDFs de vendas e extrai dados históricos.
@@ -80,7 +80,7 @@ async def process_sales_pdfs(
 @router.get("/top-selling-products")
 async def get_top_selling_products(
     limit: int = 10,
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Retorna os produtos mais vendidos baseado nos dados dos PDFs.
@@ -109,7 +109,7 @@ async def get_top_selling_products(
 @router.post("/ai-query")
 async def query_ai_with_pdf_data(
     request: AIQueryRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Consulta a IA incluindo dados dos PDFs processados.
@@ -175,7 +175,7 @@ async def query_ai_with_pdf_data(
 @router.post("/calculate-minimum-stock")
 async def calculate_minimum_stock(
     request: MinimumStockRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Calcula estoque mínimo para um produto baseado nos dados históricos.
@@ -202,7 +202,7 @@ async def calculate_minimum_stock(
 @router.post("/suggest-minimum-stocks")
 async def suggest_minimum_stocks_for_top_products(
     limit: int = 10,
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Gera sugestões de estoque mínimo para os produtos mais vendidos.
@@ -258,7 +258,7 @@ async def suggest_minimum_stocks_for_top_products(
 
 @router.get("/pending-stock-approvals")
 async def get_pending_stock_approvals(
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Lista sugestões de estoque mínimo pendentes de aprovação.
@@ -304,7 +304,7 @@ async def get_pending_stock_approvals(
 @router.post("/approve-stock-suggestion/{product_name}")
 async def approve_stock_suggestion(
     product_name: str,
-    current_user: User = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Aprova uma sugestão de estoque mínimo.

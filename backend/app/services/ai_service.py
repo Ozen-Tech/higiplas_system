@@ -3,6 +3,9 @@
 import google.generativeai as genai
 from typing import List, Dict, Any
 from app.core.config import settings
+import json
+import os
+from pathlib import Path
 
 # Inicializa a variável do modelo
 model = None
@@ -27,6 +30,60 @@ try:
 except Exception as e:
     print(f"❌ Erro ao configurar a API do Gemini: {e}")
 
+def load_historical_sales_data() -> str:
+    """
+    Carrega os dados históricos de vendas do arquivo JSON e formata para a IA.
+    """
+    try:
+        # Caminho para o arquivo de dados históricos
+        current_dir = Path(__file__).parent.parent
+        data_file = current_dir / 'dados_historicos_vendas.json'
+        
+        if not data_file.exists():
+            return "Dados históricos de vendas não encontrados."
+        
+        with open(data_file, 'r', encoding='utf-8') as f:
+            historical_data = json.load(f)
+        
+        # Formata os dados para a IA
+        formatted_data = "DADOS HISTÓRICOS DE VENDAS HIGIPLAS/HIGITEC:\n\n"
+        
+        # Pega os top 20 produtos mais vendidos por quantidade
+        top_products = sorted(historical_data, key=lambda x: x['quantidade_vendida_total'], reverse=True)[:20]
+        
+        formatted_data += "TOP 20 PRODUTOS MAIS VENDIDOS (por quantidade):\n"
+        for i, product in enumerate(top_products, 1):
+            formatted_data += f"""{i}. {product['descricao']}
+   - ID: {product['ident_antigo']}
+   - Quantidade vendida: {product['quantidade_vendida_total']}
+   - Valor total vendido: R$ {product['valor_vendido_total']:.2f}
+   - Custo total: R$ {product['custo_compra_total']:.2f}
+   - Lucro bruto: R$ {product['lucro_bruto_total']:.2f}
+   - Margem de lucro: {product['margem_lucro_percentual']:.2f}%
+
+"""
+        
+        # Adiciona estatísticas gerais
+        total_products = len(historical_data)
+        total_quantity = sum(p['quantidade_vendida_total'] for p in historical_data)
+        total_revenue = sum(p['valor_vendido_total'] for p in historical_data)
+        total_profit = sum(p['lucro_bruto_total'] for p in historical_data)
+        
+        formatted_data += f"""\nESTATÍSTICAS GERAIS:
+- Total de produtos diferentes: {total_products}
+- Quantidade total vendida: {total_quantity}
+- Receita total: R$ {total_revenue:.2f}
+- Lucro bruto total: R$ {total_profit:.2f}
+- Margem média de lucro: {(total_profit/total_revenue*100):.2f}%
+
+"""
+        
+        return formatted_data
+        
+    except Exception as e:
+        print(f"Erro ao carregar dados históricos: {e}")
+        return "Erro ao carregar dados históricos de vendas."
+
 def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: str = None) -> str:
     """
     Recebe uma pergunta do usuário e os dados do sistema, envia para a IA 
@@ -34,7 +91,10 @@ def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: 
     """
     if not model:
         return "Erro: O modelo de IA não foi inicializado corretamente. Verifique a chave da API e a configuração do serviço no servidor."
-     
+    
+    # Carrega dados históricos de vendas automaticamente
+    historical_data = load_historical_sales_data()
+    
     # Mega prompt para análise assertiva de dados
     prompt_template = f"""
     Você é a "Rozana", ASSISTENTE ESPECIALISTA EM GESTÃO DE ESTOQUE E ANÁLISE DE VENDAS da Higiplas.
@@ -46,8 +106,11 @@ def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: 
     DADOS DO SISTEMA:
     {system_data}
     
-    DADOS HISTÓRICOS DE VENDAS (MAIO-JULHO 2025):
-    {pdf_data if pdf_data else 'Dados históricos não disponíveis'}
+    DADOS HISTÓRICOS DE VENDAS COMPLETOS:
+    {historical_data}
+    
+    DADOS ADICIONAIS DOS PDFs (MAIO-JULHO 2025):
+    {pdf_data if pdf_data else 'Dados adicionais dos PDFs não disponíveis'}
     
     CAPACIDADES AVANÇADAS:
     ✅ Calcular estoque mínimo baseado em demanda histórica dos últimos 3 meses
