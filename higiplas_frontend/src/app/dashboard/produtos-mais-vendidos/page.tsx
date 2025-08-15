@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowTrendingUpIcon, CurrencyDollarIcon, ShoppingBagIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 interface ProdutoMaisVendido {
@@ -17,7 +17,7 @@ export default function ProdutosMaisVendidos() {
   const [ano, setAno] = useState<number | null>(null);
   const [limit, setLimit] = useState(50);
 
-  const fetchProdutosMaisVendidos = async () => {
+  const fetchProdutosMaisVendidos = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
@@ -52,11 +52,11 @@ export default function ProdutosMaisVendidos() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ano, limit]);
 
   useEffect(() => {
     fetchProdutosMaisVendidos();
-  }, [ano, limit, fetchProdutosMaisVendidos]);
+  }, [fetchProdutosMaisVendidos]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
