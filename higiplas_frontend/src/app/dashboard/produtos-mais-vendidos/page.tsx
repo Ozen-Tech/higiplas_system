@@ -4,13 +4,10 @@ import { useState, useEffect } from 'react';
 import { ArrowTrendingUpIcon, CurrencyDollarIcon, ShoppingBagIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 interface ProdutoMaisVendido {
-  id: number;
-  nome: string;
-  codigo: string;
-  preco_venda: number;
-  total_vendido: number;
-  valor_total_vendas: number;
-  numero_orcamentos: number;
+  produto: string;
+  total_quantidade: number;
+  total_valor: number;
+  numero_vendas: number;
 }
 
 export default function ProdutosMaisVendidos() {
@@ -48,7 +45,8 @@ export default function ProdutosMaisVendidos() {
       }
 
       const data = await response.json();
-      setProdutos(data);
+      // A API retorna um objeto com a propriedade 'products'
+      setProdutos(data.products || data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -227,13 +225,13 @@ export default function ProdutosMaisVendidos() {
                       Valor Total
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Orçamentos
+                      Nº Vendas
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {produtos.map((produto, index) => (
-                    <tr key={produto.id} className={index < 3 ? 'bg-yellow-50' : ''}>
+                    <tr key={`${produto.produto}-${index}`} className={index < 3 ? 'bg-yellow-50' : ''}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <span className={`inline-flex items-center justify-center h-8 w-8 rounded-full text-sm font-medium ${
@@ -247,22 +245,22 @@ export default function ProdutosMaisVendidos() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{produto.nome}</div>
+                        <div className="text-sm font-medium text-gray-900">{produto.produto}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{produto.codigo}</div>
+                        <div className="text-sm text-gray-500">-</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{formatCurrency(produto.preco_venda)}</div>
+                        <div className="text-sm text-gray-900">{formatCurrency(produto.total_valor / produto.total_quantidade)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{formatNumber(produto.total_vendido)}</div>
+                        <div className="text-sm font-medium text-gray-900">{formatNumber(produto.total_quantidade)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-green-600">{formatCurrency(produto.valor_total_vendas)}</div>
+                        <div className="text-sm font-medium text-green-600">{formatCurrency(produto.total_valor)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{produto.numero_orcamentos}</div>
+                        <div className="text-sm text-gray-900">{produto.numero_vendas}</div>
                       </td>
                     </tr>
                   ))}
