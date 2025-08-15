@@ -21,6 +21,7 @@ email-validator
 python-multipart
 beautifulsoup4 
 lxml
+PyPDF2
 # Inteligência Artificial
 google-generativeai
 alembic
