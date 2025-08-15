@@ -27,7 +27,7 @@ try:
 except Exception as e:
     print(f"❌ Erro ao configurar a API do Gemini: {e}")
 
-def generate_analysis_from_data(user_question: str, system_data: str) -> str:
+def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: str = None) -> str:
     """
     Recebe uma pergunta do usuário e os dados do sistema, envia para a IA 
     com um prompt aprimorado e retorna a resposta.
@@ -43,11 +43,17 @@ def generate_analysis_from_data(user_question: str, system_data: str) -> str:
     
     PERGUNTA DO GESTOR: "{user_question}"
     
-    DADOS DISPONÍVEIS:
+    DADOS DO SISTEMA:
     {system_data}
     
+    DADOS HISTÓRICOS DE VENDAS (MAIO-JULHO 2025):
+    {pdf_data if pdf_data else 'Dados históricos não disponíveis'}
+    
     CAPACIDADES AVANÇADAS:
-    ✅ Calcular estoque mínimo baseado em demanda histórica
+    ✅ Calcular estoque mínimo baseado em demanda histórica dos últimos 3 meses
+    ✅ Analisar tendências de vendas por produto e empresa (HIGIPLAS/HIGITEC)
+    ✅ Identificar produtos com maior rotatividade
+    ✅ Sugerir estratégias de reposição de estoque
     ✅ Identificar produtos críticos que precisam de reposição URGENTE
     ✅ Analisar rotatividade e sazonalidade de produtos
     ✅ Detectar produtos parados que ocupam capital desnecessário
