@@ -11,4 +11,7 @@ echo "==> [START] Verificação do superusuário concluída."
 
 echo "==> [START] Iniciando servidor Uvicorn..."
 echo "==> [START] Configuração CORS para produção ativada"
-exec uvicorn --host 0.0.0.0 --port 10000 --proxy-headers --forwarded-allow-ips='*' app.main:app
+# Use a variável PORT do Render ou 10000 como fallback
+PORT=${PORT:-10000}
+echo "==> [START] Iniciando na porta: $PORT"
+exec uvicorn --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*' app.main:app

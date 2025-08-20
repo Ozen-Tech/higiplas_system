@@ -105,6 +105,18 @@ async def processar_pdf_movimentacao(
 ):
     """Processa um PDF de nota fiscal e registra as movimentações automaticamente."""
     
+    # Log para debug
+    print(f"DEBUG: Arquivo recebido: {arquivo.filename if arquivo else 'None'}")
+    print(f"DEBUG: Tipo movimentação: {tipo_movimentacao}")
+    print(f"DEBUG: Content type: {arquivo.content_type if arquivo else 'None'}")
+    
+    # Validar se o arquivo foi enviado
+    if not arquivo or not arquivo.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado"
+        )
+    
     if not arquivo.filename.lower().endswith('.pdf'):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
