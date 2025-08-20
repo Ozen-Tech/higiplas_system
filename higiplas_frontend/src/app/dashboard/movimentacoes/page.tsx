@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Header } from '@/components/dashboard/Header';
 import { apiService } from '@/services/apiService';
 import { ArrowUpOnSquareIcon, DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -29,7 +28,7 @@ export default function MovimentacoesPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string>('');
-  const router = useRouter();
+
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -62,8 +61,8 @@ export default function MovimentacoesPage() {
       const response = await apiService.post('/processar-pdf', formData);
 
       setResult(response.data);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Erro ao processar PDF';
+    } catch (err: unknown) {
+      const errorMessage = (err as any)?.response?.data?.detail || 'Erro ao processar PDF';
       setError(errorMessage);
     } finally {
       setIsProcessing(false);
