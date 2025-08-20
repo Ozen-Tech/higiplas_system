@@ -1,0 +1,3 @@
+GRANT ALL ON SCHEMA public TO higiplas_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO higiplas_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO higiplas_user;

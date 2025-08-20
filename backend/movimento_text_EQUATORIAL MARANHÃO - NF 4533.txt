@@ -1,0 +1,59 @@
+Recebemos de T M PENHA os produtos constantes na Nota Fiscal indicada ao lado. Destinatário: EQUATORIAL MARANHAO DISTRIBUIDORA DE ENERGIA Data de Emissão
+S.A - ALAMEDA A,QD: SQS, 100 - LOTEAMENTO QUITANDINHA ALTOS DO CALHAU - Sao Luis/MA 15/08/2025 NFe Nº 0000004533
+Data de Recebimento Identificação e Assinatura do Recebedor Valor Total da Nota Série 001
+Fiscal 5.871,89
+Controle do Fisco
+DANFE
+Documento Auxiliar da
+Nota Fiscal Eletrônica
+Saída: 1 1
+Entrada: 0 Chave de Acesso
+T M PENHA - HIGIPLAS - PRODUTOS DE LIMPEZA E DESC. Nº0000004533 2125 0822 5993 8900 0176 5500 1000 0045 3312 5007 7306
+Rua RUA 59, QD-36, 01 - QD-36 - BEQUIMAO - 65062-100 - Sao Luis - MA - Série 001 Consulta de autenticidade do portal nacional da NFe
+Fone/Fax: 98 3236 0307 Folha 1/1 www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora
+Natureza de Operação Protocolo de Autorização
+Venda a prazo 421250029372403 - 15/08/2025 - 11:02:51
+Inscrição Estadual Inscrição Estadual Sub. Tributária CNPJ/CPF
+124670938 22.599.389/0001-76
+Destinatário / Remetente
+Nome/Razão Social CNPJ/CPF Data de Emissão
+EQUATORIAL MARANHAO DISTRIBUIDORA DE ENERGIA S.A 06.272.793/0001-84 15/08/2025
+Endereço Bairro/Distrito CEP Data Saída/ Entrada
+ALAMEDA A,QD: SQS, 100 - LOTEAMENTO QUITANDINHA ALTOS DO CALHAU 65071-750 15/08/2025
+Município Fone UF Inscrição Estadual Hora Saída/Entrada
+Sao Luis 98 3217 8948 MA 120515113 10:55:00
+Fatura
+Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor
+001 16/08/2025 5.871,89
+Cálculo dos Impostos
+Base de Cálculo do ICMS Valor do ICMS Base Cálc. do ICMS Subs. Valor do ICMS Subs. Valor Aprox. dos Trib. (IBPT) Valor Total dos Produtos
+0,00 0,00 0,00 0,00 2.366,74 5.871,89
+Valor do Frete Valor do Seguro Desconto Out. Desp. Acessor. Valor do IPI Valor Deson. Valor Total da Nota
+0,00 0,00 0,00 0,00 0,00 0,00 Fiscal 5.871,89
+Transportador / Volumes Transportados
+Razão Social Frete por Conta Código ANTT Placa Veículo UF CNPJ/CPF
+9-Sem Transporte
+Endereço Município UF Inscrição Estadual
+Quantidade Espécie Marca Numeração Peso Bruto Peso Líquido
+Dados dos Produtos
+Cód. Prod. Descrição dos Produtos NCM/SH CS C O S S T N CFOP Med. Quantidade Vlr. Unitário Vlr. Desconto Vlr. Total BC Icms Vlr. Icms Vlr. IPI ICM A S LIQ. % IPI V d l o r s A T p r r i o b x .
+1 222 SPRAY SANITIZANTE BOLSA 500ML 22072019 0102 5102 UN 60,0000 30,0900 0,00 1.805,40 0,00 0,00 0,00 0,00 0,00 888,44
+Lote:31005 Quantidade: 60
+Fabricação: 08/05/2025 Validade:08/05/2027
+2 456 MEXEDOR DE CAFE PACOTE COM 500UND 39241000 0102 5102 UN 20,0000 9,1100 0,00 182,20 0,00 0,00 0,00 0,00 0,00 61,98
+3 556 TELA PERFUMADA PARA MICTORIO TUTTI - FRUTTI 39042200 0500 5102 UN 40,0000 5,7600 0,00 230,40 0,00 0,00 0,00 0,00 0,00 75,55
+4 60 SABONETE SUAVITEX PESSEGO BB 5 L 34013000 0102 5102 UN 2,0000 81,6500 0,00 163,30 0,00 0,00 0,00 0,00 0,00 46,10
+Lote:31217 Quantidade: 2
+Fabricação: 06/06/2025 Validade:06/06/2027
+5 745 ACIDO MURIATICO RETIRO 1L 39249000 0102 5102 UN 36,0000 5,3700 0,00 193,32 0,00 0,00 0,00 0,00 0,00 65,77
+6 10 GEL SANITIZANTE BB 5L 38089429 0102 5102 UN 2,0000 137,6500 0,00 275,30 0,00 0,00 0,00 0,00 0,00 95,78
+Lote:31112 Quantidade: 2
+Fabricação: 22/05/2025 Validade:22/05/2027
+7 859 HC CANOA FR 250G 33074900 0102 5102 UN 25,0000 60,0000 0,00 1.500,00 0,00 0,00 0,00 0,00 0,00 584,40
+8 820 HC LAVANDA AZUL FR 250G 33074900 0102 5102 UN 15,0000 30,7500 0,00 461,25 0,00 0,00 0,00 0,00 0,00 179,70
+9 224 REMOCRIL POWER BB 5L 38089419 0102 5102 UN 4,0000 265,1800 0,00 1.060,72 0,00 0,00 0,00 0,00 0,00 369,02
+Dados Adicionais
+Informações Complementares Informações Adicionais do Fisco
+I-DOC.EMITIDO P/ME OU EPP OPTANTE P/SIMPLES NACIONAL
+II-NAO GERA DIREITO A CREDITO FISCAL DE IPI
+Trib Aprox. R$ 1.027,98 Fed - R$ 1.338,77 Est - R$ 0,00 Mun / Fonte:IBPT/empresome AB35A7

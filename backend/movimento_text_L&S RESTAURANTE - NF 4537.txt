@@ -1,0 +1,52 @@
+Recebemos de T M PENHA os produtos constantes na Nota Fiscal indicada ao lado. Destinatário: L & S RESTAURANTE LTDA - RUA R DEZOITO, 7 - VILA Data de Emissão
+EMBRATEL - Sao Luis/MA 19/08/2025 NFe Nº 0000004537
+Data de Recebimento Identificação e Assinatura do Recebedor Valor Total da Nota Série 001
+Fiscal 422,94
+Controle do Fisco
+DANFE
+Documento Auxiliar da
+Nota Fiscal Eletrônica
+Saída: 1 1
+Entrada: 0 Chave de Acesso
+T M PENHA - HIGIPLAS - PRODUTOS DE LIMPEZA E DESC. Nº0000004537 2125 0822 5993 8900 0176 5500 1000 0045 3714 1125 1000
+Rua RUA 59, QD-36, 01 - QD-36 - BEQUIMAO - 65062-100 - Sao Luis - MA - Série 001 Consulta de autenticidade do portal nacional da NFe
+Fone/Fax: 98 3236 0307 Folha 1/1 www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora
+Natureza de Operação Protocolo de Autorização
+Venda a prazo 421250029761149 - 19/08/2025 - 08:39:10
+Inscrição Estadual Inscrição Estadual Sub. Tributária CNPJ/CPF
+124670938 22.599.389/0001-76
+Destinatário / Remetente
+Nome/Razão Social CNPJ/CPF Data de Emissão
+L & S RESTAURANTE LTDA 39.988.896/0001-02 19/08/2025
+Endereço Bairro/Distrito CEP Data Saída/ Entrada
+RUA R DEZOITO, 7 - VILA EMBRATEL 65081-355 19/08/2025
+Município Fone UF Inscrição Estadual Hora Saída/Entrada
+Sao Luis MA 126743690 08:36:00
+Fatura
+Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor
+001 18/09/2025 422,94
+Cálculo dos Impostos
+Base de Cálculo do ICMS Valor do ICMS Base Cálc. do ICMS Subs. Valor do ICMS Subs. Valor Aprox. dos Trib. (IBPT) Valor Total dos Produtos
+0,00 0,00 0,00 0,00 142,73 422,94
+Valor do Frete Valor do Seguro Desconto Out. Desp. Acessor. Valor do IPI Valor Deson. Valor Total da Nota
+0,00 0,00 0,00 0,00 0,00 0,00 Fiscal 422,94
+Transportador / Volumes Transportados
+Razão Social Frete por Conta Código ANTT Placa Veículo UF CNPJ/CPF
+9-Sem Transporte
+Endereço Município UF Inscrição Estadual
+Quantidade Espécie Marca Numeração Peso Bruto Peso Líquido
+Dados dos Produtos
+Cód. Prod. Descrição dos Produtos NCM/SH CS C O S S T N CFOP Med. Quantidade Vlr. Unitário Vlr. Desconto Vlr. Total BC Icms Vlr. Icms Vlr. IPI ICM A S LIQ. % IPI V d l o r s A T p r r i o b x .
+1 43 DETERGENTE CLORADO BB 5L 38089419 0102 5102 UN 2,0000 128,6400 0,00 257,28 0,00 0,00 0,00 0,00 0,00 89,51
+Lote:30179 Quantidade: 2
+Fabricação: 12/12/2024 Validade:12/06/2025
+2 787 DESINCROST GEL BB 5 38249941 0102 5102 UN 1,0000 116,0600 0,00 116,06 0,00 0,00 0,00 0,00 0,00 38,82
+Lote:28886 Quantidade: 1
+Fabricação: 02/05/2024 Validade:02/05/2026
+3 798 LUVA NITRILICA CANO LONGO SLIM G 40151900 0102 5102 UN 1,0000 18,4000 0,00 18,40 0,00 0,00 0,00 0,00 0,00 6,46
+4 103 FIBRA DE LIMPEZA PESADA BETTANIN 68053090 0102 5102 UN 10,0000 3,1200 0,00 31,20 0,00 0,00 0,00 0,00 0,00 7,94
+Dados Adicionais
+Informações Complementares Informações Adicionais do Fisco
+I-DOC.EMITIDO P/ME OU EPP OPTANTE P/SIMPLES NACIONAL
+II-NAO GERA DIREITO A CREDITO FISCAL DE IPI
+Trib Aprox. R$ 61,01 Fed - R$ 81,72 Est - R$ 0,00 Mun / Fonte:IBPT/empresome AB35A7

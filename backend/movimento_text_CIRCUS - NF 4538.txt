@@ -1,0 +1,50 @@
+Recebemos de T M PENHA os produtos constantes na Nota Fiscal indicada ao lado. Destinatário: J S GONDIM LINHARES FILHO - AV BAHIA, 667 - Data de Emissão
+CHACARA BRASIL - Sao Luis/MA 19/08/2025 NFe Nº 0000004538
+Data de Recebimento Identificação e Assinatura do Recebedor Valor Total da Nota Série 001
+Fiscal 1.571,12
+Controle do Fisco
+DANFE
+Documento Auxiliar da
+Nota Fiscal Eletrônica
+Saída: 1 1
+Entrada: 0 Chave de Acesso
+T M PENHA - HIGIPLAS - PRODUTOS DE LIMPEZA E DESC. Nº0000004538 2125 0822 5993 8900 0176 5500 1000 0045 3810 5236 2310
+Rua RUA 59, QD-36, 01 - QD-36 - BEQUIMAO - 65062-100 - Sao Luis - MA - Série 001 Consulta de autenticidade do portal nacional da NFe
+Fone/Fax: 98 3236 0307 Folha 1/1 www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora
+Natureza de Operação Protocolo de Autorização
+Venda a prazo 421250029773675 - 19/08/2025 - 10:23:28
+Inscrição Estadual Inscrição Estadual Sub. Tributária CNPJ/CPF
+124670938 22.599.389/0001-76
+Destinatário / Remetente
+Nome/Razão Social CNPJ/CPF Data de Emissão
+J S GONDIM LINHARES FILHO 35.357.138/0001-27 19/08/2025
+Endereço Bairro/Distrito CEP Data Saída/ Entrada
+AV BAHIA, 667 - CHACARA BRASIL 65066-659 19/08/2025
+Município Fone UF Inscrição Estadual Hora Saída/Entrada
+Sao Luis MA 126233195 10:21:00
+Fatura
+Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor
+001 03/09/2025 785,56 002 18/09/2025 785,56
+Cálculo dos Impostos
+Base de Cálculo do ICMS Valor do ICMS Base Cálc. do ICMS Subs. Valor do ICMS Subs. Valor Aprox. dos Trib. (IBPT) Valor Total dos Produtos
+0,00 0,00 0,00 0,00 527,55 1.571,12
+Valor do Frete Valor do Seguro Desconto Out. Desp. Acessor. Valor do IPI Valor Deson. Valor Total da Nota
+0,00 0,00 0,00 0,00 0,00 0,00 Fiscal 1.571,12
+Transportador / Volumes Transportados
+Razão Social Frete por Conta Código ANTT Placa Veículo UF CNPJ/CPF
+9-Sem Transporte
+Endereço Município UF Inscrição Estadual
+Quantidade Espécie Marca Numeração Peso Bruto Peso Líquido
+Dados dos Produtos
+Cód. Prod. Descrição dos Produtos NCM/SH CS C O S S T N CFOP Med. Quantidade Vlr. Unitário Vlr. Desconto Vlr. Total BC Icms Vlr. Icms Vlr. IPI ICM A S LIQ. % IPI V d l o r s A T p r r i o b x .
+1 297 SUPORTE LT S/ CABO C/ PINCA P/ FIBRA (NOBRE) 96039000 0102 5102 UN 1,0000 19,1400 0,00 19,14 0,00 0,00 0,00 0,00 0,00 6,02
+2 296 CABO DE ALUMINIO 22X1,40M (NOBRE) 76082090 0102 5102 UN 1,0000 25,2000 0,00 25,20 0,00 0,00 0,00 0,00 0,00 7,93
+3 262 PAPEL TOALHA MG KING SOFT 640 FOLHAS 48030090 0102 5102 UN 55,0000 11,0900 0,00 609,95 0,00 0,00 0,00 0,00 0,00 200,00
+4 726 S P A LA C S O T P IC / LIXO 75X90X0,08 - PRETO 100LT BETA 39232190 0102 5102 UN 3,0000 102,7500 0,00 308,25 0,00 0,00 0,00 0,00 0,00 108,29
+5 394 S B A E C TA O P P L / A L S I T X I O C 90X100X0,08 - PRETO 200LT 39232190 0102 5102 UN 3,0000 126,0600 0,00 378,18 0,00 0,00 0,00 0,00 0,00 132,85
+6 986 PAPEL HIGIENICO 8X300M BRANCO 48181000 0102 5102 UN 4,0000 57,6000 0,00 230,40 0,00 0,00 0,00 0,00 0,00 72,46
+Dados Adicionais
+Informações Complementares Informações Adicionais do Fisco
+I-DOC.EMITIDO P/ME OU EPP OPTANTE P/SIMPLES NACIONAL
+II-NAO GERA DIREITO A CREDITO FISCAL DE IPI
+Trib Aprox. R$ 244,74 Fed - R$ 282,81 Est - R$ 0,00 Mun / Fonte:IBPT/empresome AB35A7

@@ -92,6 +92,14 @@ export function EditableProductTableRow({ product, onSave, onRemove, onMoveStock
             product.estoque_minimo ?? 'N/A'
         )}
       </td>
+      {/* Coluna Preço de Custo */}
+      <td className="px-4 py-3 text-sm text-right text-gray-500 dark:text-gray-400">
+        {isEditing ? (
+            <input type="number" step="0.01" name="preco_custo" value={editedData.preco_custo ?? ''} onChange={handleInputChange} className={`${inputClasses} text-right w-24`} />
+        ) : (
+            product.preco_custo ? product.preco_custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'
+        )}
+      </td>
       {/* Coluna Preço de Venda */}
        <td className="px-4 py-3 text-sm text-right text-gray-500 dark:text-gray-400">
         {isEditing ? (

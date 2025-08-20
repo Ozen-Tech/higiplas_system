@@ -1,0 +1,47 @@
+Recebemos de T M PENHA os produtos constantes na Nota Fiscal indicada ao lado. Destinatário: FITNESS CLUB LTDA - RUA DA GEOGRAFIA, 10 - Data de Emissão
+COHAFUMA - Sao Luis/MA 19/08/2025 NFe Nº 0000004536
+Data de Recebimento Identificação e Assinatura do Recebedor Valor Total da Nota Série 001
+Fiscal 616,62
+Controle do Fisco
+DANFE
+Documento Auxiliar da
+Nota Fiscal Eletrônica
+Saída: 1 1
+Entrada: 0 Chave de Acesso
+T M PENHA - HIGIPLAS - PRODUTOS DE LIMPEZA E DESC. Nº0000004536 2125 0822 5993 8900 0176 5500 1000 0045 3618 9349 4696
+Rua RUA 59, QD-36, 01 - QD-36 - BEQUIMAO - 65062-100 - Sao Luis - MA - Série 001 Consulta de autenticidade do portal nacional da NFe
+Fone/Fax: 98 3236 0307 Folha 1/1 www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora
+Natureza de Operação Protocolo de Autorização
+Venda a prazo 421250029760390 - 19/08/2025 - 08:33:27
+Inscrição Estadual Inscrição Estadual Sub. Tributária CNPJ/CPF
+124670938 22.599.389/0001-76
+Destinatário / Remetente
+Nome/Razão Social CNPJ/CPF Data de Emissão
+FITNESS CLUB LTDA 17.213.088/0001-22 19/08/2025
+Endereço Bairro/Distrito CEP Data Saída/ Entrada
+RUA DA GEOGRAFIA, 10 - COHAFUMA 65074-800 19/08/2025
+Município Fone UF Inscrição Estadual Hora Saída/Entrada
+Sao Luis 98 3303 5926 MA 123970091 08:32:00
+Fatura
+Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor
+001 18/09/2025 616,62
+Cálculo dos Impostos
+Base de Cálculo do ICMS Valor do ICMS Base Cálc. do ICMS Subs. Valor do ICMS Subs. Valor Aprox. dos Trib. (IBPT) Valor Total dos Produtos
+0,00 0,00 0,00 0,00 214,52 616,62
+Valor do Frete Valor do Seguro Desconto Out. Desp. Acessor. Valor do IPI Valor Deson. Valor Total da Nota
+0,00 0,00 0,00 0,00 0,00 0,00 Fiscal 616,62
+Transportador / Volumes Transportados
+Razão Social Frete por Conta Código ANTT Placa Veículo UF CNPJ/CPF
+9-Sem Transporte
+Endereço Município UF Inscrição Estadual
+Quantidade Espécie Marca Numeração Peso Bruto Peso Líquido
+Dados dos Produtos
+Cód. Prod. Descrição dos Produtos NCM/SH CS C O S S T N CFOP Med. Quantidade Vlr. Unitário Vlr. Desconto Vlr. Total BC Icms Vlr. Icms Vlr. IPI ICM A S LIQ. % IPI V d l o r s A T p r r i o b x .
+1 62 MULTIBAC BP DOS 1L 38089419 0102 5102 UN 2,0000 308,3100 0,00 616,62 0,00 0,00 0,00 0,00 0,00 214,52
+Lote:31013 Quantidade: 2
+Fabricação: 08/05/2025 Validade:08/05/2027
+Dados Adicionais
+Informações Complementares Informações Adicionais do Fisco
+I-DOC.EMITIDO P/ME OU EPP OPTANTE P/SIMPLES NACIONAL
+II-NAO GERA DIREITO A CREDITO FISCAL DE IPI
+Trib Aprox. R$ 91,20 Fed - R$ 123,32 Est - R$ 0,00 Mun / Fonte:IBPT/empresome AB35A7

@@ -1,0 +1,53 @@
+Recebemos de T M PENHA os produtos constantes na Nota Fiscal indicada ao lado. Destinatário: L A F COSTA ESCOLA LTDA - R DO ARAME 64/85, 20 - Data de Emissão
+VINHAIS - Sao Luis/MA 19/08/2025 NFe Nº 0000004534
+Data de Recebimento Identificação e Assinatura do Recebedor Valor Total da Nota Série 001
+Fiscal 1.056,98
+Controle do Fisco
+DANFE
+Documento Auxiliar da
+Nota Fiscal Eletrônica
+Saída: 1 1
+Entrada: 0 Chave de Acesso
+T M PENHA - HIGIPLAS - PRODUTOS DE LIMPEZA E DESC. Nº0000004534 2125 0822 5993 8900 0176 5500 1000 0045 3411 6767 9164
+Rua RUA 59, QD-36, 01 - QD-36 - BEQUIMAO - 65062-100 - Sao Luis - MA - Série 001 Consulta de autenticidade do portal nacional da NFe
+Fone/Fax: 98 3236 0307 Folha 1/1 www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora
+Natureza de Operação Protocolo de Autorização
+Venda a prazo 421250029758104 - 19/08/2025 - 08:15:59
+Inscrição Estadual Inscrição Estadual Sub. Tributária CNPJ/CPF
+124670938 22.599.389/0001-76
+Destinatário / Remetente
+Nome/Razão Social CNPJ/CPF Data de Emissão
+L A F COSTA ESCOLA LTDA 07.146.144/0001-08 19/08/2025
+Endereço Bairro/Distrito CEP Data Saída/ Entrada
+R DO ARAME 64/85, 20 - VINHAIS 65070-020 19/08/2025
+Município Fone UF Inscrição Estadual Hora Saída/Entrada
+Sao Luis MA 08:13:00
+Fatura
+Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor
+001 20/08/2025 1.056,98
+Cálculo dos Impostos
+Base de Cálculo do ICMS Valor do ICMS Base Cálc. do ICMS Subs. Valor do ICMS Subs. Valor Aprox. dos Trib. (IBPT) Valor Total dos Produtos
+0,00 0,00 0,00 0,00 343,63 1.056,98
+Valor do Frete Valor do Seguro Desconto Out. Desp. Acessor. Valor do IPI Valor Deson. Valor Total da Nota
+0,00 0,00 0,00 0,00 0,00 0,00 Fiscal 1.056,98
+Transportador / Volumes Transportados
+Razão Social Frete por Conta Código ANTT Placa Veículo UF CNPJ/CPF
+9-Sem Transporte
+Endereço Município UF Inscrição Estadual
+Quantidade Espécie Marca Numeração Peso Bruto Peso Líquido
+Dados dos Produtos
+Cód. Prod. Descrição dos Produtos NCM/SH CS C O S S T N CFOP Med. Quantidade Vlr. Unitário Vlr. Desconto Vlr. Total BC Icms Vlr. Icms Vlr. IPI ICM A S LIQ. % IPI V d l o r s A T p r r i o b x .
+1 330 AROMATIZADOR LAVANDA 360ML 33074900 0102 5102 UN 3,0000 14,9200 0,00 44,76 0,00 0,00 0,00 0,00 0,00 17,44
+2 324 P 8X A 3 P 0 E 0 L HIGIENICO HR PAPEIS 100% CELULOSE 48181000 0102 5102 UN 6,0000 77,0000 0,00 462,00 0,00 0,00 0,00 0,00 0,00 145,30
+3 796 P P A R P E E M L IU T M OALHA INTERF.C/ 1000F 100% CELULOSE 48182000 0102 5102 UN 30,0000 15,4500 0,00 463,50 0,00 0,00 0,00 0,00 0,00 151,98
+4 587 DETERGENTE ECONOMICO NEUTRO 500ML 38089419 0102 5102 UN 3,0000 2,9100 0,00 8,73 0,00 0,00 0,00 0,00 0,00 3,04
+5 102 ESPONJA DUPLA FACE 73231000 0102 5102 UN 2,0000 0,9700 0,00 1,94 0,00 0,00 0,00 0,00 0,00 0,70
+6 259 P S A A N N O TO DE CHAO ALVEJA DO FLANELADO 45X68 ESP. 63079090 0102 5102 UN 3,0000 7,6900 0,00 23,07 0,00 0,00 0,00 0,00 0,00 7,26
+7 231 AGUA SANITARIA CLORITO 1L 28289011 0102 5102 UN 12,0000 3,2900 0,00 39,48 0,00 0,00 0,00 0,00 0,00 13,21
+8 942 SABAO EM PO ALA FLOR DE LIS 400G 38089419 0102 5102 UN 3,0000 4,5000 0,00 13,50 0,00 0,00 0,00 0,00 0,00 4,70
+Dados Adicionais
+Informações Complementares Informações Adicionais do Fisco
+I-DOC.EMITIDO P/ME OU EPP OPTANTE P/SIMPLES NACIONAL
+II-NAO GERA DIREITO A CREDITO FISCAL DE IPI
+Trib Aprox. R$ 151,19 Fed - R$ 192,43 Est - R$ 0,00 Mun / Fonte:IBPT/empresome AB35A7
+NF vinculada ao DAV n 3624 - Vendedor: MIRIAN CASTRO

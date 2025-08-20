@@ -19,6 +19,7 @@ export function ProductTable({ products, onSave, onRemove, onMoveStock }: Produc
     { label: 'Código' },
     { label: 'Estoque', className: 'text-center' },
     { label: 'Est. Mínimo', className: 'text-center' },
+    { label: 'Preço Custo', className: 'text-right' },
     { label: 'Preço Venda', className: 'text-right' },
     { label: 'Data Cadastro', className: 'text-center' },
     { label: 'Ações', className: 'text-right' },

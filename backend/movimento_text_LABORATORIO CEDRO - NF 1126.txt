@@ -1,0 +1,52 @@
+Recebemos de T MARINHO PENHA LTDA os produtos constantes na Nota Fiscal indicada ao lado. Destinatário: LABORATORIO CEDRO LTDA - Avenida Data de Emissão
+AVENIDA SILVA MAIA, 081 - CENTRO - Sao Luis/MA 18/08/2025 NFe Nº 0000001126
+Data de Recebimento Identificação e Assinatura do Recebedor Valor Total da Nota Série 001
+Fiscal 5.093,40
+Controle do Fisco
+DANFE
+Documento Auxiliar da
+Nota Fiscal Eletrônica
+Saída: 1 1
+Entrada: 0 Chave de Acesso
+T MARINHO PENHA LTDA - HIGITEC PRODUTOS AVANCADOS EM LIM. Nº0000001126 2125 0844 8741 2600 0160 5500 1000 0011 2617 8224 5436
+Rua RUA 59, QD-36, 001 - QD-36 - PBREOQFU.IMAO - 65062-100 - Sao Luis - MA - Série 001 Consulta de autenticidade do portal nacional da NFe
+Fone/Fax: 98 3236 0307 Folha 1/1 www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora
+Natureza de Operação Protocolo de Autorização
+Venda a prazo 421250029661206 - 18/08/2025 - 14:36:17
+Inscrição Estadual Inscrição Estadual Sub. Tributária CNPJ/CPF
+127398805 44.874.126/0001-60
+Destinatário / Remetente
+Nome/Razão Social CNPJ/CPF Data de Emissão
+LABORATORIO CEDRO LTDA 10.445.344/0001-68 18/08/2025
+Endereço Bairro/Distrito CEP Data Saída/ Entrada
+Avenida AVENIDA SILVA MAIA, 081 - CENTRO 65020-570 18/08/2025
+Município Fone UF Inscrição Estadual Hora Saída/Entrada
+Sao Luis MA 14:34:00
+Fatura
+Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor Nº da duplicata Vencimento Valor
+001 17/09/2025 2.546,70 002 17/10/2025 2.546,70
+Cálculo dos Impostos
+Base de Cálculo do ICMS Valor do ICMS Base Cálc. do ICMS Subs. Valor do ICMS Subs. Valor Aprox. dos Trib. (IBPT) Valor Total dos Produtos
+0,00 0,00 0,00 0,00 1.944,62 5.093,40
+Valor do Frete Valor do Seguro Desconto Out. Desp. Acessor. Valor do IPI Valor Deson. Valor Total da Nota
+0,00 0,00 0,00 0,00 0,00 0,00 Fiscal 5.093,40
+Transportador / Volumes Transportados
+Razão Social Frete por Conta Código ANTT Placa Veículo UF CNPJ/CPF
+9-Sem Transporte
+Endereço Município UF Inscrição Estadual
+Quantidade Espécie Marca Numeração Peso Bruto Peso Líquido
+Dados dos Produtos
+Cód. Prod. Descrição dos Produtos NCM/SH CS C O S S T N CFOP Med. Quantidade Vlr. Unitário Vlr. Desconto Vlr. Total BC Icms Vlr. Icms Vlr. IPI ICM A S LIQ. % IPI V d l o r s A T p r r i o b x .
+1 3 AGUASSANI BB 5L REND 20L 28289011 0102 5102 UN 98,0000 33,4500 0,00 3.278,10 0,00 0,00 0,00 0,00 0,00 1.260,43
+Lote:31367 Quantidade: 98
+Fabricação: 03/07/2025 Validade:03/01/2026
+2 522 HOSP NEUTRO PLUS BB5L 34025000 0102 5102 UN 10,0000 181,5300 0,00 1.815,30 0,00 0,00 0,00 0,00 0,00 684,19
+Dados Adicionais
+Informações Complementares Informações Adicionais do Fisco
+I-DOC.EMITIDO P/ME OU EPP OPTANTE P/SIMPLES NACIONAL
+II-NAO GERA DIREITO A CREDITO FISCAL DE IPI
+Trib Aprox. R$ 707,57 Fed - R$ 1.237,05 Est - R$ 0,00 Mun / Fonte:IBPT/empresome 81AAFF
+PEDIDO N 2920
+Endereco de entrega (ALMOXARIFADO): RUA BOM JESUS, N 15C - Qd. 136 A, LOTE 3, GALPAO D -
+COMPLEMENTO COM A RUA SANTO ANTONIO - JARDIM SAO CRISTOVAO - CEP: 65.055.050 - SAO LUIS-
+Ponto de referencia: Proximo a ACO MARANHAO.
