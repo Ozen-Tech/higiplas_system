@@ -1,7 +1,7 @@
 # backend/app/routers/movimentacoes.py
 
 # Adicionamos 'Body' às importações do FastAPI
-from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from ..db import models
@@ -99,7 +99,7 @@ def read_movimentacoes_por_produto(
 )
 async def processar_pdf_movimentacao(
     arquivo: UploadFile = File(..., description="Arquivo PDF da nota fiscal"),
-    tipo_movimentacao: str = Body(..., description="Tipo de movimentação: ENTRADA ou SAIDA"),
+    tipo_movimentacao: str = Form(..., description="Tipo de movimentação: ENTRADA ou SAIDA"),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
