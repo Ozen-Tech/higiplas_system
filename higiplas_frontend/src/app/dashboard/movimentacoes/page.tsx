@@ -55,10 +55,10 @@ export default function MovimentacoesPage() {
 
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('arquivo', selectedFile);
       formData.append('tipo_movimentacao', tipoMovimentacao);
 
-      const response = await apiService.post('/processar-pdf', formData);
+      const response = await apiService.post('/movimentacoes/processar-pdf', formData);
 
       setResult(response.data);
     } catch (err: unknown) {
