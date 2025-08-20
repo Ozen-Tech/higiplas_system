@@ -62,7 +62,8 @@ export default function MovimentacoesPage() {
 
       setResult(response.data);
     } catch (err: unknown) {
-      const errorMessage = (err as any)?.response?.data?.detail || 'Erro ao processar PDF';
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error.response?.data?.detail || 'Erro ao processar PDF';
       setError(errorMessage);
     } finally {
       setIsProcessing(false);
