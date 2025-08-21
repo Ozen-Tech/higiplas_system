@@ -3,32 +3,53 @@
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/Header';
 import { apiService } from '@/services/apiService';
-import { ArrowUpOnSquareIcon, DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ArrowUpOnSquareIcon, DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/Button';
 
-interface ProcessedMovement {
-  produto_nome: string;
+interface ProdutoPreview {
+  codigo: string;
+  descricao_pdf: string;
   quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+  encontrado: boolean;
+  produto_id?: number;
+  nome_sistema?: string;
+  estoque_atual?: number;
+  estoque_projetado?: number;
+}
+
+interface PreviewResult {
+  sucesso: boolean;
+  arquivo: string;
   tipo_movimentacao: 'ENTRADA' | 'SAIDA';
-  observacao?: string;
-  status: 'success' | 'error' | 'not_found';
-  message?: string;
+  nota_fiscal?: string;
+  data_emissao?: string;
+  cliente?: string;
+  produtos_encontrados: ProdutoPreview[];
+  produtos_nao_encontrados: ProdutoPreview[];
+  total_produtos_pdf: number;
+  produtos_validos: number;
 }
 
 interface ProcessingResult {
-  movements_created: number;
-  products_found: number;
-  products_not_found: number;
-  processed_movements: ProcessedMovement[];
+  sucesso: boolean;
+  mensagem: string;
+  movimentacoes_criadas: number;
+  produtos_atualizados: string[];
+  detalhes: any[];
 }
 
 export default function MovimentacoesPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tipoMovimentacao, setTipoMovimentacao] = useState<'ENTRADA' | 'SAIDA'>('SAIDA');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string>('');
-
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -36,6 +57,8 @@ export default function MovimentacoesPage() {
       if (file.type === 'application/pdf') {
         setSelectedFile(file);
         setError('');
+        setPreviewData(null);
+        setResult(null);
       } else {
         setError('Por favor, selecione apenas arquivos PDF.');
         setSelectedFile(null);
@@ -43,7 +66,7 @@ export default function MovimentacoesPage() {
     }
   };
 
-  const handleProcessPDF = async () => {
+  const handlePreviewPDF = async () => {
     if (!selectedFile) {
       setError('Por favor, selecione um arquivo PDF.');
       return;
@@ -51,6 +74,7 @@ export default function MovimentacoesPage() {
 
     setIsProcessing(true);
     setError('');
+    setPreviewData(null);
     setResult(null);
 
     try {
@@ -58,9 +82,15 @@ export default function MovimentacoesPage() {
       formData.append('arquivo', selectedFile);
       formData.append('tipo_movimentacao', tipoMovimentacao);
 
-      const response = await apiService.postFormData('/movimentacoes/processar-pdf', formData);
-
-      setResult(response.data);
+      const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
+      
+      setPreviewData(response.data);
+      setShowModal(true);
+      
+      // Selecionar todos os produtos encontrados por padrão
+      const produtosEncontrados = response.data.produtos_encontrados || [];
+      setSelectedProducts(produtosEncontrados.map((_: any, index: number) => index));
+      
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       const errorMessage = error.response?.data?.detail || 'Erro ao processar PDF';
@@ -70,28 +100,57 @@ export default function MovimentacoesPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'error':
-      case 'not_found':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />;
-      default:
-        return null;
+  const handleConfirmProcessing = async () => {
+    if (!previewData || selectedProducts.length === 0) {
+      setError('Selecione pelo menos um produto para processar.');
+      return;
+    }
+
+    setIsConfirming(true);
+    setError('');
+
+    try {
+      const produtosConfirmados = selectedProducts.map(index => 
+        previewData.produtos_encontrados[index]
+      );
+
+      const dados = {
+        produtos_confirmados: produtosConfirmados,
+        tipo_movimentacao: previewData.tipo_movimentacao,
+        nota_fiscal: previewData.nota_fiscal
+      };
+
+      const response = await apiService.post('/movimentacoes/confirmar-movimentacoes', dados);
+      
+      setResult(response.data);
+      setShowModal(false);
+      setPreviewData(null);
+      setSelectedFile(null);
+      
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error.response?.data?.detail || 'Erro ao confirmar movimentações';
+      setError(errorMessage);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'text-green-600 bg-green-50';
-      case 'error':
-      case 'not_found':
-        return 'text-red-600 bg-red-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
+  const toggleProductSelection = (index: number) => {
+    setSelectedProducts(prev => 
+      prev.includes(index) 
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    );
+  };
+
+  const selectAllProducts = () => {
+    if (!previewData) return;
+    setSelectedProducts(previewData.produtos_encontrados.map((_, index) => index));
+  };
+
+  const deselectAllProducts = () => {
+    setSelectedProducts([]);
   };
 
   return (
@@ -107,7 +166,7 @@ export default function MovimentacoesPage() {
               Processar PDF de Movimentação
             </h2>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Faça upload de um PDF com dados de movimentação de estoque para processamento automático.
+              Faça upload de um PDF com dados de movimentação de estoque para visualização e confirmação.
             </p>
 
             {/* Seleção do tipo de movimentação */}
@@ -175,21 +234,21 @@ export default function MovimentacoesPage() {
               )}
             </div>
 
-            {/* Botão de processar */}
+            {/* Botão de visualizar */}
             <Button
-              onClick={handleProcessPDF}
+              onClick={handlePreviewPDF}
               disabled={!selectedFile || isProcessing}
               className="w-full"
             >
               {isProcessing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processando PDF...
+                  Analisando PDF...
                 </>
               ) : (
                 <>
-                  <ArrowUpOnSquareIcon className="h-4 w-4 mr-2" />
-                  Processar PDF
+                  <EyeIcon className="h-4 w-4 mr-2" />
+                  Visualizar Produtos do PDF
                 </>
               )}
             </Button>
@@ -205,64 +264,38 @@ export default function MovimentacoesPage() {
             </div>
           )}
 
-          {/* Resultados do processamento */}
+          {/* Resultado final do processamento */}
           {result && (
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border dark:border-gray-700">
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Resultado do Processamento
+                ✅ Processamento Concluído
               </h3>
               
-              {/* Resumo */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{result.movements_created}</div>
-                  <div className="text-sm text-green-700 dark:text-green-300">Movimentações Criadas</div>
-                </div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg mb-4">
+                <p className="text-green-700 dark:text-green-300 font-medium">{result.mensagem}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{result.products_found}</div>
-                  <div className="text-sm text-blue-700 dark:text-blue-300">Produtos Encontrados</div>
+                  <div className="text-2xl font-bold text-blue-600">{result.movimentacoes_criadas}</div>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">Movimentações Criadas</div>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">{result.products_not_found}</div>
-                  <div className="text-sm text-red-700 dark:text-red-300">Produtos Não Encontrados</div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">{result.produtos_atualizados.length}</div>
+                  <div className="text-sm text-purple-700 dark:text-purple-300">Produtos Atualizados</div>
                 </div>
               </div>
 
-              {/* Detalhes das movimentações */}
-              {result.processed_movements && result.processed_movements.length > 0 && (
+              {result.produtos_atualizados.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    Detalhes das Movimentações
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Produtos Atualizados:
                   </h4>
-                  <div className="space-y-2">
-                    {result.processed_movements.map((movement, index) => (
-                      <div
-                        key={index}
-                        className={`p-3 rounded-lg border ${getStatusColor(movement.status)}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            {getStatusIcon(movement.status)}
-                            <span className="ml-2 font-medium">{movement.produto_nome}</span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              movement.tipo_movimentacao === 'ENTRADA' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {movement.tipo_movimentacao}
-                            </span>
-                            <span className="font-semibold">{movement.quantidade} unidades</span>
-                          </div>
-                        </div>
-                        {movement.message && (
-                          <p className="text-sm mt-2 opacity-75">{movement.message}</p>
-                        )}
-                        {movement.observacao && (
-                          <p className="text-sm mt-1 italic">Obs: {movement.observacao}</p>
-                        )}
-                      </div>
+                  <div className="flex flex-wrap gap-2">
+                    {result.produtos_atualizados.map((produto, index) => (
+                      <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">
+                        {produto}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -271,6 +304,202 @@ export default function MovimentacoesPage() {
           )}
         </div>
       </main>
+
+      {/* Modal de Confirmação */}
+      {showModal && previewData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Confirmar Movimentações
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Arquivo: {previewData.arquivo} | Tipo: {previewData.tipo_movimentacao}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Informações da Nota Fiscal */}
+            {(previewData.nota_fiscal || previewData.data_emissao || previewData.cliente) && (
+              <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Informações da Nota Fiscal</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  {previewData.nota_fiscal && (
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">NF: </span>
+                      <span className="text-gray-600 dark:text-gray-400">{previewData.nota_fiscal}</span>
+                    </div>
+                  )}
+                  {previewData.data_emissao && (
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Data: </span>
+                      <span className="text-gray-600 dark:text-gray-400">{previewData.data_emissao}</span>
+                    </div>
+                  )}
+                  {previewData.cliente && (
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Cliente: </span>
+                      <span className="text-gray-600 dark:text-gray-400">{previewData.cliente}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Resumo */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{previewData.produtos_encontrados.length}</div>
+                  <div className="text-sm text-green-700 dark:text-green-300">Produtos Encontrados</div>
+                </div>
+                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">{previewData.produtos_nao_encontrados.length}</div>
+                  <div className="text-sm text-red-700 dark:text-red-300">Não Encontrados</div>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{selectedProducts.length}</div>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">Selecionados</div>
+                </div>
+              </div>
+
+              {/* Controles de Seleção */}
+              {previewData.produtos_encontrados.length > 0 && (
+                <div className="flex gap-2 mb-4">
+                  <Button onClick={selectAllProducts} className="px-3 py-1 text-sm">
+                    Selecionar Todos
+                  </Button>
+                  <Button onClick={deselectAllProducts} className="px-3 py-1 text-sm">
+                    Desmarcar Todos
+                  </Button>
+                </div>
+              )}
+
+              {/* Lista de Produtos Encontrados */}
+              {previewData.produtos_encontrados.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    Produtos Encontrados no Sistema
+                  </h4>
+                  <div className="space-y-3">
+                    {previewData.produtos_encontrados.map((produto, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          selectedProducts.includes(index)
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                        }`}
+                        onClick={() => toggleProductSelection(index)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedProducts.includes(index)}
+                              onChange={() => toggleProductSelection(index)}
+                              className="mr-3"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
+                                {produto.nome_sistema || produto.descricao_pdf}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Código: {produto.codigo}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100">
+                              {produto.quantidade} unidades
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              Estoque: {produto.estoque_atual} → {produto.estoque_projetado}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de Produtos Não Encontrados */}
+              {previewData.produtos_nao_encontrados.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    Produtos Não Encontrados no Sistema
+                  </h4>
+                  <div className="space-y-3">
+                    {previewData.produtos_nao_encontrados.map((produto, index) => (
+                      <div key={index} className="p-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                              {produto.descricao_pdf}
+                            </div>
+                            <div className="text-sm text-red-600 dark:text-red-400">
+                              Código: {produto.codigo} (não encontrado no sistema)
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100">
+                              {produto.quantidade} unidades
+                            </div>
+                            <div className="text-sm text-red-600 dark:text-red-400">
+                              Não será processado
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="flex items-center justify-between p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {selectedProducts.length} de {previewData.produtos_encontrados.length} produtos selecionados
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowModal(false)}
+                  variant="secondary"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmProcessing}
+                  disabled={selectedProducts.length === 0 || isConfirming}
+                >
+                  {isConfirming ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-4 w-4 mr-2" />
+                      Confirmar e Processar ({selectedProducts.length})
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

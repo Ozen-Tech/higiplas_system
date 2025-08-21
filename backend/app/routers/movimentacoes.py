@@ -92,6 +92,231 @@ def read_movimentacoes_por_produto(
     )
 
 @router.post(
+    "/preview-pdf",
+    response_model=Dict[str, Any],
+    summary="Visualiza dados extraídos do PDF",
+    description="Extrai dados de um PDF de nota fiscal para visualização e confirmação antes do processamento."
+)
+async def preview_pdf_movimentacao(
+    arquivo: UploadFile = File(..., description="Arquivo PDF da nota fiscal"),
+    tipo_movimentacao: str = Form(..., description="Tipo de movimentação: ENTRADA ou SAIDA"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Extrai dados do PDF para visualização antes do processamento."""
+    
+    print(f"DEBUG: Arquivo recebido: {arquivo.filename}")
+    print(f"DEBUG: Tipo de movimentação: {tipo_movimentacao}")
+    print(f"DEBUG: Content type: {arquivo.content_type}")
+    
+    if not arquivo or not arquivo.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado"
+        )
+    
+    if not arquivo.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos PDF são aceitos"
+        )
+    
+    if tipo_movimentacao not in ['ENTRADA', 'SAIDA']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tipo de movimentação deve ser ENTRADA ou SAIDA"
+        )
+    
+    try:
+        print(f"DEBUG: Iniciando preview do arquivo {arquivo.filename}")
+        
+        # Salvar arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            content = await arquivo.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
+        
+        # Extrair dados do PDF
+        print(f"DEBUG: Iniciando extração de dados do PDF")
+        dados_extraidos = extrair_dados_pdf(temp_file_path)
+        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
+        
+        # Limpar arquivo temporário
+        os.unlink(temp_file_path)
+        
+        if not dados_extraidos or not dados_extraidos.get('produtos'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não foi possível extrair dados válidos do PDF"
+            )
+        
+        # Enriquecer dados dos produtos com informações do banco
+        produtos_enriquecidos = []
+        produtos_nao_encontrados = []
+        
+        for produto_data in dados_extraidos['produtos']:
+            codigo = produto_data.get('codigo')
+            quantidade = produto_data.get('quantidade', 0)
+            
+            if not codigo or quantidade <= 0:
+                continue
+            
+            # Buscar produto pelo código
+            produto = db.query(models.Produto).filter(
+                models.Produto.codigo == str(codigo),
+                models.Produto.empresa_id == current_user.empresa_id
+            ).first()
+            
+            produto_info = {
+                'codigo': codigo,
+                'descricao_pdf': produto_data.get('descricao', 'N/A'),
+                'quantidade': quantidade,
+                'valor_unitario': produto_data.get('valor_unitario', 0),
+                'valor_total': produto_data.get('valor_total', 0),
+                'encontrado': produto is not None
+            }
+            
+            if produto:
+                produto_info.update({
+                    'produto_id': produto.id,
+                    'nome_sistema': produto.nome,
+                    'estoque_atual': produto.quantidade_estoque,
+                    'estoque_projetado': produto.quantidade_estoque + (quantidade if tipo_movimentacao == 'ENTRADA' else -quantidade)
+                })
+                produtos_enriquecidos.append(produto_info)
+            else:
+                produtos_nao_encontrados.append(produto_info)
+        
+        return {
+            'sucesso': True,
+            'arquivo': arquivo.filename,
+            'tipo_movimentacao': tipo_movimentacao,
+            'nota_fiscal': dados_extraidos.get('nota_fiscal'),
+            'data_emissao': dados_extraidos.get('data_emissao'),
+            'cliente': dados_extraidos.get('cliente'),
+            'produtos_encontrados': produtos_enriquecidos,
+            'produtos_nao_encontrados': produtos_nao_encontrados,
+            'total_produtos_pdf': len(dados_extraidos['produtos']),
+            'produtos_validos': len(produtos_enriquecidos)
+        }
+        
+    except HTTPException as he:
+        print(f"DEBUG: HTTPException capturada: {he.status_code} - {he.detail}")
+        raise
+    except Exception as e:
+        print(f"DEBUG: Exception geral capturada: {type(e).__name__} - {str(e)}")
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar PDF: {str(e)}"
+        )
+
+@router.post(
+    "/confirmar-movimentacoes",
+    response_model=Dict[str, Any],
+    summary="Confirma e processa movimentações de estoque",
+    description="Processa as movimentações de estoque após confirmação do usuário."
+)
+async def confirmar_movimentacoes(
+    dados: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Processa as movimentações após confirmação do usuário."""
+    
+    try:
+        produtos_confirmados = dados.get('produtos_confirmados', [])
+        tipo_movimentacao = dados.get('tipo_movimentacao')
+        nota_fiscal = dados.get('nota_fiscal')
+        
+        if not produtos_confirmados:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nenhum produto foi confirmado para processamento"
+            )
+        
+        movimentacoes_criadas = []
+        produtos_atualizados = []
+        
+        for produto_data in produtos_confirmados:
+            produto_id = produto_data.get('produto_id')
+            quantidade = produto_data.get('quantidade', 0)
+            
+            if not produto_id or quantidade <= 0:
+                continue
+            
+            # Buscar produto
+            produto = db.query(models.Produto).filter(
+                models.Produto.id == produto_id,
+                models.Produto.empresa_id == current_user.empresa_id
+            ).first()
+            
+            if not produto:
+                continue
+            
+            # Calcular nova quantidade
+            if tipo_movimentacao == 'ENTRADA':
+                nova_quantidade = produto.quantidade_estoque + quantidade
+            else:  # SAIDA
+                nova_quantidade = produto.quantidade_estoque - quantidade
+                if nova_quantidade < 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {produto.quantidade_estoque}, Quantidade solicitada: {quantidade}"
+                    )
+            
+            # Criar movimentação
+            movimentacao = models.MovimentacaoEstoque(
+                produto_id=produto.id,
+                tipo=tipo_movimentacao,
+                quantidade=quantidade,
+                quantidade_anterior=produto.quantidade_estoque,
+                quantidade_nova=nova_quantidade,
+                observacoes=f"Importação automática - NF: {nota_fiscal}",
+                usuario_id=current_user.id,
+                empresa_id=current_user.empresa_id
+            )
+            
+            db.add(movimentacao)
+            
+            # Atualizar estoque do produto
+            produto.quantidade_estoque = nova_quantidade
+            
+            movimentacoes_criadas.append({
+                'produto_id': produto.id,
+                'produto_nome': produto.nome,
+                'tipo': tipo_movimentacao,
+                'quantidade': quantidade,
+                'estoque_anterior': movimentacao.quantidade_anterior,
+                'estoque_novo': nova_quantidade
+            })
+            
+            produtos_atualizados.append(produto.nome)
+        
+        db.commit()
+        
+        return {
+            'sucesso': True,
+            'mensagem': f'Processamento concluído com sucesso! {len(movimentacoes_criadas)} movimentações registradas.',
+            'movimentacoes_criadas': len(movimentacoes_criadas),
+            'produtos_atualizados': produtos_atualizados,
+            'detalhes': movimentacoes_criadas
+        }
+        
+    except HTTPException as he:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar movimentações: {str(e)}"
+        )
+
+@router.post(
     "/processar-pdf",
     response_model=Dict[str, Any],
     summary="Processa PDF de movimentação de estoque",
