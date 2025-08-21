@@ -189,8 +189,8 @@ async def preview_pdf_movimentacao(
                 produto_info.update({
                     'produto_id': produto.id,
                     'nome_sistema': produto.nome,
-                    'estoque_atual': produto.quantidade_estoque,
-                    'estoque_projetado': produto.quantidade_estoque + (quantidade if tipo_movimentacao == 'ENTRADA' else -quantidade)
+                    'estoque_atual': produto.quantidade_em_estoque,
+                'estoque_projetado': produto.quantidade_em_estoque + (quantidade if tipo_movimentacao == 'ENTRADA' else -quantidade)
                 })
                 produtos_enriquecidos.append(produto_info)
             else:
@@ -303,8 +303,8 @@ async def associar_produto_similar(
                 'id': produto_atualizado.id,
                 'nome': produto_atualizado.nome,
                 'codigo': produto_atualizado.codigo,
-                'estoque_anterior': produto.quantidade_estoque,
-                'estoque_atual': produto_atualizado.quantidade_estoque,
+                'estoque_anterior': produto.quantidade_em_estoque,
+                'estoque_atual': produto_atualizado.quantidade_em_estoque,
                 'quantidade_movimentada': quantidade,
                 'tipo_movimentacao': tipo_movimentacao
             }
@@ -364,13 +364,13 @@ async def confirmar_movimentacoes(
             
             # Calcular nova quantidade
             if tipo_movimentacao == 'ENTRADA':
-                nova_quantidade = produto.quantidade_estoque + quantidade
+                nova_quantidade = produto.quantidade_em_estoque + quantidade
             else:  # SAIDA
-                nova_quantidade = produto.quantidade_estoque - quantidade
+                nova_quantidade = produto.quantidade_em_estoque - quantidade
                 if nova_quantidade < 0:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {produto.quantidade_estoque}, Quantidade solicitada: {quantidade}"
+                        detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {produto.quantidade_em_estoque}, Quantidade solicitada: {quantidade}"
                     )
             
             # Criar movimentação
@@ -378,7 +378,7 @@ async def confirmar_movimentacoes(
                 produto_id=produto.id,
                 tipo=tipo_movimentacao,
                 quantidade=quantidade,
-                quantidade_anterior=produto.quantidade_estoque,
+                quantidade_anterior=produto.quantidade_em_estoque,
                 quantidade_nova=nova_quantidade,
                 observacoes=f"Importação automática - NF: {nota_fiscal}",
                 usuario_id=current_user.id,
@@ -388,7 +388,7 @@ async def confirmar_movimentacoes(
             db.add(movimentacao)
             
             # Atualizar estoque do produto
-            produto.quantidade_estoque = nova_quantidade
+            produto.quantidade_em_estoque = nova_quantidade
             
             movimentacoes_criadas.append({
                 'produto_id': produto.id,
@@ -531,8 +531,8 @@ async def processar_pdf_movimentacao(
                     'codigo': codigo,
                     'nome': produto.nome,
                     'quantidade': quantidade,
-                    'estoque_anterior': produto_atualizado.quantidade_estoque - (quantidade if tipo_movimentacao == 'ENTRADA' else -quantidade),
-                    'estoque_atual': produto_atualizado.quantidade_estoque
+                    'estoque_anterior': produto_atualizado.quantidade_em_estoque - (quantidade if tipo_movimentacao == 'ENTRADA' else -quantidade),
+                    'estoque_atual': produto_atualizado.quantidade_em_estoque
                 })
             except Exception as e:
                 produtos_nao_encontrados.append({
