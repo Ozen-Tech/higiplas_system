@@ -23,6 +23,9 @@ beautifulsoup4
 lxml
 PyPDF2
 pdfplumber
+# Busca por Similaridade
+fuzzywuzzy
+python-Levenshtein
 # Inteligência Artificial
 google-generativeai
 alembic

@@ -18,6 +18,7 @@ from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from ..db.connection import get_db
 from app.dependencies import get_current_user
+from ..services.product_similarity import ProductSimilarityService
 
 router = APIRouter(
     #prefix="/movimentacoes",
@@ -156,14 +157,18 @@ async def preview_pdf_movimentacao(
         produtos_enriquecidos = []
         produtos_nao_encontrados = []
         
+        # Inicializar serviço de similaridade
+        similarity_service = ProductSimilarityService(db, current_user.empresa_id)
+        
         for produto_data in dados_extraidos['produtos']:
             codigo = produto_data.get('codigo')
+            descricao = produto_data.get('descricao', '')
             quantidade = produto_data.get('quantidade', 0)
             
             if not codigo or quantidade <= 0:
                 continue
             
-            # Buscar produto pelo código
+            # Buscar produto pelo código exato
             produto = db.query(models.Produto).filter(
                 models.Produto.codigo == str(codigo),
                 models.Produto.empresa_id == current_user.empresa_id
@@ -171,11 +176,12 @@ async def preview_pdf_movimentacao(
             
             produto_info = {
                 'codigo': codigo,
-                'descricao_pdf': produto_data.get('descricao', 'N/A'),
+                'descricao_pdf': descricao,
                 'quantidade': quantidade,
                 'valor_unitario': produto_data.get('valor_unitario', 0),
                 'valor_total': produto_data.get('valor_total', 0),
-                'encontrado': produto is not None
+                'encontrado': produto is not None,
+                'produtos_similares': []
             }
             
             if produto:
@@ -187,6 +193,22 @@ async def preview_pdf_movimentacao(
                 })
                 produtos_enriquecidos.append(produto_info)
             else:
+                # Buscar produtos similares por nome
+                produtos_similares = similarity_service.find_similar_products(
+                    search_name=descricao,
+                    db=db,
+                    empresa_id=current_user.empresa_id,
+                    limit=5
+                )
+                produto_info['produtos_similares'] = [
+                    {
+                        'produto_id': p['produto_id'],
+                        'nome': p['nome'],
+                        'codigo': p['codigo'],
+                        'score': p['score'],
+                        'estoque_atual': p['estoque_atual']
+                    } for p in produtos_similares
+                ]
                 produtos_nao_encontrados.append(produto_info)
         
         return {
@@ -212,6 +234,85 @@ async def preview_pdf_movimentacao(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF: {str(e)}"
+        )
+
+@router.post(
+    "/associar-produto-similar",
+    response_model=Dict[str, Any],
+    summary="Associa um produto similar do sistema a um produto do PDF",
+    description="Permite associar um produto existente no sistema a um produto não encontrado do PDF."
+)
+async def associar_produto_similar(
+    dados: Dict[str, Any] = Body(..., example={
+        "codigo_pdf": "297",
+        "produto_id_sistema": 15,
+        "quantidade": 1.0,
+        "tipo_movimentacao": "ENTRADA"
+    }),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Associa um produto do sistema a um produto do PDF para processamento."""
+    
+    try:
+        codigo_pdf = dados.get('codigo_pdf')
+        produto_id_sistema = dados.get('produto_id_sistema')
+        quantidade = dados.get('quantidade', 0)
+        tipo_movimentacao = dados.get('tipo_movimentacao')
+        
+        if not all([codigo_pdf, produto_id_sistema, quantidade, tipo_movimentacao]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Todos os campos são obrigatórios: codigo_pdf, produto_id_sistema, quantidade, tipo_movimentacao"
+            )
+        
+        # Verificar se o produto existe
+        produto = db.query(models.Produto).filter(
+            models.Produto.id == produto_id_sistema,
+            models.Produto.empresa_id == current_user.empresa_id
+        ).first()
+        
+        if not produto:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Produto não encontrado"
+            )
+        
+        # Criar movimentação
+        movimentacao_data = schemas_movimentacao.MovimentacaoEstoqueCreate(
+            produto_id=produto_id_sistema,
+            tipo_movimentacao=tipo_movimentacao,
+            quantidade=quantidade,
+            observacao=f"Associação manual - Código PDF: {codigo_pdf}"
+        )
+        
+        produto_atualizado = crud_movimentacao.create_movimentacao(
+            db=db,
+            movimentacao=movimentacao_data,
+            empresa_id=current_user.empresa_id
+        )
+        
+        return {
+            'sucesso': True,
+            'mensagem': f'Produto {produto.nome} associado com sucesso',
+            'produto': {
+                'id': produto_atualizado.id,
+                'nome': produto_atualizado.nome,
+                'codigo': produto_atualizado.codigo,
+                'estoque_anterior': produto.quantidade_estoque,
+                'estoque_atual': produto_atualizado.quantidade_estoque,
+                'quantidade_movimentada': quantidade,
+                'tipo_movimentacao': tipo_movimentacao
+            }
+        }
+        
+    except HTTPException as he:
+        raise
+    except Exception as e:
+        print(f"DEBUG: Erro ao associar produto similar: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao associar produto: {str(e)}"
         )
 
 @router.post(

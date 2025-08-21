@@ -6,6 +6,14 @@ import { apiService } from '@/services/apiService';
 import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/Button';
 
+interface ProdutoSimilar {
+  produto_id: number;
+  nome: string;
+  codigo: string;
+  estoque_atual: number;
+  score_similaridade: number;
+}
+
 interface ProdutoPreview {
   codigo: string;
   descricao_pdf: string;
@@ -17,6 +25,7 @@ interface ProdutoPreview {
   nome_sistema?: string;
   estoque_atual?: number;
   estoque_projetado?: number;
+  produtos_similares?: ProdutoSimilar[];
 }
 
 interface PreviewResult {
@@ -50,6 +59,7 @@ export default function MovimentacoesPage() {
   const [error, setError] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [selectedSimilarProducts, setSelectedSimilarProducts] = useState<{[key: number]: number}>({});
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -155,6 +165,63 @@ export default function MovimentacoesPage() {
 
   const deselectAllProducts = () => {
     setSelectedProducts([]);
+  };
+
+  const handleAssociarProdutoSimilar = async (produtoNaoEncontradoIndex: number, produtoSimilarId: number) => {
+    try {
+      const produtoNaoEncontrado = previewData?.produtos_nao_encontrados[produtoNaoEncontradoIndex];
+      if (!produtoNaoEncontrado) return;
+
+      const dados = {
+        produto_id: produtoSimilarId,
+        codigo_pdf: produtoNaoEncontrado.codigo,
+        descricao_pdf: produtoNaoEncontrado.descricao_pdf,
+        quantidade: produtoNaoEncontrado.quantidade,
+        tipo_movimentacao: previewData?.tipo_movimentacao,
+        nota_fiscal: previewData?.nota_fiscal
+      };
+
+      const response = await apiService.post('/movimentacoes/associar-produto-similar', dados);
+      
+      if (response?.data?.sucesso) {
+        // Atualizar o estado para remover o produto da lista de não encontrados
+        // e adicionar à lista de encontrados
+        setPreviewData(prev => {
+          if (!prev) return prev;
+          
+          const produtoAssociado = {
+            ...produtoNaoEncontrado,
+            encontrado: true,
+            produto_id: produtoSimilarId,
+            nome_sistema: response.data.produto_associado.nome,
+            estoque_atual: response.data.produto_associado.estoque_atual,
+            estoque_projetado: response.data.produto_associado.estoque_projetado
+          };
+          
+          return {
+            ...prev,
+            produtos_encontrados: [...prev.produtos_encontrados, produtoAssociado],
+            produtos_nao_encontrados: prev.produtos_nao_encontrados.filter((_, i) => i !== produtoNaoEncontradoIndex)
+          };
+        });
+        
+        // Adicionar o produto à seleção
+        setSelectedProducts(prev => [...prev, previewData.produtos_encontrados.length]);
+        
+        alert('Produto associado com sucesso!');
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error.response?.data?.detail || 'Erro ao associar produto';
+      alert(errorMessage);
+    }
+  };
+
+  const handleSelectSimilarProduct = (produtoNaoEncontradoIndex: number, produtoSimilarId: number) => {
+    setSelectedSimilarProducts(prev => ({
+      ...prev,
+      [produtoNaoEncontradoIndex]: produtoSimilarId
+    }));
   };
 
   return (
@@ -443,10 +510,10 @@ export default function MovimentacoesPage() {
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                     Produtos Não Encontrados no Sistema
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {previewData.produtos_nao_encontrados.map((produto, index) => (
                       <div key={index} className="p-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-3">
                           <div>
                             <div className="font-medium text-gray-900 dark:text-gray-100">
                               {produto.descricao_pdf}
@@ -460,10 +527,53 @@ export default function MovimentacoesPage() {
                               {produto.quantidade} unidades
                             </div>
                             <div className="text-sm text-red-600 dark:text-red-400">
-                              Não será processado
+                              {produto.produtos_similares && produto.produtos_similares.length > 0 ? 'Produtos similares encontrados' : 'Não será processado'}
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Produtos Similares */}
+                        {produto.produtos_similares && produto.produtos_similares.length > 0 && (
+                          <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                            <h5 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                              Produtos similares encontrados (selecione um para associar):
+                            </h5>
+                            <div className="space-y-2">
+                              {produto.produtos_similares.map((similar, similarIndex) => (
+                                <div key={similarIndex} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                  <div className="flex items-center">
+                                    <input
+                                      type="radio"
+                                      name={`similar-${index}`}
+                                      value={similar.produto_id}
+                                      checked={selectedSimilarProducts[index] === similar.produto_id}
+                                      onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
+                                      className="mr-2"
+                                    />
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {similar.nome}
+                                      </div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                                        Código: {similar.codigo} | Estoque: {similar.estoque_atual} | Similaridade: {Math.round(similar.score_similaridade)}%
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {selectedSimilarProducts[index] && (
+                              <div className="mt-3">
+                                <Button
+                                  onClick={() => handleAssociarProdutoSimilar(index, selectedSimilarProducts[index])}
+                                  className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700"
+                                >
+                                  Associar Produto Selecionado
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
