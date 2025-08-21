@@ -130,14 +130,20 @@ async def processar_pdf_movimentacao(
         )
     
     try:
+        print(f"DEBUG: Iniciando processamento do arquivo {arquivo.filename}")
+        
         # Salvar arquivo temporariamente
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
             content = await arquivo.read()
             temp_file.write(content)
             temp_file_path = temp_file.name
         
+        print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
+        
         # Extrair dados do PDF
+        print(f"DEBUG: Iniciando extração de dados do PDF")
         dados_extraidos = extrair_dados_pdf(temp_file_path)
+        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
         
         # Limpar arquivo temporário
         os.unlink(temp_file_path)
@@ -217,9 +223,13 @@ async def processar_pdf_movimentacao(
             'total_produtos_pdf': len(dados_extraidos['produtos'])
         }
         
-    except HTTPException:
+    except HTTPException as he:
+        print(f"DEBUG: HTTPException capturada: {he.status_code} - {he.detail}")
         raise
     except Exception as e:
+        print(f"DEBUG: Exception geral capturada: {type(e).__name__} - {str(e)}")
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF: {str(e)}"
@@ -227,6 +237,8 @@ async def processar_pdf_movimentacao(
 
 def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
     """Extrai dados estruturados de um PDF de nota fiscal."""
+    
+    print(f"DEBUG: Iniciando extração de dados do arquivo: {caminho_pdf}")
     
     dados = {
         'nota_fiscal': None,
@@ -296,8 +308,12 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
                     continue
         
         dados['produtos'] = produtos
+        print(f"DEBUG: Extração concluída. Produtos encontrados: {len(produtos)}")
         
     except Exception as e:
-        print(f"Erro ao extrair dados do PDF: {e}")
+        print(f"DEBUG: Erro ao extrair dados do PDF: {type(e).__name__} - {str(e)}")
+        import traceback
+        print(f"DEBUG: Traceback na extração: {traceback.format_exc()}")
     
+    print(f"DEBUG: Retornando dados: {dados}")
     return dados
