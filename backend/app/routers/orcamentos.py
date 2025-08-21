@@ -7,8 +7,9 @@ from typing import List
 from app.db.connection import get_db
 from app.db import models
 from app.dependencies import get_current_user
-from app.crud import orcamento as crud_orcamento
-from app.schemas import orcamento as schemas_orcamento
+from ..crud import orcamento as crud_orcamento
+from ..schemas import orcamento as schemas_orcamento
+from ..schemas import produtos_mais_vendidos as schemas_produtos_vendidos
 
 router = APIRouter(
     prefix="/orcamentos",
@@ -160,7 +161,7 @@ def get_dashboard_stats(
     """Retorna estatísticas para o dashboard de admins."""
     return crud_orcamento.get_dashboard_stats(db=db, empresa_id=current_user.empresa_id)
 
-@router.get("/produtos-mais-vendidos")
+@router.get("/produtos-mais-vendidos", response_model=List[schemas_produtos_vendidos.ProdutoVendidoDetalhado])
 def get_produtos_mais_vendidos(
     ano: int = None,
     limit: int = 50,

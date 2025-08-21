@@ -11,10 +11,10 @@ from app.db.connection import get_db
 from app.db import models
 from app.dependencies import get_current_user
 from app.services import ai_service
-from app.crud import produto as crud_produto
-from app.crud import movimentacao_estoque as crud_movimentacao 
-from app.crud import venda_historica as crud_historico
-from app.crud import analise_estoque as crud_analise
+from ..crud import produto as crud_produto
+from ..crud import movimentacao_estoque as crud_movimentacao 
+from ..crud import venda_historica as crud_historico
+from ..crud import analise_estoque as crud_analise
 
 # Inicializa o router
 router = APIRouter(prefix="/insights", tags=["Inteligência Artificial"])

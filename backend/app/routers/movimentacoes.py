@@ -289,9 +289,10 @@ async def associar_produto_similar(
             observacao=f"Associação manual - Código PDF: {codigo_pdf}"
         )
         
-        produto_atualizado = crud_movimentacao.create_movimentacao(
+        produto_atualizado = crud_movimentacao.create_movimentacao_estoque(
             db=db,
             movimentacao=movimentacao_data,
+            usuario_id=current_user.id,
             empresa_id=current_user.empresa_id
         )
         

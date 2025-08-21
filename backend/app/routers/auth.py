@@ -9,8 +9,8 @@ from ..db import models
 # Importações necessárias e limpas
 from app.db.connection import get_db
 from app.db import models
-from app.schemas import usuario as schemas_usuario
-from app.crud import usuario as crud_usuario
+from ..schemas import usuario as schemas_usuario
+from ..crud import usuario as crud_usuario
 from app.dependencies import create_access_token, get_current_user
 from app.core.config import settings
 

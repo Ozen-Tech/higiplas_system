@@ -311,3 +311,167 @@ def get_produtos_mais_vendidos(db: Session, empresa_id: int, ano: int = None, li
         })
     
     return produtos_mais_vendidos
+
+def delete_orcamento(db: Session, orcamento_id: int, usuario_id: int, empresa_id: int):
+    """Exclui um orçamento (apenas se não estiver finalizado)."""
+    try:
+        # Busca o orçamento
+        db_orcamento = db.query(models.Orcamento).filter(
+            models.Orcamento.id == orcamento_id,
+            models.Orcamento.usuario_id == usuario_id
+        ).first()
+        
+        if not db_orcamento:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Orçamento não encontrado ou não pertence a este usuário"
+            )
+        
+        # Verifica se o orçamento não está finalizado
+        if db_orcamento.finalizado:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não é possível excluir um orçamento finalizado"
+            )
+        
+        # Remove os itens do orçamento primeiro
+        db.query(models.OrcamentoItem).filter(
+            models.OrcamentoItem.orcamento_id == orcamento_id
+        ).delete()
+        
+        # Remove o orçamento
+        db.delete(db_orcamento)
+        db.commit()
+        
+        return {"message": "Orçamento excluído com sucesso"}
+        
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+             detail=f"Erro interno ao excluir orçamento: {str(e)}"
+         )
+
+def finalizar_orcamento_com_nf(db: Session, orcamento_id: int, numero_nf: str, usuario_id: int, empresa_id: int):
+    """Finaliza um orçamento com número da NF."""
+    try:
+        # Busca o orçamento
+        db_orcamento = db.query(models.Orcamento).filter(
+            models.Orcamento.id == orcamento_id,
+            models.Orcamento.usuario_id == usuario_id
+        ).first()
+        
+        if not db_orcamento:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Orçamento não encontrado ou não pertence a este usuário"
+            )
+        
+        if db_orcamento.finalizado:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Orçamento já está finalizado"
+            )
+        
+        # Atualiza o orçamento com a NF e finaliza
+        db_orcamento.numero_nf = numero_nf
+        db_orcamento.finalizado = True
+        db_orcamento.data_finalizacao = datetime.now()
+        
+        # Processa os itens do orçamento para dar baixa no estoque
+        for item in db_orcamento.itens:
+            produto = db.query(models.Produto).filter(
+                models.Produto.id == item.produto_id
+            ).first()
+            
+            if produto:
+                # Atualiza o estoque
+                produto.estoque_atual -= item.quantidade
+                
+                # Cria movimentação de estoque
+                movimentacao_data = schemas_movimentacao.MovimentacaoEstoqueCreate(
+                    produto_id=item.produto_id,
+                    tipo_movimentacao="saida",
+                    quantidade=item.quantidade,
+                    observacoes=f"Venda finalizada - Orçamento #{orcamento_id} - NF: {numero_nf}"
+                )
+                
+                crud_movimentacao.create_movimentacao_estoque(
+                    db=db,
+                    movimentacao=movimentacao_data,
+                    usuario_id=usuario_id,
+                    empresa_id=empresa_id
+                )
+        
+        db.commit()
+        db.refresh(db_orcamento)
+        
+        return db_orcamento
+        
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro interno ao finalizar orçamento: {str(e)}"
+        )
+
+def get_dashboard_stats(db: Session, empresa_id: int):
+    """Retorna estatísticas para o dashboard de admins."""
+    try:
+        # Total de orçamentos
+        total_orcamentos = db.query(models.Orcamento).join(
+            models.Usuario
+        ).filter(
+            models.Usuario.empresa_id == empresa_id
+        ).count()
+        
+        # Orçamentos finalizados
+        orcamentos_finalizados = db.query(models.Orcamento).join(
+            models.Usuario
+        ).filter(
+            models.Usuario.empresa_id == empresa_id,
+            models.Orcamento.finalizado == True
+        ).count()
+        
+        # Orçamentos pendentes
+        orcamentos_pendentes = total_orcamentos - orcamentos_finalizados
+        
+        # Valor total de vendas (orçamentos finalizados)
+        valor_total_vendas = db.query(func.sum(models.Orcamento.valor_total)).join(
+            models.Usuario
+        ).filter(
+            models.Usuario.empresa_id == empresa_id,
+            models.Orcamento.finalizado == True
+        ).scalar() or 0
+        
+        # Número de clientes únicos
+        clientes_unicos = db.query(models.Cliente).filter(
+            models.Cliente.empresa_id == empresa_id
+        ).count()
+        
+        # Produtos em estoque baixo (menos de 10 unidades)
+        produtos_estoque_baixo = db.query(models.Produto).filter(
+            models.Produto.empresa_id == empresa_id,
+            models.Produto.estoque_atual < 10
+        ).count()
+        
+        return {
+            "total_orcamentos": total_orcamentos,
+            "orcamentos_finalizados": orcamentos_finalizados,
+            "orcamentos_pendentes": orcamentos_pendentes,
+            "valor_total_vendas": float(valor_total_vendas),
+            "clientes_unicos": clientes_unicos,
+            "produtos_estoque_baixo": produtos_estoque_baixo
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro interno ao obter estatísticas: {str(e)}"
+        )

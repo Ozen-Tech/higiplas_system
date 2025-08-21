@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
-from app.schemas.empresa import Empresa, EmpresaCreate
-from psycopg2.extensions import connection 
-from app.crud import empresa as crud_empresa
+from sqlalchemy.orm import Session
+from ..schemas.empresa import Empresa, EmpresaCreate
+from ..crud import empresa as crud_empresa
 from app.db.connection import get_db
 from app.dependencies import get_current_user
 from ..db import models
@@ -13,21 +13,27 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=Empresa, status_code=status.HTTP_201_CREATED)
-def create_new_empresa(empresa: EmpresaCreate, db: connection = Depends(get_db)): # <--- A MÁGICA ACONTECE AQUI!
+def create_new_empresa(empresa: EmpresaCreate, db: Session = Depends(get_db)):
     """
     Cria uma nova empresa no sistema.
 
     - **empresa**: Dados da nova empresa (nome, cnpj) vindos do corpo do request.
     - **db**: Dependência que injeta a sessão/conexão com o banco de dados.
     """
-    # Agora a variável 'db' existe e pode ser passada para a função do CRUD.
-    return crud_empresa.create_empresa(conn=db, empresa=empresa)
+    try:
+        # Agora a variável 'db' existe e pode ser passada para a função do CRUD.
+        return crud_empresa.create_empresa(db=db, empresa=empresa)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar empresa: {str(e)}")
 
  
 @router.get("/", response_model=List[Empresa])
-def read_empresas(skip: int = 0, limit: int = 100, db: connection = Depends(get_db)):
+def read_empresas(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     Retorna uma lista de empresas cadastradas, com paginação.
     """
-    empresas = crud_empresa.get_empresas(conn=db, skip=skip, limit=limit)
-    return empresas
+    try:
+        empresas = crud_empresa.get_empresas(db=db, skip=skip, limit=limit)
+        return empresas
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar empresas: {str(e)}")

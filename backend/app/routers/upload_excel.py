@@ -7,9 +7,9 @@ from io import BytesIO
 from ..db import models
 # Importações necessárias
 from app.db.connection import get_db
-from app.crud import produto as crud_produto
-from app.schemas import produto as schemas_produto
-from app.schemas import usuario as schemas_usuario
+from ..crud import produto as crud_produto
+from ..schemas import produto as schemas_produto
+from ..schemas import usuario as schemas_usuario
 from app.dependencies import get_current_user
 
 router = APIRouter()
