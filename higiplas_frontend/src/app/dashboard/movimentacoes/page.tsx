@@ -173,7 +173,7 @@ export default function MovimentacoesPage() {
       if (!produtoNaoEncontrado) return;
 
       const dados = {
-        produto_id: produtoSimilarId,
+        produto_id_sistema: produtoSimilarId,
         codigo_pdf: produtoNaoEncontrado.codigo,
         descricao_pdf: produtoNaoEncontrado.descricao_pdf,
         quantidade: produtoNaoEncontrado.quantidade,
