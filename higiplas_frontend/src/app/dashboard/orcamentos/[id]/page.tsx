@@ -31,7 +31,7 @@ export default function OrcamentoDetailPage() {
         try {
           setLoading(true);
           const data = await apiService.get(`/orcamentos/${orcamentoId}`);
-          setOrcamento(data);
+          setOrcamento(data?.data || null);
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Falha ao buscar detalhes do orçamento.');
         } finally {
@@ -53,7 +53,7 @@ export default function OrcamentoDetailPage() {
     setError(null);
     try {
       const updatedOrcamento = await apiService.post(`/orcamentos/${orcamentoId}/finalizar`, {});
-      setOrcamento(updatedOrcamento);
+      setOrcamento(updatedOrcamento?.data || null);
       alert('Pedido finalizado com sucesso e estoque atualizado!');
     } catch (err) {
        const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.';

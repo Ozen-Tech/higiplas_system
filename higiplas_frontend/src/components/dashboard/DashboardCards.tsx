@@ -19,7 +19,7 @@ export function DashboardCards() {
     const fetchKpis = async () => {
       try {
         const kpiData = await apiService.get('/kpis/');
-        setData(kpiData);
+        setData(kpiData?.data || null);
       } catch (error) {
         console.error("Erro ao buscar KPIs:", error);
       } finally {

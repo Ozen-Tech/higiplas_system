@@ -18,7 +18,7 @@ export function useOrcamentos() {
     setLoading(true);
     try {
       const data = await apiService.get('/orcamentos/');
-      setOrcamentos(data);
+      setOrcamentos(data?.data || []);
     } catch (error) {
       console.error("Falha ao buscar orçamentos", error);
     } finally {

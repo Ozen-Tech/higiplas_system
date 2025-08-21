@@ -69,7 +69,9 @@ export default function AIVendasPage() {
         force_reprocess: false
       });
       
-      setProcessingStatus(response.data.message);
+      if (response?.data?.message) {
+        setProcessingStatus(response.data.message);
+      }
       await loadTopProducts(); // Recarrega produtos após processamento
     } catch (err) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -82,7 +84,7 @@ export default function AIVendasPage() {
   const loadTopProducts = async () => {
     try {
       const response = await apiService.get('/ai-pdf/top-selling-products?limit=10');
-      setTopProducts(response.data.products || []);
+      setTopProducts(response?.data?.products || []);
     } catch (err) {
       console.error('Erro ao carregar produtos:', err);
     }
@@ -91,7 +93,7 @@ export default function AIVendasPage() {
   const loadPendingApprovals = async () => {
     try {
       const response = await apiService.get('/ai-pdf/pending-stock-approvals');
-      setStockSuggestions(response.data.suggestions || []);
+      setStockSuggestions(response?.data?.suggestions || []);
     } catch (err) {
       console.error('Erro ao carregar aprovações:', err);
     }
@@ -109,7 +111,9 @@ export default function AIVendasPage() {
         include_pdf_data: true
       });
       
-      setAiResponse(response.data);
+      if (response?.data) {
+        setAiResponse(response.data);
+      }
     } catch (err) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || 'Erro ao consultar IA');
@@ -124,7 +128,9 @@ export default function AIVendasPage() {
     
     try {
       const response = await apiService.post('/ai-pdf/suggest-minimum-stocks?limit=10', {});
-      setProcessingStatus(response.data.message);
+      if (response?.data?.message) {
+        setProcessingStatus(response.data.message);
+      }
       await loadPendingApprovals(); // Recarrega sugestões
     } catch (err) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -137,7 +143,9 @@ export default function AIVendasPage() {
   const approveStockSuggestion = async (productName: string) => {
     try {
       const response = await apiService.post(`/ai-pdf/approve-stock-suggestion/${encodeURIComponent(productName)}`, {});
-      setProcessingStatus(response.data.message);
+      if (response?.data?.message) {
+        setProcessingStatus(response.data.message);
+      }
       await loadPendingApprovals(); // Recarrega sugestões
     } catch (err) {
       const error = err as { response?: { data?: { detail?: string } } };

@@ -119,7 +119,11 @@ export function useClientes() {
   const createCliente = async (clienteData: ClienteCreate) => {
     try {
       const apiPayload = mapToApi(clienteData);
-      const newClienteApi = await apiService.post('/clientes', apiPayload);
+      const response = await apiService.post('/clientes', apiPayload);
+      const newClienteApi = response?.data;
+      if (!newClienteApi) {
+        throw new Error('Dados do cliente não encontrados na resposta');
+      }
       const newCliente = mapClienteFromApi(newClienteApi);
       setClientes(prev => [...prev, newCliente]);
       toast.success('Cliente criado com sucesso!');
@@ -134,7 +138,11 @@ export function useClientes() {
   const updateCliente = async (id: number, clienteData: Partial<ClienteUpdate>) => {
     try {
       const apiPayload = mapToApi(clienteData);
-      const updatedClienteApi = await apiService.put(`/clientes/${id}`, apiPayload);
+      const response = await apiService.put(`/clientes/${id}`, apiPayload);
+      const updatedClienteApi = response?.data;
+      if (!updatedClienteApi) {
+        throw new Error('Dados do cliente não encontrados na resposta');
+      }
       const updatedCliente = mapClienteFromApi(updatedClienteApi);
       setClientes(prev => prev.map(cliente => 
         cliente.id === id ? updatedCliente : cliente
@@ -168,7 +176,11 @@ export function useClientes() {
     try {
       setLoading(true);
       const response = await apiService.get(`/clientes/${id}`);
-      return mapClienteFromApi(response);
+      const clienteData = response?.data;
+      if (!clienteData) {
+        throw new Error('Cliente não encontrado');
+      }
+      return mapClienteFromApi(clienteData);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar cliente';
       setError(errorMessage);

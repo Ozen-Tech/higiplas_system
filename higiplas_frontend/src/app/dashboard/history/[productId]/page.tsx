@@ -37,10 +37,10 @@ function HistoryPageContent() {
                 // Aqui assumimos que temos uma rota para pegar dados de um produto específico
                 // Se não tiver, podemos buscar a lista e filtrar
                 const productData = await apiService.get(`/produtos/${productId}`); // Precisa criar essa rota
-                setProductName(productData.nome);
+                setProductName(productData?.data?.nome || 'Produto não encontrado');
 
                 const historyData = await apiService.get(`/movimentacoes/${productId}`);
-                setMovimentacoes(historyData);
+                setMovimentacoes(historyData?.data || []);
 
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Erro desconhecido";

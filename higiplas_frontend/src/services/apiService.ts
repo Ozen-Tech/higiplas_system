@@ -35,7 +35,8 @@ async function request(endpoint: string, options: RequestInit = {}) {
   }
 
   // Retorna o JSON para respostas de sucesso
-  return response.json();
+  const data = await response.json();
+  return { data };
 }
 
 export const apiService = {

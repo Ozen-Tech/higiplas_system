@@ -26,8 +26,8 @@ export default function ComprasPage() {
           apiService.get('/produtos/baixo-estoque/'),
           apiService.get('/ordens-compra/'),
         ]);
-        setLowStockProducts(lowStockData);
-        setOrders(ordersData);
+        setLowStockProducts(lowStockData?.data || []);
+        setOrders(ordersData?.data || []);
       } catch (error) {
         console.error("Erro ao buscar dados de compras:", error);
       } finally {

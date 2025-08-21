@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = useCallback(async () => {
     try {
       const userData = await apiService.get('/users/me');
-      setUser(userData);
+      setUser(userData?.data || null);
     } catch (error) {
       // --- 2. ADICIONAR O TOAST DE ERRO AQUI ---
       console.error("Falha ao buscar usuário, limpando token.", error);

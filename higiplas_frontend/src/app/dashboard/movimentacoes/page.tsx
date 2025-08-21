@@ -84,12 +84,14 @@ export default function MovimentacoesPage() {
 
       const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
       
-      setPreviewData(response.data);
-      setShowModal(true);
-      
-      // Selecionar todos os produtos encontrados por padrão
-      const produtosEncontrados = response.data.produtos_encontrados || [];
-      setSelectedProducts(produtosEncontrados.map((_: ProdutoPreview, index: number) => index));
+      if (response?.data) {
+        setPreviewData(response.data);
+        setShowModal(true);
+        
+        // Selecionar todos os produtos encontrados por padrão
+        const produtosEncontrados = response.data.produtos_encontrados || [];
+        setSelectedProducts(produtosEncontrados.map((_: ProdutoPreview, index: number) => index));
+      }
       
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
@@ -122,7 +124,9 @@ export default function MovimentacoesPage() {
 
       const response = await apiService.post('/movimentacoes/confirmar-movimentacoes', dados);
       
-      setResult(response.data);
+      if (response?.data) {
+        setResult(response.data);
+      }
       setShowModal(false);
       setPreviewData(null);
       setSelectedFile(null);

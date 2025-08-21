@@ -19,7 +19,7 @@ function InsightsPageContent() {
     
     try {
       const response = await apiService.post('/insights/ask', { question });
-      setAnswer(response.answer);
+      setAnswer(response?.data?.answer || 'Resposta não disponível');
     } catch (err) {
        setAnswer(err instanceof Error ? `Erro: ${err.message}` : "Erro desconhecido.");
     } finally {

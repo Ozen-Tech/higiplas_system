@@ -58,7 +58,7 @@ export default function ImportarNotaPage() {
     toast.promise(promise, {
       loading: 'Analisando nota fiscal com IA...',
       success: (data) => {
-        setParsedData(data);
+        setParsedData(data?.data || null);
         setIsProcessing(false);
         return 'Nota fiscal analisada com sucesso!';
       },
@@ -97,9 +97,14 @@ export default function ImportarNotaPage() {
         }
       );
 
+      const orcamentoId = orcamentoCriado?.data?.id;
+      if (!orcamentoId) {
+        throw new Error('ID do orçamento não encontrado na resposta');
+      }
+
       // 3. Finalizar o orçamento para dar baixa no estoque
       await toast.promise(
-        apiService.post(`/orcamentos/${orcamentoCriado.id}/finalizar`, {}),
+        apiService.post(`/orcamentos/${orcamentoId}/finalizar`, {}),
         {
           loading: 'Dando baixa no estoque...',
           success: 'Baixa no estoque realizada com sucesso!',
@@ -107,7 +112,7 @@ export default function ImportarNotaPage() {
         }
       );
       
-      router.push(`/dashboard/orcamentos/${orcamentoCriado.id}`);
+      router.push(`/dashboard/orcamentos/${orcamentoId}`);
 
     } catch (error) {
       console.error(error);

@@ -388,7 +388,7 @@ function ClienteDetalhesPageContent() {
         // Carregar histórico de pagamentos
         try {
           const historico = await apiService.get(`/clientes/${clienteId}/historico-pagamentos`);
-          const historicoMapeado = historico.data.historico_pagamentos.map((p: HistoricoPagamento) => ({
+          const historicoMapeado = historico?.data?.historico_pagamentos?.map((p: HistoricoPagamento) => ({
             ...p,
             metodo_pagamento: p.metodo_pagamento || 'Não informado',
             data_pagamento: p.data_pagamento || new Date().toISOString(),
@@ -403,7 +403,9 @@ function ClienteDetalhesPageContent() {
         // Carregar resumo de vendas
         try {
           const resumo = await apiService.get(`/clientes/${clienteId}/resumo-vendas`);
-          setResumoVendas(resumo.data);
+          if (resumo?.data) {
+            setResumoVendas(resumo.data);
+          }
         } catch (error) {
           console.error('Erro ao carregar resumo de vendas:', error);
           setResumoVendas({

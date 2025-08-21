@@ -37,16 +37,17 @@ export default function NovaOrdemDeCompraPage() {
                     apiService.get('/fornecedores/')
                 ]);
 
-                const initialItems: OrderItem[] = productsData.map(p => ({
-                    ...p,
-                    quantidade_solicitada: p.estoque_minimo || 10, // Sugestão inicial
-                    custo_unitario_registrado: p.preco_custo || 0,
+                const initialItems: OrderItem[] = productsData.map(response => ({
+                    ...response?.data,
+                    quantidade_solicitada: response?.data?.estoque_minimo || 10, // Sugestão inicial
+                    custo_unitario_registrado: response?.data?.preco_custo || 0,
                 }));
 
                 setItems(initialItems);
-                setFornecedores(fornecedoresData);
-                if (fornecedoresData.length > 0) {
-                    setSelectedFornecedorId(String(fornecedoresData[0].id));
+                const fornecedores = fornecedoresData?.data || [];
+                setFornecedores(fornecedores);
+                if (fornecedores.length > 0) {
+                    setSelectedFornecedorId(String(fornecedores[0].id));
                 }
             } catch (error) {
                 console.error("Erro ao carregar dados da OC", error);

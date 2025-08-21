@@ -82,7 +82,7 @@ export function useProducts() {
     setLoading(true);
     try {
       const data = await apiService.get('/produtos/');
-      setProducts(data.map(mapProductFromApi));
+      setProducts((data?.data || []).map(mapProductFromApi));
       setError(null);
     } catch (err) {
       handleApiError(err);
@@ -156,7 +156,7 @@ export function useProducts() {
 
     try {
       const data = await apiService.get(`/produtos/buscar/?q=${encodeURIComponent(query)}`);
-      const results = data.map(mapProductFromApi);
+      const results = (data?.data || []).map(mapProductFromApi);
       setSearchResults(results);
       return results;
     } catch (err) {

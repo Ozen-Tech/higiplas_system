@@ -14,13 +14,9 @@ const UserRegistrationPage = () => {
     e.preventDefault();
     setMessage('');
     try {
-      const response = await api.post('/users', { nome: name, email, password, perfil });
+      await api.post('/users', { nome: name, email, password, perfil });
 
-      if (response.status !== 201) {
-        
-        throw new Error(response.data.message || 'Erro ao cadastrar usuário');
-      }
-
+      // Se chegou até aqui, o cadastro foi bem-sucedido
       setMessage(`Usuário ${name} cadastrado com sucesso!`);
       setName('');
       setEmail('');
