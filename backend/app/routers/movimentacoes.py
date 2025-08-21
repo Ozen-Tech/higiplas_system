@@ -18,7 +18,7 @@ from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from ..db.connection import get_db
 from app.dependencies import get_current_user
-from ..services.product_similarity import ProductSimilarityService
+# Serviço de similaridade importado dinamicamente quando necessário
 
 router = APIRouter(
     #prefix="/movimentacoes",
@@ -158,7 +158,8 @@ async def preview_pdf_movimentacao(
         produtos_nao_encontrados = []
         
         # Inicializar serviço de similaridade
-        similarity_service = ProductSimilarityService(db, current_user.empresa_id)
+        from ..services.product_similarity import product_similarity_service
+        similarity_service = product_similarity_service
         
         for produto_data in dados_extraidos['produtos']:
             codigo = produto_data.get('codigo')
