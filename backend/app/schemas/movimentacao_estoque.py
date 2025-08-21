@@ -7,7 +7,7 @@ from .usuario import Usuario
 
 class MovimentacaoEstoqueBase(BaseModel):
     produto_id: int
-    quantidade: int = Field(..., gt=0, description="A quantidade deve ser maior que zero.")
+    quantidade: float = Field(..., gt=0, description="A quantidade deve ser maior que zero.")
     observacao: Optional[str] = None
 
 class MovimentacaoEstoqueCreate(MovimentacaoEstoqueBase):

@@ -64,7 +64,7 @@ class MovimentacaoEstoque(Base):
     id = Column(Integer, primary_key=True, index=True)
     # Usando Enum para garantir que o tipo seja 'ENTRADA' ou 'SAIDA' no banco
     tipo_movimentacao = Column(Enum('ENTRADA', 'SAIDA', name='tipo_movimentacao_enum'), nullable=False)
-    quantidade = Column(Integer, nullable=False)
+    quantidade = Column(Float, nullable=False)
     observacao = Column(String, nullable=True)
     data_movimentacao = Column(DateTime(timezone=True), server_default=func.now())
     
