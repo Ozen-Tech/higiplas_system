@@ -480,57 +480,86 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
             for page in pdf.pages:
                 texto_completo += page.extract_text() or ""
         
-        # Extrair número da nota fiscal
-        nf_match = re.search(r'(?:NOTA FISCAL|NF|N°)\s*:?\s*(\d+)', texto_completo, re.IGNORECASE)
-        if nf_match:
-            dados['nota_fiscal'] = nf_match.group(1).zfill(10)
+        print(f"DEBUG: Texto extraído ({len(texto_completo)} caracteres)")
         
-        # Extrair data de emissão
-        data_match = re.search(r'(?:Data de Emissão|Emissão)\s*:?\s*(\d{2}/\d{2}/\d{4})', texto_completo, re.IGNORECASE)
+        # Extrair número da nota fiscal - padrão: NFe Nº 0000004538
+        nf_match = re.search(r'NFe\s+Nº\s+(\d+)', texto_completo, re.IGNORECASE)
+        if nf_match:
+            dados['nota_fiscal'] = nf_match.group(1)
+            print(f"DEBUG: Nota fiscal encontrada: {dados['nota_fiscal']}")
+        
+        # Extrair data de emissão - padrão: Data de Emissão 19/08/2025
+        data_match = re.search(r'Data de Emissão\s+(\d{2}/\d{2}/\d{4})', texto_completo, re.IGNORECASE)
         if data_match:
             dados['data_emissao'] = data_match.group(1)
+            print(f"DEBUG: Data de emissão encontrada: {dados['data_emissao']}")
         
-        # Extrair cliente
-        cliente_match = re.search(r'(?:Cliente|Razão Social)\s*:?\s*([A-Z][A-Z\s&.-]+)', texto_completo, re.IGNORECASE)
+        # Extrair cliente - padrão: Nome/Razão Social J S GONDIM LINHARES FILHO
+        cliente_match = re.search(r'Nome/Razão Social\s+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}', texto_completo, re.IGNORECASE)
         if cliente_match:
             dados['cliente'] = cliente_match.group(1).strip()
+            print(f"DEBUG: Cliente encontrado: {dados['cliente']}")
         
-        # Extrair CNPJ
-        cnpj_match = re.search(r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})', texto_completo)
-        if cnpj_match:
-            dados['cnpj_cliente'] = cnpj_match.group(1)
+        # Extrair CNPJ - buscar todos os CNPJs e pegar o do destinatário
+        cnpj_matches = re.findall(r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})', texto_completo)
+        if cnpj_matches:
+            # O segundo CNPJ geralmente é do destinatário
+            dados['cnpj_cliente'] = cnpj_matches[1] if len(cnpj_matches) > 1 else cnpj_matches[0]
+            print(f"DEBUG: CNPJ cliente encontrado: {dados['cnpj_cliente']}")
         
-        # Extrair produtos usando padrões mais robustos
+        # Extrair valor total - padrão: Valor Total da Nota Fiscal 1.571,12
+        valor_match = re.search(r'Valor Total da Nota\s+Fiscal\s+([\d.,]+)', texto_completo, re.IGNORECASE)
+        if valor_match:
+            valor_str = valor_match.group(1).replace('.', '').replace(',', '.')
+            dados['valor_total'] = float(valor_str)
+            print(f"DEBUG: Valor total encontrado: {dados['valor_total']}")
+        
+        # Extrair produtos - padrão da tabela de produtos
         linhas = texto_completo.split('\n')
         produtos = []
         
+        # Procurar pela seção "Dados dos Produtos"
+        inicio_produtos = False
         for i, linha in enumerate(linhas):
-            # Procurar por padrões de produtos
-            produto_match = re.match(r'(\d+)\s+(\d+)\s+(.+?)\s+(\d{8})\s+(\w+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)', linha)
+            if 'Dados dos Produtos' in linha:
+                inicio_produtos = True
+                continue
             
-            if produto_match:
-                try:
-                    item = int(produto_match.group(1))
-                    codigo = produto_match.group(2)
-                    descricao = produto_match.group(3).strip()
-                    ncm = produto_match.group(4)
-                    unidade = produto_match.group(5)
-                    quantidade = float(produto_match.group(6).replace(',', '.'))
-                    valor_unitario = float(produto_match.group(7).replace(',', '.'))
-                    valor_total = float(produto_match.group(8).replace(',', '.'))
-                    
-                    produtos.append({
-                        'item': item,
-                        'codigo': codigo,
-                        'descricao': descricao,
-                        'ncm': ncm,
-                        'unidade': unidade,
-                        'quantidade': quantidade,
-                        'valor_unitario': valor_unitario,
-                        'valor_total': valor_total
-                    })
-                except (ValueError, IndexError):
-                    continue
+            if inicio_produtos and 'Dados Adicionais' in linha:
+                break
+                
+            if inicio_produtos:
+                # Padrão: 1 297 SUPORTE LT S/ CABO C/ PINCA P/ FIBRA (NOBRE) 96039000 0102 5102 UN 1,0000 19,1400 0,00 19,14
+                produto_match = re.match(r'^(\d+)\s+(\d+)\s+(.+?)\s+(\d{8})\s+\d{4}\s+\d{4}\s+(\w+)\s+([\d,]+)\s+([\d,]+)\s+[\d,]+\s+([\d,]+)', linha)
+                
+                if produto_match:
+                    try:
+                        item = int(produto_match.group(1))
+                        codigo = produto_match.group(2)
+                        descricao = produto_match.group(3).strip()
+                        ncm = produto_match.group(4)
+                        unidade = produto_match.group(5)
+                        quantidade = float(produto_match.group(6).replace(',', '.'))
+                        valor_unitario = float(produto_match.group(7).replace(',', '.'))
+                        valor_total = float(produto_match.group(8).replace(',', '.'))
+                        
+                        produto = {
+                            'item': item,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': ncm,
+                            'unidade': unidade,
+                            'quantidade': quantidade,
+                            'valor_unitario': valor_unitario,
+                            'valor_total': valor_total
+                        }
+                        
+                        produtos.append(produto)
+                        print(f"DEBUG: Produto encontrado: {codigo} - {descricao} - Qtd: {quantidade}")
+                        
+                    except (ValueError, IndexError) as e:
+                        print(f"DEBUG: Erro ao processar linha de produto: {linha} - Erro: {e}")
+                        continue
         
         dados['produtos'] = produtos
         print(f"DEBUG: Extração concluída. Produtos encontrados: {len(produtos)}")
