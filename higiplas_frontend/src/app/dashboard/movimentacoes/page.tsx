@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Header } from '@/components/dashboard/Header';
 import { apiService } from '@/services/apiService';
-import { ArrowUpOnSquareIcon, DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/Button';
 
 interface ProdutoPreview {
@@ -37,7 +37,7 @@ interface ProcessingResult {
   mensagem: string;
   movimentacoes_criadas: number;
   produtos_atualizados: string[];
-  detalhes: any[];
+  detalhes: unknown[];
 }
 
 export default function MovimentacoesPage() {
@@ -89,7 +89,7 @@ export default function MovimentacoesPage() {
       
       // Selecionar todos os produtos encontrados por padrão
       const produtosEncontrados = response.data.produtos_encontrados || [];
-      setSelectedProducts(produtosEncontrados.map((_: any, index: number) => index));
+      setSelectedProducts(produtosEncontrados.map((_: ProdutoPreview, index: number) => index));
       
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
