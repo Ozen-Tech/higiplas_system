@@ -255,7 +255,7 @@ async def associar_produto_similar(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Associa um produto do sistema a um produto do PDF para processamento."""
+    """Associa um produto do sistema a um produto do PDF para processamento posterior."""
     
     try:
         codigo_pdf = dados.get('codigo_pdf')
@@ -281,32 +281,32 @@ async def associar_produto_similar(
                 detail="Produto não encontrado"
             )
         
-        # Criar movimentação
-        movimentacao_data = schemas_movimentacao.MovimentacaoEstoqueCreate(
-            produto_id=produto_id_sistema,
-            tipo_movimentacao=tipo_movimentacao,
-            quantidade=quantidade,
-            observacao=f"Associação manual - Código PDF: {codigo_pdf}"
-        )
+        # Verificar se há estoque suficiente para saída
+        if tipo_movimentacao == 'SAIDA' and produto.quantidade_em_estoque < quantidade:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {produto.quantidade_em_estoque}, Quantidade solicitada: {quantidade}"
+            )
         
-        produto_atualizado = crud_movimentacao.create_movimentacao_estoque(
-            db=db,
-            movimentacao=movimentacao_data,
-            usuario_id=current_user.id,
-            empresa_id=current_user.empresa_id
-        )
+        # Calcular estoque após movimentação (apenas para visualização)
+        if tipo_movimentacao == 'ENTRADA':
+            estoque_apos_movimentacao = produto.quantidade_em_estoque + quantidade
+        else:  # SAIDA
+            estoque_apos_movimentacao = produto.quantidade_em_estoque - quantidade
         
+        # Retornar apenas a associação, SEM criar a movimentação
         return {
             'sucesso': True,
-            'mensagem': f'Produto {produto.nome} associado com sucesso',
+            'mensagem': f'Produto {produto.nome} associado com sucesso. Confirme para processar a movimentação.',
             'produto': {
-                'id': produto_atualizado.id,
-                'nome': produto_atualizado.nome,
-                'codigo': produto_atualizado.codigo,
-                'estoque_anterior': produto.quantidade_em_estoque,
-                'estoque_atual': produto_atualizado.quantidade_em_estoque,
+                'id': produto.id,
+                'nome': produto.nome,
+                'codigo': produto.codigo,
+                'estoque_atual': produto.quantidade_em_estoque,
+                'estoque_apos_movimentacao': estoque_apos_movimentacao,
                 'quantidade_movimentada': quantidade,
-                'tipo_movimentacao': tipo_movimentacao
+                'tipo_movimentacao': tipo_movimentacao,
+                'codigo_pdf': codigo_pdf
             }
         }
         
