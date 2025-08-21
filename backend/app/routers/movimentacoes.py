@@ -203,11 +203,13 @@ async def preview_pdf_movimentacao(
                 )
                 produto_info['produtos_similares'] = [
                     {
-                        'produto_id': p['produto_id'],
+                        'produto_id': p['id'],
                         'nome': p['nome'],
                         'codigo': p['codigo'],
-                        'score': p['score'],
-                        'estoque_atual': p['estoque_atual']
+                        'score': p['similarity_score'],
+                        'categoria': p.get('categoria', ''),
+                        'unidade_medida': p.get('unidade_medida', ''),
+                        'preco_venda': p.get('preco_venda', 0)
                     } for p in produtos_similares
                 ]
                 produtos_nao_encontrados.append(produto_info)
