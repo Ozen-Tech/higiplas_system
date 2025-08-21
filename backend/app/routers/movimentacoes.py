@@ -76,6 +76,79 @@ def create_movimentacao(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Ocorreu um erro interno: {e}")
 
 @router.get(
+    "/historico-geral",
+    response_model=Dict[str, Any],
+    summary="Lista o histórico geral de movimentações",
+    description="Retorna todas as movimentações de estoque da empresa, com filtros opcionais por tipo e termo de busca."
+)
+def read_historico_geral(
+    tipo: str = None,
+    search: str = None,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    try:
+        # Buscar todas as movimentações da empresa
+        query = db.query(models.MovimentacaoEstoque).join(
+            models.Produto
+        ).filter(
+            models.Produto.empresa_id == current_user.empresa_id
+        )
+        
+        # Aplicar filtro por tipo se fornecido
+        if tipo and tipo != "TODOS":
+            query = query.filter(models.MovimentacaoEstoque.tipo_movimentacao == tipo)
+        
+        # Aplicar filtro de busca se fornecido
+        if search:
+            query = query.filter(
+                models.Produto.nome.ilike(f"%{search}%") |
+                models.MovimentacaoEstoque.observacao.ilike(f"%{search}%")
+            )
+        
+        # Ordenar por data mais recente
+        movimentacoes = query.order_by(models.MovimentacaoEstoque.data_movimentacao.desc()).all()
+        
+        # Calcular estatísticas
+        total_entradas = sum(m.quantidade for m in movimentacoes if m.tipo_movimentacao == "ENTRADA")
+        total_saidas = sum(m.quantidade for m in movimentacoes if m.tipo_movimentacao == "SAIDA")
+        
+        # Formatar resposta
+        movimentacoes_formatadas = []
+        for mov in movimentacoes:
+            produto = db.query(models.Produto).filter(models.Produto.id == mov.produto_id).first()
+            usuario = db.query(models.Usuario).filter(models.Usuario.id == mov.usuario_id).first()
+            
+            movimentacoes_formatadas.append({
+                "id": mov.id,
+                "produto_id": mov.produto_id,
+                "produto_nome": produto.nome if produto else "Produto não encontrado",
+                "produto_codigo": produto.codigo if produto else "",
+                "tipo_movimentacao": mov.tipo_movimentacao,
+                "quantidade": mov.quantidade,
+                "quantidade_anterior": mov.quantidade_anterior,
+                "data_movimentacao": mov.data_movimentacao.isoformat(),
+                "observacao": mov.observacao,
+                "usuario_nome": usuario.nome if usuario else "Usuário não encontrado"
+            })
+        
+        return {
+            "movimentacoes": movimentacoes_formatadas,
+            "estatisticas": {
+                "total_movimentacoes": len(movimentacoes),
+                "total_entradas": total_entradas,
+                "total_saidas": total_saidas,
+                "saldo_liquido": total_entradas - total_saidas
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao buscar histórico geral: {str(e)}"
+        )
+
+@router.get(
     "/{produto_id}",
     response_model=List[schemas_movimentacao.MovimentacaoEstoqueResponse],
     summary="Lista o histórico de movimentações de um produto",
