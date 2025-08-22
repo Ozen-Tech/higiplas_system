@@ -449,13 +449,10 @@ async def confirmar_movimentacoes(
             # Criar movimentação
             movimentacao = models.MovimentacaoEstoque(
                 produto_id=produto.id,
-                tipo=tipo_movimentacao,
+                tipo_movimentacao=tipo_movimentacao,
                 quantidade=quantidade,
-                quantidade_anterior=produto.quantidade_em_estoque,
-                quantidade_nova=nova_quantidade,
-                observacoes=f"Importação automática - NF: {nota_fiscal}",
-                usuario_id=current_user.id,
-                empresa_id=current_user.empresa_id
+                observacao=f"Importação automática - NF: {nota_fiscal}",
+                usuario_id=current_user.id
             )
             
             db.add(movimentacao)
@@ -468,7 +465,7 @@ async def confirmar_movimentacoes(
                 'produto_nome': produto.nome,
                 'tipo': tipo_movimentacao,
                 'quantidade': quantidade,
-                'estoque_anterior': movimentacao.quantidade_anterior,
+                'estoque_anterior': produto.quantidade_em_estoque - quantidade if tipo_movimentacao == 'ENTRADA' else produto.quantidade_em_estoque + quantidade,
                 'estoque_novo': nova_quantidade
             })
             

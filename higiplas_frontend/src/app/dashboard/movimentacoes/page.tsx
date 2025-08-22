@@ -142,9 +142,12 @@ export default function MovimentacoesPage() {
       setSelectedFile(null);
       
     } catch (err: unknown) {
+      console.error('Erro ao confirmar movimentações:', err);
       const error = err as { response?: { data?: { detail?: string } } };
       const errorMessage = error.response?.data?.detail || 'Erro ao confirmar movimentações';
       setError(errorMessage);
+      // Manter o modal aberto em caso de erro para que o usuário possa tentar novamente
+      // setShowModal(false); // Comentado para manter o modal aberto
     } finally {
       setIsConfirming(false);
     }
@@ -205,15 +208,19 @@ export default function MovimentacoesPage() {
           };
         });
         
-        // Adicionar o produto à seleção
-        setSelectedProducts(prev => [...prev, previewData.produtos_encontrados.length]);
+        // Adicionar o produto à seleção usando o índice correto
+        setSelectedProducts(prev => {
+          const newIndex = previewData.produtos_encontrados.length;
+          return [...prev, newIndex];
+        });
         
         alert('Produto associado com sucesso!');
       }
     } catch (err: unknown) {
+      console.error('Erro ao associar produto similar:', err);
       const error = err as { response?: { data?: { detail?: string } } };
       const errorMessage = error.response?.data?.detail || 'Erro ao associar produto';
-      alert(errorMessage);
+      alert(`Erro: ${errorMessage}`);
     }
   };
 
