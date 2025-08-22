@@ -95,11 +95,18 @@ export default function MovimentacoesPage() {
       const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
       
       if (response?.data) {
-        setPreviewData(response.data);
+        // Garantir que os arrays sempre existam
+        const previewDataWithDefaults = {
+          ...response.data,
+          produtos_encontrados: response.data.produtos_encontrados || [],
+          produtos_nao_encontrados: response.data.produtos_nao_encontrados || []
+        };
+        
+        setPreviewData(previewDataWithDefaults);
         setShowModal(true);
         
         // Selecionar todos os produtos encontrados por padrão
-        const produtosEncontrados = response.data.produtos_encontrados || [];
+        const produtosEncontrados = previewDataWithDefaults.produtos_encontrados;
         setSelectedProducts(produtosEncontrados.map((_: ProdutoPreview, index: number) => index));
       }
       
@@ -162,7 +169,7 @@ export default function MovimentacoesPage() {
   };
 
   const selectAllProducts = () => {
-    if (!previewData) return;
+    if (!previewData || !previewData.produtos_encontrados) return;
     setSelectedProducts(previewData.produtos_encontrados.map((_, index) => index));
   };
 
@@ -203,13 +210,16 @@ export default function MovimentacoesPage() {
           
           return {
             ...prev,
-            produtos_encontrados: [...prev.produtos_encontrados, produtoAssociado],
-            produtos_nao_encontrados: prev.produtos_nao_encontrados.filter((_, i) => i !== produtoNaoEncontradoIndex)
+            produtos_encontrados: [...(prev.produtos_encontrados || []), produtoAssociado],
+            produtos_nao_encontrados: (prev.produtos_nao_encontrados || []).filter((_, i) => i !== produtoNaoEncontradoIndex)
           };
         });
         
         // Adicionar o produto à seleção usando o índice correto
         setSelectedProducts(prev => {
+          if (!previewData || !previewData.produtos_encontrados) {
+            return prev;
+          }
           const newIndex = previewData.produtos_encontrados.length;
           return [...prev, newIndex];
         });
@@ -469,7 +479,7 @@ export default function MovimentacoesPage() {
                     Produtos Encontrados no Sistema
                   </h4>
                   <div className="space-y-3">
-                    {previewData.produtos_encontrados.map((produto, index) => (
+                    {previewData.produtos_encontrados && previewData.produtos_encontrados.map((produto, index) => (
                       <div
                         key={index}
                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
@@ -518,7 +528,7 @@ export default function MovimentacoesPage() {
                     Produtos Não Encontrados no Sistema
                   </h4>
                   <div className="space-y-4">
-                    {previewData.produtos_nao_encontrados.map((produto, index) => (
+                    {previewData.produtos_nao_encontrados && previewData.produtos_nao_encontrados.map((produto, index) => (
                       <div key={index} className="p-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20">
                         <div className="flex items-center justify-between mb-3">
                           <div>
@@ -559,10 +569,10 @@ export default function MovimentacoesPage() {
                                     />
                                     <div>
                                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {similar.nome}
+                                        {similar.nome || 'Nome não disponível'}
                                       </div>
                                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Código: {similar.codigo} | Estoque: {similar.estoque_atual} | Similaridade: {Math.round(similar.score_similaridade)}%
+                                        Código: {similar.codigo || 'N/A'} | Estoque: {similar.estoque_atual || 0} | Similaridade: {Math.round(similar.score_similaridade || 0)}%
                                       </div>
                                     </div>
                                   </div>
