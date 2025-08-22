@@ -126,7 +126,7 @@ def read_historico_geral(
                 "produto_codigo": produto.codigo if produto else "",
                 "tipo_movimentacao": mov.tipo_movimentacao,
                 "quantidade": mov.quantidade,
-                "quantidade_anterior": mov.quantidade_anterior,
+                "estoque_atual": produto.quantidade_em_estoque if produto else 0,
                 "data_movimentacao": mov.data_movimentacao.isoformat(),
                 "observacao": mov.observacao,
                 "usuario_nome": usuario.nome if usuario else "Usuário não encontrado"
