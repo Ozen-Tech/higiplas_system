@@ -203,9 +203,9 @@ export default function MovimentacoesPage() {
             ...produtoNaoEncontrado,
             encontrado: true,
             produto_id: produtoSimilarId,
-            nome_sistema: response.data.produto_associado.nome,
-            estoque_atual: response.data.produto_associado.estoque_atual,
-            estoque_projetado: response.data.produto_associado.estoque_projetado
+            nome_sistema: response.data?.produto_associado?.nome || 'Nome não disponível',
+            estoque_atual: response.data?.produto_associado?.estoque_atual || 0,
+            estoque_projetado: response.data?.produto_associado?.estoque_projetado || 0
           };
           
           return {
