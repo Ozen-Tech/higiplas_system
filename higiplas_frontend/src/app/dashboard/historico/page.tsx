@@ -51,8 +51,8 @@ function HistoricoGeralContent() {
 
   const movimentacoesFiltradas = movimentacoes.filter(mov => {
     const matchesTipo = filtroTipo === 'TODOS' || mov.tipo_movimentacao === filtroTipo;
-    const matchesSearch = mov.produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mov.produto.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (mov.produto?.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (mov.produto?.codigo || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTipo && matchesSearch;
   });
 
@@ -205,9 +205,9 @@ function HistoricoGeralContent() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                           <div>
-                            <div className="font-medium">{mov.produto.nome}</div>
+                            <div className="font-medium">{mov.produto?.nome || 'Nome não disponível'}</div>
                             <div className="text-gray-500 dark:text-gray-400 text-xs">
-                              Código: {mov.produto.codigo}
+                              Código: {mov.produto?.codigo || 'N/A'}
                             </div>
                           </div>
                         </td>
