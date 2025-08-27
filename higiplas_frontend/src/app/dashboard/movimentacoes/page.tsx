@@ -160,6 +160,42 @@ export default function MovimentacoesPage() {
     }
   };
 
+  const handleProcessarPDFEntrada = async () => {
+    if (!selectedFile) {
+      alert('Por favor, selecione um arquivo PDF');
+      return;
+    }
+
+    setIsProcessing(true);
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', selectedFile);
+
+      const response = await apiService.postFormData('/movimentacoes/processar-pdf-entrada', formData);
+      
+      if (response?.data) {
+        setResult(response.data);
+        // Limpar o arquivo selecionado
+        setSelectedFile(null);
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+        alert(`PDF processado com sucesso! ${response.data.movimentacoes_criadas} movimentações de entrada foram criadas.`);
+      }
+      
+    } catch (err: unknown) {
+      console.error('Erro ao processar PDF de entrada:', err);
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error.response?.data?.detail || 'Erro ao processar PDF de entrada';
+      setError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const toggleProductSelection = (index: number) => {
     setSelectedProducts(prev => 
       prev.includes(index) 
@@ -286,6 +322,44 @@ export default function MovimentacoesPage() {
               </div>
             </div>
 
+            {/* Seção específica para Entrada com processamento de PDF */}
+            {tipoMovimentacao === 'ENTRADA' && (
+              <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <h3 className="text-lg font-medium text-green-900 dark:text-green-100 mb-3">
+                  📄 Processamento Automático de PDF de Entrada
+                </h3>
+                <p className="text-sm text-green-700 dark:text-green-300 mb-4">
+                  Para movimentações de entrada, você pode fazer upload de um PDF de nota fiscal para processar automaticamente as movimentações de estoque.
+                </p>
+                
+                <div className="bg-green-100 dark:bg-green-800/30 p-3 rounded-md mb-4">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    💡 <strong>Dica:</strong> Use o botão "Visualizar Produtos do PDF" para revisar antes de processar, ou "Processar PDF Diretamente" para processamento automático completo.
+                  </p>
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleProcessarPDFEntrada}
+                    disabled={!selectedFile || isProcessing}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processando PDF...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircleIcon className="h-4 w-4 mr-2" />
+                        Processar PDF Diretamente
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Upload de arquivo */}
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 mb-6">
               <div className="text-center">
@@ -322,24 +396,44 @@ export default function MovimentacoesPage() {
               )}
             </div>
 
-            {/* Botão de visualizar */}
-            <Button
-              onClick={handlePreviewPDF}
-              disabled={!selectedFile || isProcessing}
-              className="w-full"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Analisando PDF...
-                </>
-              ) : (
-                <>
-                  <EyeIcon className="h-4 w-4 mr-2" />
-                  Visualizar Produtos do PDF
-                </>
-              )}
-            </Button>
+            {/* Botões de ação */}
+            {tipoMovimentacao === 'SAIDA' ? (
+              <Button
+                onClick={handlePreviewPDF}
+                disabled={!selectedFile || isProcessing}
+                className="w-full"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Analisando PDF...
+                  </>
+                ) : (
+                  <>
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    Visualizar Produtos do PDF
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handlePreviewPDF}
+                disabled={!selectedFile || isProcessing}
+                className="w-full"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Analisando PDF...
+                  </>
+                ) : (
+                  <>
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    Visualizar Produtos do PDF
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Mensagem de erro */}

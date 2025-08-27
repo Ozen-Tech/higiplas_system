@@ -212,9 +212,12 @@ async def preview_pdf_movimentacao(
         
         print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
         
-        # Extrair dados do PDF
+        # Extrair dados do PDF baseado no tipo de movimentação
         print(f"DEBUG: Iniciando extração de dados do PDF")
-        dados_extraidos = extrair_dados_pdf(temp_file_path)
+        if tipo_movimentacao == 'ENTRADA':
+            dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
+        else:
+            dados_extraidos = extrair_dados_pdf(temp_file_path)
         print(f"DEBUG: Dados extraídos: {dados_extraidos}")
         
         # Limpar arquivo temporário
@@ -492,6 +495,144 @@ async def confirmar_movimentacoes(
         )
 
 @router.post(
+    "/processar-pdf-entrada",
+    response_model=Dict[str, Any],
+    summary="Processa PDF de nota fiscal de entrada",
+    description="Extrai dados de um PDF de nota fiscal de entrada e registra as movimentações de estoque automaticamente."
+)
+async def processar_pdf_entrada(
+    arquivo: UploadFile = File(..., description="Arquivo PDF da nota fiscal de entrada"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Processa um PDF de nota fiscal de ENTRADA e registra as movimentações automaticamente."""
+    
+    # Log para debug
+    print(f"DEBUG: Arquivo de entrada recebido: {arquivo.filename if arquivo else 'None'}")
+    print(f"DEBUG: Content type: {arquivo.content_type if arquivo else 'None'}")
+    
+    # Validar se o arquivo foi enviado
+    if not arquivo or not arquivo.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado"
+        )
+    
+    if not arquivo.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos PDF são aceitos"
+        )
+    
+    try:
+        print(f"DEBUG: Iniciando processamento do arquivo de entrada {arquivo.filename}")
+        
+        # Salvar arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            content = await arquivo.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
+        
+        # Extrair dados do PDF de entrada
+        print(f"DEBUG: Iniciando extração de dados do PDF de entrada")
+        dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
+        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
+        
+        # Limpar arquivo temporário
+        os.unlink(temp_file_path)
+        
+        if not dados_extraidos or not dados_extraidos.get('produtos'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não foi possível extrair dados válidos do PDF de entrada"
+            )
+        
+        # Processar movimentações de entrada
+        movimentacoes_criadas = []
+        produtos_nao_encontrados = []
+        
+        for produto_data in dados_extraidos['produtos']:
+            codigo = produto_data.get('codigo')
+            quantidade = produto_data.get('quantidade', 0)
+            
+            if not codigo or quantidade <= 0:
+                continue
+            
+            # Buscar produto pelo código
+            produto = db.query(models.Produto).filter(
+                models.Produto.codigo == str(codigo),
+                models.Produto.empresa_id == current_user.empresa_id
+            ).first()
+            
+            if not produto:
+                produtos_nao_encontrados.append({
+                    'codigo': codigo,
+                    'descricao': produto_data.get('descricao', 'N/A')
+                })
+                continue
+            
+            # Criar movimentação de entrada
+            observacao = f"Entrada automática - NF {dados_extraidos.get('nota_fiscal', 'N/A')} - Fornecedor: {dados_extraidos.get('fornecedor', 'N/A')}"
+            
+            movimentacao_data = schemas_movimentacao.MovimentacaoEstoqueCreate(
+                produto_id=produto.id,
+                tipo_movimentacao='ENTRADA',
+                quantidade=quantidade,
+                observacao=observacao
+            )
+            
+            try:
+                produto_atualizado = crud_movimentacao.create_movimentacao_estoque(
+                    db=db,
+                    movimentacao=movimentacao_data,
+                    usuario_id=current_user.id,
+                    empresa_id=current_user.empresa_id
+                )
+                
+                movimentacoes_criadas.append({
+                    'produto_id': produto.id,
+                    'codigo': codigo,
+                    'nome': produto.nome,
+                    'quantidade': quantidade,
+                    'estoque_anterior': produto_atualizado.quantidade_em_estoque - quantidade,
+                    'estoque_atual': produto_atualizado.quantidade_em_estoque
+                })
+            except Exception as e:
+                produtos_nao_encontrados.append({
+                    'codigo': codigo,
+                    'descricao': produto_data.get('descricao', 'N/A'),
+                    'erro': str(e)
+                })
+        
+        return {
+            'sucesso': True,
+            'arquivo': arquivo.filename,
+            'tipo': 'ENTRADA',
+            'nota_fiscal': dados_extraidos.get('nota_fiscal'),
+            'data_emissao': dados_extraidos.get('data_emissao'),
+            'fornecedor': dados_extraidos.get('fornecedor'),
+            'cnpj_fornecedor': dados_extraidos.get('cnpj_fornecedor'),
+            'movimentacoes_criadas': len(movimentacoes_criadas),
+            'produtos_processados': movimentacoes_criadas,
+            'produtos_nao_encontrados': produtos_nao_encontrados,
+            'total_produtos_pdf': len(dados_extraidos['produtos'])
+        }
+        
+    except HTTPException as he:
+        print(f"DEBUG: HTTPException capturada: {he.status_code} - {he.detail}")
+        raise
+    except Exception as e:
+        print(f"DEBUG: Exception geral capturada: {type(e).__name__} - {str(e)}")
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar PDF de entrada: {str(e)}"
+        )
+
+@router.post(
     "/processar-pdf",
     response_model=Dict[str, Any],
     summary="Processa PDF de movimentação de estoque",
@@ -635,10 +776,282 @@ async def processar_pdf_movimentacao(
             detail=f"Erro ao processar PDF: {str(e)}"
         )
 
-def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
-    """Extrai dados estruturados de um PDF de nota fiscal."""
+def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
+    """Extrai dados estruturados de um PDF de nota fiscal de ENTRADA."""
     
-    print(f"DEBUG: Iniciando extração de dados do arquivo: {caminho_pdf}")
+    print(f"DEBUG: Iniciando extração de dados de ENTRADA do arquivo: {caminho_pdf}")
+    
+    dados = {
+        'nota_fiscal': None,
+        'data_emissao': None,
+        'fornecedor': None,  # Para entrada, é fornecedor ao invés de cliente
+        'cnpj_fornecedor': None,
+        'valor_total': None,
+        'produtos': []
+    }
+    
+    try:
+        with pdfplumber.open(caminho_pdf) as pdf:
+            texto_completo = ""
+            for page in pdf.pages:
+                texto_completo += page.extract_text() or ""
+        
+        print(f"DEBUG: Texto extraído ({len(texto_completo)} caracteres)")
+        
+        # Salvar amostra do texto para debug
+        try:
+            with open('/tmp/debug_texto_pdf_entrada.txt', 'w', encoding='utf-8') as f:
+                f.write(f"ARQUIVO ENTRADA: {caminho_pdf}\n")
+                f.write(f"TAMANHO: {len(texto_completo)} caracteres\n")
+                f.write("=" * 50 + "\n")
+                f.write(texto_completo[:3000])  # Primeiros 3000 caracteres
+                f.write("\n" + "=" * 50 + "\n")
+                f.write("LINHAS COMPLETAS:\n")
+                linhas = texto_completo.split('\n')
+                for i, linha in enumerate(linhas[:100]):  # Primeiras 100 linhas
+                    f.write(f"{i+1:3d}: {linha}\n")
+            print("DEBUG: Texto de entrada salvo em /tmp/debug_texto_pdf_entrada.txt")
+        except Exception as e:
+            print(f"DEBUG: Erro ao salvar texto de entrada: {e}")
+        
+        # Extração inteligente e abrangente de dados
+        dados = extrair_dados_inteligente_entrada(texto_completo, dados)
+        
+    except Exception as e:
+        print(f"DEBUG: Erro ao processar PDF de entrada: {e}")
+    
+    return dados
+
+def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]) -> Dict[str, Any]:
+    """Extração inteligente e abrangente de dados para PDFs de entrada."""
+    
+    # Múltiplos padrões para nota fiscal
+    padroes_nf = [
+        r'NFe?\s+N[ºo°]?\s*(\d+)',
+        r'Nota\s+Fiscal\s+N[ºo°]?\s*(\d+)',
+        r'N[ºo°]\s*(\d{4,})',
+        r'Número\s*(\d{4,})'
+    ]
+    
+    for padrao in padroes_nf:
+        nf_match = re.search(padrao, texto_completo, re.IGNORECASE)
+        if nf_match:
+            dados['nota_fiscal'] = nf_match.group(1)
+            print(f"DEBUG: Nota fiscal encontrada: {dados['nota_fiscal']}")
+            break
+    
+    # Múltiplos padrões para data
+    padroes_data = [
+        r'Data\s+de\s+Emissão\s+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
+        r'Emissão[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
+        r'Data[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
+        r'(\d{1,2}[/\-]\d{1,2}[/\-]\d{4})'
+    ]
+    
+    for padrao in padroes_data:
+        data_match = re.search(padrao, texto_completo, re.IGNORECASE)
+        if data_match:
+            dados['data_emissao'] = data_match.group(1)
+            print(f"DEBUG: Data de emissão encontrada: {dados['data_emissao']}")
+            break
+    
+    # Múltiplos padrões para fornecedor/remetente
+    padroes_fornecedor = [
+        r'Remetente[:\s]+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}',
+        r'Fornecedor[:\s]+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}',
+        r'Nome/Razão\s+Social\s+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}',
+        r'Empresa[:\s]+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}'
+    ]
+    
+    for padrao in padroes_fornecedor:
+        fornecedor_match = re.search(padrao, texto_completo, re.IGNORECASE)
+        if fornecedor_match:
+            dados['fornecedor'] = fornecedor_match.group(1).strip()
+            print(f"DEBUG: Fornecedor encontrado: {dados['fornecedor']}")
+            break
+    
+    # Extração de CNPJ - buscar todos e identificar o do remetente
+    cnpj_matches = re.findall(r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})', texto_completo)
+    if cnpj_matches:
+        # Para entrada, o primeiro CNPJ geralmente é do remetente/fornecedor
+        dados['cnpj_fornecedor'] = cnpj_matches[0]
+        print(f"DEBUG: CNPJ fornecedor encontrado: {dados['cnpj_fornecedor']}")
+    
+    # Múltiplos padrões para valor total
+    padroes_valor = [
+        r'Valor\s+Total\s+da\s+Nota\s+Fiscal\s+([\d.,]+)',
+        r'Total\s+Geral[:\s]+R?\$?\s*([\d.,]+)',
+        r'Valor\s+Total[:\s]+R?\$?\s*([\d.,]+)',
+        r'Total[:\s]+R?\$?\s*([\d.,]+)'
+    ]
+    
+    for padrao in padroes_valor:
+        valor_match = re.search(padrao, texto_completo, re.IGNORECASE)
+        if valor_match:
+            valor_str = valor_match.group(1).replace('.', '').replace(',', '.')
+            try:
+                dados['valor_total'] = float(valor_str)
+                print(f"DEBUG: Valor total encontrado: {dados['valor_total']}")
+                break
+            except ValueError:
+                continue
+    
+    # Extração inteligente de produtos
+    dados['produtos'] = extrair_produtos_inteligente_entrada(texto_completo)
+    
+    return dados
+
+def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, Any]]:
+    """Extração inteligente de produtos para PDFs de entrada."""
+    
+    produtos = []
+    linhas = texto_completo.split('\n')
+    
+    # Múltiplos indicadores de início da seção de produtos
+    indicadores_produtos = [
+        'Dados dos Produtos',
+        'Produtos e Serviços',
+        'Itens da Nota',
+        'Discriminação dos Produtos',
+        'Mercadorias'
+    ]
+    
+    # Múltiplos indicadores de fim da seção de produtos
+    indicadores_fim = [
+        'Dados Adicionais',
+        'Informações Complementares',
+        'Observações',
+        'Total da Nota',
+        'Valor Total'
+    ]
+    
+    inicio_produtos = False
+    
+    for i, linha in enumerate(linhas):
+        # Verificar início da seção de produtos
+        if not inicio_produtos:
+            for indicador in indicadores_produtos:
+                if indicador in linha:
+                    inicio_produtos = True
+                    print(f"DEBUG: Seção de produtos iniciada em: {indicador}")
+                    break
+            continue
+        
+        # Verificar fim da seção de produtos
+        fim_secao = False
+        for indicador in indicadores_fim:
+            if indicador in linha:
+                fim_secao = True
+                print(f"DEBUG: Seção de produtos finalizada em: {indicador}")
+                break
+        
+        if fim_secao:
+            break
+        
+        # Múltiplos padrões para linhas de produtos
+        padroes_produto = [
+            # Padrão completo: item codigo descricao ncm cfop unidade quantidade valor_unit valor_total
+            r'^(\d+)\s+(\d+)\s+(.+?)\s+(\d{8})\s+\d{4}\s+\d{4}\s+(\w+)\s+([\d,]+)\s+([\d,]+)\s+[\d,]+\s+([\d,]+)',
+            # Padrão simplificado: codigo descricao quantidade valor
+            r'^(\d{3,})\s+(.+?)\s+(\d+[,.]\d+)\s+([\d,]+)',
+            # Padrão com item: item codigo descricao quantidade valor
+            r'^(\d+)\s+(\d{3,})\s+(.+?)\s+(\d+[,.]\d+)\s+([\d,]+)',
+            # Padrão flexível: qualquer sequência com código e descrição
+            r'(\d{3,})\s+([A-Z][A-Z\s/\-()]+)\s+(\d+[,.]\d+)'
+        ]
+        
+        for j, padrao in enumerate(padroes_produto):
+            produto_match = re.match(padrao, linha.strip())
+            
+            if produto_match:
+                try:
+                    if j == 0:  # Padrão completo
+                        item = int(produto_match.group(1))
+                        codigo = produto_match.group(2)
+                        descricao = produto_match.group(3).strip()
+                        ncm = produto_match.group(4)
+                        unidade = produto_match.group(5)
+                        quantidade = float(produto_match.group(6).replace(',', '.'))
+                        valor_unitario = float(produto_match.group(7).replace(',', '.'))
+                        valor_total = float(produto_match.group(8).replace(',', '.'))
+                        
+                        produto = {
+                            'item': item,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': ncm,
+                            'unidade': unidade,
+                            'quantidade': quantidade,
+                            'valor_unitario': valor_unitario,
+                            'valor_total': valor_total
+                        }
+                    
+                    elif j == 1:  # Padrão simplificado
+                        codigo = produto_match.group(1)
+                        descricao = produto_match.group(2).strip()
+                        quantidade = float(produto_match.group(3).replace(',', '.'))
+                        valor_total = float(produto_match.group(4).replace(',', '.'))
+                        
+                        produto = {
+                            'item': len(produtos) + 1,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': '',
+                            'unidade': 'UN',
+                            'quantidade': quantidade,
+                            'valor_unitario': valor_total / quantidade if quantidade > 0 else 0,
+                            'valor_total': valor_total
+                        }
+                    
+                    elif j == 2:  # Padrão com item
+                        item = int(produto_match.group(1))
+                        codigo = produto_match.group(2)
+                        descricao = produto_match.group(3).strip()
+                        quantidade = float(produto_match.group(4).replace(',', '.'))
+                        valor_total = float(produto_match.group(5).replace(',', '.'))
+                        
+                        produto = {
+                            'item': item,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': '',
+                            'unidade': 'UN',
+                            'quantidade': quantidade,
+                            'valor_unitario': valor_total / quantidade if quantidade > 0 else 0,
+                            'valor_total': valor_total
+                        }
+                    
+                    else:  # Padrão flexível
+                        codigo = produto_match.group(1)
+                        descricao = produto_match.group(2).strip()
+                        quantidade = float(produto_match.group(3).replace(',', '.'))
+                        
+                        produto = {
+                            'item': len(produtos) + 1,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': '',
+                            'unidade': 'UN',
+                            'quantidade': quantidade,
+                            'valor_unitario': 0,
+                            'valor_total': 0
+                        }
+                    
+                    produtos.append(produto)
+                    print(f"DEBUG: Produto extraído (padrão {j+1}): {codigo} - {descricao[:30]}...")
+                    break
+                    
+                except (ValueError, IndexError, ZeroDivisionError) as e:
+                    print(f"DEBUG: Erro ao processar produto (padrão {j+1}): {e}")
+                    continue
+    
+    print(f"DEBUG: Total de produtos extraídos para entrada: {len(produtos)}")
+    return produtos
+
+def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
+    """Extrai dados estruturados de um PDF de nota fiscal de SAÍDA."""
+    
+    print(f"DEBUG: Iniciando extração de dados de SAÍDA do arquivo: {caminho_pdf}")
     
     dados = {
         'nota_fiscal': None,
@@ -656,6 +1069,22 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
                 texto_completo += page.extract_text() or ""
         
         print(f"DEBUG: Texto extraído ({len(texto_completo)} caracteres)")
+        
+        # Salvar amostra do texto para debug
+        try:
+            with open('/tmp/debug_texto_pdf.txt', 'w', encoding='utf-8') as f:
+                f.write(f"ARQUIVO: {caminho_pdf}\n")
+                f.write(f"TAMANHO: {len(texto_completo)} caracteres\n")
+                f.write("=" * 50 + "\n")
+                f.write(texto_completo[:3000])  # Primeiros 3000 caracteres
+                f.write("\n" + "=" * 50 + "\n")
+                f.write("LINHAS COMPLETAS:\n")
+                linhas = texto_completo.split('\n')
+                for i, linha in enumerate(linhas[:100]):  # Primeiras 100 linhas
+                    f.write(f"{i+1:3d}: {linha}\n")
+            print("DEBUG: Texto salvo em /tmp/debug_texto_pdf.txt")
+        except Exception as e:
+            print(f"DEBUG: Erro ao salvar texto: {e}")
         
         # Extrair número da nota fiscal - padrão: NFe Nº 0000004538
         nf_match = re.search(r'NFe\s+Nº\s+(\d+)', texto_completo, re.IGNORECASE)
