@@ -22,7 +22,7 @@ O **Higiplas System** é um sistema completo de gestão de estoque e movimentaç
 ### 🎯 Principais Funcionalidades
 
 - **Dashboard Interativo**: Interface moderna e responsiva
-- **Processamento de PDFs GIRASSOL**: Extração automática de dados de notas fiscais
+- **Processamento de PDFs**: Extração automática de dados de notas fiscais
 - **Gestão de Produtos Similares**: Sistema inteligente de associação de produtos
 - **Controle de Estoque Mínimo**: Alertas automáticos para reposição
 - **API RESTful**: Backend robusto com FastAPI
