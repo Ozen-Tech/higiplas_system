@@ -334,7 +334,7 @@ export default function MovimentacoesPage() {
                 
                 <div className="bg-green-100 dark:bg-green-800/30 p-3 rounded-md mb-4">
                   <p className="text-sm text-green-800 dark:text-green-200">
-                    💡 <strong>Dica:</strong> Use o botão "Visualizar Produtos do PDF" para revisar antes de processar, ou "Processar PDF Diretamente" para processamento automático completo.
+                    💡 <strong>Dica:</strong> Use o botão &quot;Visualizar Produtos do PDF&quot; para revisar antes de processar, ou &quot;Processar PDF Diretamente&quot; para processamento automático completo.
                   </p>
                 </div>
                 
