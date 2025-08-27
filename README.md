@@ -372,25 +372,22 @@ SOFTWARE.
 
 ### Mantenedores
 
-- **Equipe de Desenvolvimento**: [dev@higiplas.com](mailto:dev@higiplas.com)
-- **Suporte Técnico**: [suporte@higiplas.com](mailto:suporte@higiplas.com)
+- **Equipe de Desenvolvimento**: [comercial@ozentech.com](mailto:comercial@ozentech.com)
+- **Suporte Técnico**: [comercial@ozentech.com](mailto:comercial@ozentech.com)
 
 ### Links Úteis
 
-- 🌐 **Website**: [https://higiplas.com](https://higiplas.com)
+- 🌐 **Website**: [https://higiplas.ozentech.com](https://higiplas.ozentech.com)
 - 📚 **Documentação**: [https://docs.higiplas.com](https://docs.higiplas.com)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/seu-usuario/higiplas_system/issues)
-- 💬 **Discussões**: [GitHub Discussions](https://github.com/seu-usuario/higiplas_system/discussions)
 
 ### Redes Sociais
 
-- 🐦 **Twitter**: [@HigiplasSystem](https://twitter.com/HigiplasSystem)
-- 💼 **LinkedIn**: [Higiplas Company](https://linkedin.com/company/higiplas)
+- 💼 **LinkedIn**: [Ozen Tech]([https://linkedin.com/company/higiplas](https://www.linkedin.com/company/ozen-tech/?viewAsMember=true))
 
 ---
 
 <div align="center">
-  <p><strong>Desenvolvido com ❤️ pela equipe Higiplas</strong></p>
+  <p><strong>Desenvolvido com ❤️ pela equipe OzenTech</strong></p>
   <p>Se este projeto foi útil para você, considere dar uma ⭐!</p>
 </div>
 
