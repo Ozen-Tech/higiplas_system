@@ -823,14 +823,18 @@ def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
     return dados
 
 def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]) -> Dict[str, Any]:
-    """Extração inteligente e abrangente de dados para PDFs de entrada."""
+    """Extração inteligente de dados para PDFs de entrada - Formato GIRASSOL."""
     
-    # Múltiplos padrões para nota fiscal
+    print(f"DEBUG: Iniciando extração inteligente para entrada - Formato GIRASSOL")
+    
+    # Padrões específicos para GIRASSOL - Número da nota fiscal
     padroes_nf = [
-        r'NFe?\s+N[ºo°]?\s*(\d+)',
-        r'Nota\s+Fiscal\s+N[ºo°]?\s*(\d+)',
-        r'N[ºo°]\s*(\d{4,})',
-        r'Número\s*(\d{4,})'
+        r'NOTA FISCAL ELETRÔNICA[\s\S]*?Nº\s*(\d+)',
+        r'NÚMERO[:\s]+(\d+)',
+        r'NF[\s-]*e?[:\s]*(\d+)',
+        r'N[úu]mero[:\s]+(\d+)',
+        r'Nota[:\s]+(\d+)',
+        r'(\d{6,})(?=\s|$)'  # Padrão para números longos como 125215
     ]
     
     for padrao in padroes_nf:
@@ -840,9 +844,10 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
             print(f"DEBUG: Nota fiscal encontrada: {dados['nota_fiscal']}")
             break
     
-    # Múltiplos padrões para data
+    # Padrões específicos para GIRASSOL - Data de emissão
     padroes_data = [
-        r'Data\s+de\s+Emissão\s+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
+        r'DATA DE EMISSÃO[:\s]+(\d{2}/\d{2}/\d{4})',
+        r'Data de Emissão[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
         r'Emissão[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
         r'Data[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
         r'(\d{1,2}[/\-]\d{1,2}[/\-]\d{4})'
@@ -855,12 +860,13 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
             print(f"DEBUG: Data de emissão encontrada: {dados['data_emissao']}")
             break
     
-    # Múltiplos padrões para fornecedor/remetente
+    # Padrões específicos para GIRASSOL - Fornecedor/remetente
     padroes_fornecedor = [
+        r'RAZÃO SOCIAL[\s\n]+([A-Z][A-Z\s&.-]+?)(?=\s+CNPJ|\s+\d{2}\.\d{3})',
         r'Remetente[:\s]+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}',
         r'Fornecedor[:\s]+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}',
         r'Nome/Razão\s+Social\s+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}',
-        r'Empresa[:\s]+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}'
+        r'GIRASSOL[\s\S]*?([A-Z][A-Z\s&.-]{10,}?)(?=\s+CNPJ|\s+\d{2}\.\d{3})'
     ]
     
     for padrao in padroes_fornecedor:
@@ -877,8 +883,9 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
         dados['cnpj_fornecedor'] = cnpj_matches[0]
         print(f"DEBUG: CNPJ fornecedor encontrado: {dados['cnpj_fornecedor']}")
     
-    # Múltiplos padrões para valor total
+    # Padrões específicos para GIRASSOL - Valor total
     padroes_valor = [
+        r'VALOR TOTAL DA NOTA[\s\n]+([\d.,]+)',
         r'Valor\s+Total\s+da\s+Nota\s+Fiscal\s+([\d.,]+)',
         r'Total\s+Geral[:\s]+R?\$?\s*([\d.,]+)',
         r'Valor\s+Total[:\s]+R?\$?\s*([\d.,]+)',
@@ -902,33 +909,37 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
     return dados
 
 def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, Any]]:
-    """Extração inteligente de produtos para PDFs de entrada."""
+    """Extração inteligente de produtos para PDFs de entrada - Formato GIRASSOL."""
     
     produtos = []
     linhas = texto_completo.split('\n')
     
-    # Múltiplos indicadores de início da seção de produtos
+    # Indicadores específicos para GIRASSOL
     indicadores_produtos = [
+        'DADOS DOS PRODUTOS / SERVIÇOS',
+        'DADOS DOS PRODUTOS',
         'Dados dos Produtos',
         'Produtos e Serviços',
-        'Itens da Nota',
-        'Discriminação dos Produtos',
-        'Mercadorias'
+        'CÓDIGO VALOR VALOR BASE CÁLCULO',
+        'DESCRIÇÃO DO PRODUTO/SERVIÇO'
     ]
     
-    # Múltiplos indicadores de fim da seção de produtos
+    # Indicadores de fim específicos para GIRASSOL
     indicadores_fim = [
+        'DADOS ADICIONAIS',
         'Dados Adicionais',
         'Informações Complementares',
+        'INFORMAÇÕES COMPLEMENTARES',
         'Observações',
         'Total da Nota',
         'Valor Total'
     ]
     
     inicio_produtos = False
+    fim_secao = False
     
     for i, linha in enumerate(linhas):
-        # Verificar início da seção de produtos
+        # Verificar se chegamos ao início da seção de produtos
         if not inicio_produtos:
             for indicador in indicadores_produtos:
                 if indicador in linha:
@@ -937,8 +948,7 @@ def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, 
                     break
             continue
         
-        # Verificar fim da seção de produtos
-        fim_secao = False
+        # Verificar se chegamos ao fim da seção de produtos
         for indicador in indicadores_fim:
             if indicador in linha:
                 fim_secao = True
@@ -948,16 +958,16 @@ def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, 
         if fim_secao:
             break
         
-        # Múltiplos padrões para linhas de produtos
+        # Padrões específicos para GIRASSOL
         padroes_produto = [
-            # Padrão completo: item codigo descricao ncm cfop unidade quantidade valor_unit valor_total
-            r'^(\d+)\s+(\d+)\s+(.+?)\s+(\d{8})\s+\d{4}\s+\d{4}\s+(\w+)\s+([\d,]+)\s+([\d,]+)\s+[\d,]+\s+([\d,]+)',
-            # Padrão simplificado: codigo descricao quantidade valor
-            r'^(\d{3,})\s+(.+?)\s+(\d+[,.]\d+)\s+([\d,]+)',
-            # Padrão com item: item codigo descricao quantidade valor
-            r'^(\d+)\s+(\d{3,})\s+(.+?)\s+(\d+[,.]\d+)\s+([\d,]+)',
-            # Padrão flexível: qualquer sequência com código e descrição
-            r'(\d{3,})\s+([A-Z][A-Z\s/\-()]+)\s+(\d+[,.]\d+)'
+            # Padrão GIRASSOL: codigo+descricao ncm cst cfop unidade quantidade valor_unit valor_total
+            r'^(\d{7})([A-Z][A-Z\s/\-()0-9]+?)\s+(\d{8})\s+(\d{3})\s+(\d{4})\s+(\w+)\s+(\d+)\s+([\d,]+)\s+([\d,]+)',
+            # Padrão simplificado GIRASSOL: codigo+descricao quantidade valor_unit valor_total
+            r'^(\d{7})([A-Z][A-Z\s/\-()0-9]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)',
+            # Padrão flexível para linhas de produto GIRASSOL
+            r'^(\d{7})([A-Z][A-Z\s/\-()0-9]+?)\s+.*?\s+(\d+)\s+([\d,]+)\s+([\d,]+)',
+            # Padrão genérico: código descrição quantidade valor
+            r'(\d{6,})\s+([A-Z][A-Z\s/\-()0-9]+)\s+(\d+[,.]\d+)\s+([\d,]+)'
         ]
         
         for j, padrao in enumerate(padroes_produto):
@@ -965,18 +975,23 @@ def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, 
             
             if produto_match:
                 try:
-                    if j == 0:  # Padrão completo
-                        item = int(produto_match.group(1))
-                        codigo = produto_match.group(2)
-                        descricao = produto_match.group(3).strip()
-                        ncm = produto_match.group(4)
-                        unidade = produto_match.group(5)
-                        quantidade = float(produto_match.group(6).replace(',', '.'))
-                        valor_unitario = float(produto_match.group(7).replace(',', '.'))
-                        valor_total = float(produto_match.group(8).replace(',', '.'))
+                    if j == 0:  # Padrão GIRASSOL completo
+                        codigo = produto_match.group(1)
+                        descricao = produto_match.group(2).strip()
+                        ncm = produto_match.group(3)
+                        cst = produto_match.group(4)
+                        cfop = produto_match.group(5)
+                        unidade = produto_match.group(6)
+                        quantidade = float(produto_match.group(7))
+                        valor_unitario = float(produto_match.group(8).replace(',', '.'))
+                        # Para o padrão GIRASSOL, o valor total pode estar na posição 9 ou ser calculado
+                        try:
+                            valor_total = float(produto_match.group(9).replace(',', '.'))
+                        except:
+                            valor_total = quantidade * valor_unitario
                         
                         produto = {
-                            'item': item,
+                            'item': len(produtos) + 1,
                             'codigo': codigo,
                             'descricao': descricao,
                             'ncm': ncm,
@@ -985,8 +1000,50 @@ def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, 
                             'valor_unitario': valor_unitario,
                             'valor_total': valor_total
                         }
+                        produtos.append(produto)
+                        break
                     
-                    elif j == 1:  # Padrão simplificado
+                    elif j == 1:  # Padrão GIRASSOL simplificado
+                        codigo = produto_match.group(1)
+                        descricao = produto_match.group(2).strip()
+                        quantidade = float(produto_match.group(3))
+                        valor_unitario = float(produto_match.group(4).replace(',', '.'))
+                        valor_total = float(produto_match.group(5).replace(',', '.'))
+                        
+                        produto = {
+                            'item': len(produtos) + 1,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': '',
+                            'unidade': 'UN',
+                            'quantidade': quantidade,
+                            'valor_unitario': valor_unitario,
+                            'valor_total': valor_total
+                        }
+                        produtos.append(produto)
+                        break
+                    
+                    elif j == 2:  # Padrão GIRASSOL flexível
+                        codigo = produto_match.group(1)
+                        descricao = produto_match.group(2).strip()
+                        quantidade = float(produto_match.group(3))
+                        valor_unitario = float(produto_match.group(4).replace(',', '.'))
+                        valor_total = float(produto_match.group(5).replace(',', '.'))
+                        
+                        produto = {
+                            'item': len(produtos) + 1,
+                            'codigo': codigo,
+                            'descricao': descricao,
+                            'ncm': '',
+                            'unidade': 'UN',
+                            'quantidade': quantidade,
+                            'valor_unitario': valor_unitario,
+                            'valor_total': valor_total
+                        }
+                        produtos.append(produto)
+                        break
+                    
+                    else:  # Padrão genérico
                         codigo = produto_match.group(1)
                         descricao = produto_match.group(2).strip()
                         quantidade = float(produto_match.group(3).replace(',', '.'))
@@ -1002,42 +1059,9 @@ def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, 
                             'valor_unitario': valor_total / quantidade if quantidade > 0 else 0,
                             'valor_total': valor_total
                         }
+                        produtos.append(produto)
+                        break
                     
-                    elif j == 2:  # Padrão com item
-                        item = int(produto_match.group(1))
-                        codigo = produto_match.group(2)
-                        descricao = produto_match.group(3).strip()
-                        quantidade = float(produto_match.group(4).replace(',', '.'))
-                        valor_total = float(produto_match.group(5).replace(',', '.'))
-                        
-                        produto = {
-                            'item': item,
-                            'codigo': codigo,
-                            'descricao': descricao,
-                            'ncm': '',
-                            'unidade': 'UN',
-                            'quantidade': quantidade,
-                            'valor_unitario': valor_total / quantidade if quantidade > 0 else 0,
-                            'valor_total': valor_total
-                        }
-                    
-                    else:  # Padrão flexível
-                        codigo = produto_match.group(1)
-                        descricao = produto_match.group(2).strip()
-                        quantidade = float(produto_match.group(3).replace(',', '.'))
-                        
-                        produto = {
-                            'item': len(produtos) + 1,
-                            'codigo': codigo,
-                            'descricao': descricao,
-                            'ncm': '',
-                            'unidade': 'UN',
-                            'quantidade': quantidade,
-                            'valor_unitario': 0,
-                            'valor_total': 0
-                        }
-                    
-                    produtos.append(produto)
                     print(f"DEBUG: Produto extraído (padrão {j+1}): {codigo} - {descricao[:30]}...")
                     break
                     
