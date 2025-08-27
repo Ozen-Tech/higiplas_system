@@ -101,9 +101,14 @@ export default function MovimentacoesPage() {
       } else {
         setError(response?.data?.mensagem || 'Erro ao processar o arquivo PDF.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao fazer upload:', error);
-      setError(error.response?.data?.detail || 'Erro ao processar o arquivo. Tente novamente.');
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data
+        ? String(error.response.data.detail)
+        : 'Erro ao processar o arquivo. Tente novamente.';
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -132,9 +137,14 @@ export default function MovimentacoesPage() {
       } else {
         setError(response?.data?.mensagem || 'Erro ao processar o PDF de entrada.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao processar PDF de entrada:', error);
-      setError(error.response?.data?.detail || 'Erro ao processar o arquivo. Tente novamente.');
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data
+        ? String(error.response.data.detail)
+        : 'Erro ao processar o arquivo. Tente novamente.';
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -171,9 +181,14 @@ export default function MovimentacoesPage() {
       } else {
         setError(response?.data?.mensagem || 'Erro ao confirmar as movimentações.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao confirmar movimentações:', error);
-      setError(error.response?.data?.detail || 'Erro ao processar as movimentações. Tente novamente.');
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data
+        ? String(error.response.data.detail)
+        : 'Erro ao processar as movimentações. Tente novamente.';
+      setError(errorMessage);
     } finally {
       setIsConfirming(false);
     }
@@ -245,9 +260,14 @@ export default function MovimentacoesPage() {
       } else {
         setError(response?.data?.mensagem || 'Erro ao associar produto similar.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao associar produto similar:', error);
-      setError(error.response?.data?.detail || 'Erro ao associar produto. Tente novamente.');
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data
+        ? String(error.response.data.detail)
+        : 'Erro ao associar produto. Tente novamente.';
+      setError(errorMessage);
     }
   };
 
