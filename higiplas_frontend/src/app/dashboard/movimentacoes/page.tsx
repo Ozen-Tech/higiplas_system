@@ -97,9 +97,9 @@ export default function MovimentacoesPage() {
       if (response?.data) {
         // Garantir que os arrays sempre existam
         const previewDataWithDefaults = {
-          ...response.data,
-          produtos_encontrados: response.data.produtos_encontrados || [],
-          produtos_nao_encontrados: response.data.produtos_nao_encontrados || []
+          ...response?.data,
+          produtos_encontrados: response?.data?.produtos_encontrados || [],
+          produtos_nao_encontrados: response?.data?.produtos_nao_encontrados || []
         };
         
         setPreviewData(previewDataWithDefaults);
@@ -130,13 +130,13 @@ export default function MovimentacoesPage() {
 
     try {
       const produtosConfirmados = selectedProducts.map(index => 
-        previewData.produtos_encontrados[index]
+        previewData?.produtos_encontrados[index]
       );
 
       const dados = {
         produtos_confirmados: produtosConfirmados,
-        tipo_movimentacao: previewData.tipo_movimentacao,
-        nota_fiscal: previewData.nota_fiscal
+        tipo_movimentacao: previewData?.tipo_movimentacao,
+        nota_fiscal: previewData?.nota_fiscal
       };
 
       const response = await apiService.post('/movimentacoes/confirmar-movimentacoes', dados);
@@ -169,7 +169,7 @@ export default function MovimentacoesPage() {
   };
 
   const selectAllProducts = () => {
-    if (!previewData || !previewData.produtos_encontrados) return;
+    if (!previewData || !previewData?.produtos_encontrados) return;
     setSelectedProducts(previewData.produtos_encontrados.map((_, index) => index));
   };
 
@@ -217,7 +217,7 @@ export default function MovimentacoesPage() {
         
         // Adicionar o produto à seleção usando o índice correto
         setSelectedProducts(prev => {
-          if (!previewData || !previewData.produtos_encontrados) {
+          if (!previewData || !previewData?.produtos_encontrados) {
             return prev;
           }
           const newIndex = previewData.produtos_encontrados.length;
@@ -360,21 +360,21 @@ export default function MovimentacoesPage() {
               </h3>
               
               <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg mb-4">
-                <p className="text-green-700 dark:text-green-300 font-medium">{result.mensagem}</p>
+                <p className="text-green-700 dark:text-green-300 font-medium">{result?.mensagem || 'Processamento concluído'}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{result.movimentacoes_criadas}</div>
+                  <div className="text-2xl font-bold text-blue-600">{result?.movimentacoes_criadas || 0}</div>
                   <div className="text-sm text-blue-700 dark:text-blue-300">Movimentações Criadas</div>
                 </div>
                 <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{result.produtos_atualizados.length}</div>
+                  <div className="text-2xl font-bold text-purple-600">{result?.produtos_atualizados?.length || 0}</div>
                   <div className="text-sm text-purple-700 dark:text-purple-300">Produtos Atualizados</div>
                 </div>
               </div>
 
-              {result.produtos_atualizados.length > 0 && (
+              {result?.produtos_atualizados && result.produtos_atualizados.length > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     Produtos Atualizados:
@@ -404,7 +404,7 @@ export default function MovimentacoesPage() {
                   Confirmar Movimentações
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Arquivo: {previewData.arquivo} | Tipo: {previewData.tipo_movimentacao}
+                  Arquivo: {previewData?.arquivo || 'N/A'} | Tipo: {previewData?.tipo_movimentacao || 'N/A'}
                 </p>
               </div>
               <button
@@ -416,23 +416,23 @@ export default function MovimentacoesPage() {
             </div>
 
             {/* Informações da Nota Fiscal */}
-            {(previewData.nota_fiscal || previewData.data_emissao || previewData.cliente) && (
+            {(previewData?.nota_fiscal || previewData?.data_emissao || previewData?.cliente) && (
               <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Informações da Nota Fiscal</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  {previewData.nota_fiscal && (
+                  {previewData?.nota_fiscal && (
                     <div>
                       <span className="font-medium text-gray-700 dark:text-gray-300">NF: </span>
                       <span className="text-gray-600 dark:text-gray-400">{previewData.nota_fiscal}</span>
                     </div>
                   )}
-                  {previewData.data_emissao && (
+                  {previewData?.data_emissao && (
                     <div>
                       <span className="font-medium text-gray-700 dark:text-gray-300">Data: </span>
                       <span className="text-gray-600 dark:text-gray-400">{previewData.data_emissao}</span>
                     </div>
                   )}
-                  {previewData.cliente && (
+                  {previewData?.cliente && (
                     <div>
                       <span className="font-medium text-gray-700 dark:text-gray-300">Cliente: </span>
                       <span className="text-gray-600 dark:text-gray-400">{previewData.cliente}</span>
@@ -447,11 +447,11 @@ export default function MovimentacoesPage() {
               {/* Resumo */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{previewData.produtos_encontrados.length}</div>
+                  <div className="text-2xl font-bold text-green-600">{previewData?.produtos_encontrados?.length || 0}</div>
                   <div className="text-sm text-green-700 dark:text-green-300">Produtos Encontrados</div>
                 </div>
                 <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">{previewData.produtos_nao_encontrados.length}</div>
+                  <div className="text-2xl font-bold text-red-600">{previewData?.produtos_nao_encontrados?.length || 0}</div>
                   <div className="text-sm text-red-700 dark:text-red-300">Não Encontrados</div>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
@@ -461,7 +461,7 @@ export default function MovimentacoesPage() {
               </div>
 
               {/* Controles de Seleção */}
-              {previewData.produtos_encontrados.length > 0 && (
+              {(previewData?.produtos_encontrados?.length || 0) > 0 && (
                 <div className="flex gap-2 mb-4">
                   <Button onClick={selectAllProducts} className="px-3 py-1 text-sm">
                     Selecionar Todos
@@ -473,7 +473,7 @@ export default function MovimentacoesPage() {
               )}
 
               {/* Lista de Produtos Encontrados */}
-              {previewData.produtos_encontrados.length > 0 && (
+              {(previewData?.produtos_encontrados?.length || 0) > 0 && (
                 <div className="mb-6">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                     Produtos Encontrados no Sistema
@@ -499,7 +499,7 @@ export default function MovimentacoesPage() {
                             />
                             <div>
                               <div className="font-medium text-gray-900 dark:text-gray-100">
-                                {produto.nome_sistema || produto.descricao_pdf}
+                                {produto?.nome_sistema || produto?.descricao_pdf || 'Nome não disponível'}
                               </div>
                               <div className="text-sm text-gray-500 dark:text-gray-400">
                                 Código: {produto.codigo}
@@ -511,7 +511,7 @@ export default function MovimentacoesPage() {
                               {produto.quantidade} unidades
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              Estoque: {produto.estoque_atual} → {produto.estoque_projetado}
+                              Estoque: {produto?.estoque_atual || 0} → {produto?.estoque_projetado || 0}
                             </div>
                           </div>
                         </div>
@@ -522,7 +522,7 @@ export default function MovimentacoesPage() {
               )}
 
               {/* Lista de Produtos Não Encontrados */}
-              {previewData.produtos_nao_encontrados.length > 0 && (
+              {(previewData?.produtos_nao_encontrados?.length || 0) > 0 && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                     Produtos Não Encontrados no Sistema
@@ -544,13 +544,13 @@ export default function MovimentacoesPage() {
                               {produto.quantidade} unidades
                             </div>
                             <div className="text-sm text-red-600 dark:text-red-400">
-                              {produto.produtos_similares && produto.produtos_similares.length > 0 ? 'Produtos similares encontrados' : 'Não será processado'}
+                              {produto?.produtos_similares && produto.produtos_similares.length > 0 ? 'Produtos similares encontrados' : 'Não será processado'}
                             </div>
                           </div>
                         </div>
                         
                         {/* Produtos Similares */}
-                        {produto.produtos_similares && produto.produtos_similares.length > 0 && (
+                        {produto?.produtos_similares && produto.produtos_similares.length > 0 && (
                           <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                             <h5 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
                               Produtos similares encontrados (selecione um para associar):
@@ -569,10 +569,10 @@ export default function MovimentacoesPage() {
                                     />
                                     <div>
                                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {similar.nome || 'Nome não disponível'}
+                                        {similar?.nome || 'Nome não disponível'}
                                       </div>
                                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Código: {similar.codigo || 'N/A'} | Estoque: {similar.estoque_atual || 0} | Similaridade: {Math.round(similar.score_similaridade || 0)}%
+                                        Código: {similar?.codigo || 'N/A'} | Estoque: {similar?.estoque_atual || 0} | Similaridade: {Math.round(similar?.score_similaridade || 0)}%
                                       </div>
                                     </div>
                                   </div>
@@ -601,7 +601,7 @@ export default function MovimentacoesPage() {
             {/* Footer do Modal */}
             <div className="flex items-center justify-between p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedProducts.length} de {previewData.produtos_encontrados.length} produtos selecionados
+                {selectedProducts.length} de {previewData?.produtos_encontrados?.length || 0} produtos selecionados
               </div>
               <div className="flex gap-3">
                 <Button
