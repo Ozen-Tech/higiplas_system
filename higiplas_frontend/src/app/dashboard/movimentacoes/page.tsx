@@ -150,6 +150,43 @@ export default function MovimentacoesPage() {
     }
   };
 
+  const handleProcessarPDFSaida = async () => {
+    if (!arquivo) {
+      setError('Por favor, selecione um arquivo PDF.');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', arquivo);
+      formData.append('tipo_movimentacao', tipoMovimentacao);
+
+      const response = await apiService.post('/movimentacoes/processar-pdf', formData);
+
+      if (response && response.data.sucesso) {
+        setResult(response.data);
+        setArquivo(null);
+        const fileInput = document.getElementById('arquivo') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      } else {
+        setError(response?.data?.mensagem || 'Erro ao processar o PDF de saída.');
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao processar PDF de saída:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data
+        ? String(error.response.data.detail)
+        : 'Erro ao processar o arquivo. Tente novamente.';
+      setError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleConfirmProcessing = async () => {
     if (!previewData || selectedProducts.length === 0) {
       setError('Selecione pelo menos um produto para processar.');
@@ -356,6 +393,26 @@ export default function MovimentacoesPage() {
                   <>
                     <CogIcon className="h-4 w-4 mr-2" />
                     Processar PDF de Entrada
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {tipoMovimentacao === 'SAIDA' && (
+              <Button
+                onClick={handleProcessarPDFSaida}
+                disabled={!arquivo || isProcessing}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processando Saída...
+                  </>
+                ) : (
+                  <>
+                    <CogIcon className="h-4 w-4 mr-2" />
+                    Processar PDF de Saída
                   </>
                 )}
               </Button>
