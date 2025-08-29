@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.routers import (
-    auth, empresas, produtos, movimentacoes, 
+    auth, empresas, produtos, movimentacoes, entrada, saida,
     upload_excel, insights, orcamentos, dashboard_kpis, 
     invoice_processing, fornecedores, ordens_compra, clientes, ai_pdf
 )
@@ -63,6 +63,8 @@ app.include_router(auth.router, prefix="/users", tags=["Usuários e Autenticaç�
 app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
 app.include_router(produtos.router, tags=["Produtos"])
 app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
+app.include_router(entrada.router, prefix="/movimentacoes", tags=["Entrada de Estoque"])
+app.include_router(saida.router, prefix="/movimentacoes", tags=["Saída de Estoque"])
 app.include_router(upload_excel.router, tags=["Upload Excel"])
 app.include_router(insights.router, tags=["Insights"])
 app.include_router(orcamentos.router)

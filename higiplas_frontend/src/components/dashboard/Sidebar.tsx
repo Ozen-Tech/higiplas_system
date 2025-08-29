@@ -3,12 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
+import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
 import Image from 'next/image'; 
 
 // Define a estrutura de cada item do menu
 const navigation = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
+  { name: 'Entrada de Estoque', href: '/dashboard/entrada', icon: ArrowUpIcon },
+  { name: 'Saída de Estoque', href: '/dashboard/saida', icon: ArrowDownIcon },
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
