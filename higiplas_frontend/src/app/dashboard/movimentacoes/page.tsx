@@ -91,7 +91,7 @@ export default function MovimentacoesPage() {
       formData.append('arquivo', arquivo);
       formData.append('tipo_movimentacao', tipoMovimentacao);
 
-      const response = await apiService.post('/movimentacoes/preview-pdf', formData);
+      const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
 
       if (response && response.data.sucesso) {
         setPreviewData(response.data);
@@ -127,7 +127,7 @@ export default function MovimentacoesPage() {
       const formData = new FormData();
       formData.append('arquivo', arquivo);
 
-      const response = await apiService.post('/movimentacoes/processar-pdf-entrada', formData);
+      const response = await apiService.postFormData('/movimentacoes/processar-pdf-entrada', formData);
 
       if (response && response.data.sucesso) {
         setResult(response.data);
@@ -164,7 +164,7 @@ export default function MovimentacoesPage() {
       formData.append('arquivo', arquivo);
       formData.append('tipo_movimentacao', tipoMovimentacao);
 
-      const response = await apiService.post('/movimentacoes/processar-pdf', formData);
+      const response = await apiService.postFormData('/movimentacoes/processar-pdf', formData);
 
       if (response && response.data.sucesso) {
         setResult(response.data);
