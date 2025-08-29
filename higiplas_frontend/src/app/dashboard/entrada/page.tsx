@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, CheckCircle, AlertCircle, Package, TrendingUp } from 'lucide-react';
 import { apiService } from '@/services/apiService';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface ProdutoProcessado {
   codigo: string;
@@ -40,7 +39,6 @@ interface ResultadoProcessamento {
 }
 
 export default function EntradaPage() {
-  const { user } = useAuth();
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
@@ -77,9 +75,12 @@ export default function EntradaPage() {
       if (response) {
         setResultado(response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao processar PDF:', error);
-      setErro(error.response?.data?.detail || 'Erro ao processar o arquivo PDF.');
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail 
+        : 'Erro ao processar o arquivo PDF.';
+      setErro(errorMessage || 'Erro ao processar o arquivo PDF.');
     } finally {
       setProcessando(false);
     }
