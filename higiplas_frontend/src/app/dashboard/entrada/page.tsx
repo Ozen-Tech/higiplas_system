@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Input from '@/components/Input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, CheckCircle, AlertCircle, Package, TrendingUp } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Package, TrendingUp, Eye } from 'lucide-react';
 import { apiService } from '@/services/apiService';
 
 interface ProdutoProcessado {
@@ -38,10 +38,39 @@ interface ResultadoProcessamento {
   total_produtos_pdf: number;
 }
 
+interface ProdutoPreview {
+  codigo: string;
+  descricao_pdf: string;
+  quantidade: number;
+  valor_unitario?: number;
+  valor_total?: number;
+  encontrado: boolean;
+  produto_id?: number;
+  nome_sistema?: string;
+  estoque_atual?: number;
+  estoque_projetado?: number;
+  produtos_similares?: { id: number; nome: string; codigo: string; }[];
+}
+
+interface PreviewResult {
+  sucesso: boolean;
+  arquivo: string;
+  tipo_movimentacao: string;
+  nota_fiscal?: string;
+  data_emissao?: string;
+  fornecedor?: string;
+  cnpj_fornecedor?: string;
+  produtos_encontrados: ProdutoPreview[];
+  produtos_nao_encontrados: ProdutoPreview[];
+  total_produtos_pdf: number;
+}
+
 export default function EntradaPage() {
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
+  const [visualizando, setVisualizando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +83,36 @@ export default function EntradaPage() {
         setErro('Por favor, selecione apenas arquivos PDF.');
         setArquivo(null);
       }
+    }
+  };
+
+  const handleVisualizarProdutos = async () => {
+    if (!arquivo) {
+      setErro('Por favor, selecione um arquivo PDF.');
+      return;
+    }
+
+    setVisualizando(true);
+    setErro(null);
+    setPreviewData(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', arquivo);
+      formData.append('tipo_movimentacao', 'ENTRADA');
+
+      const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
+      if (response) {
+        setPreviewData(response.data);
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao visualizar produtos:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail 
+        : 'Erro ao analisar o arquivo PDF.';
+      setErro(errorMessage || 'Erro ao analisar o arquivo PDF.');
+    } finally {
+      setVisualizando(false);
     }
   };
 
@@ -74,6 +133,7 @@ export default function EntradaPage() {
       const response = await apiService.postFormData('/movimentacoes/entrada/processar-pdf', formData);
       if (response) {
         setResultado(response.data);
+        setPreviewData(null); // Limpar preview após processar
       }
     } catch (error: unknown) {
       console.error('Erro ao processar PDF:', error);
@@ -89,6 +149,7 @@ export default function EntradaPage() {
   const resetForm = () => {
     setArquivo(null);
     setResultado(null);
+    setPreviewData(null);
     setErro(null);
     // Reset file input
     const fileInput = document.getElementById('pdf-file') as HTMLInputElement;
@@ -144,23 +205,170 @@ export default function EntradaPage() {
             </Alert>
           )}
 
-          <div className="flex space-x-3">
-            <Button
-              onClick={handleProcessarPDF}
-              disabled={!arquivo || processando}
-              className="bg-green-600 hover:bg-green-700"
+          <div className="flex gap-4">
+            <Button 
+              onClick={handleVisualizarProdutos} 
+              disabled={!arquivo || visualizando || processando}
+              variant="outline"
+              className="flex-1"
             >
-              {processando ? 'Processando...' : 'Processar Entrada'}
+              {visualizando ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                  Analisando...
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Visualizar Produtos
+                </>
+              )}
             </Button>
-            
-            {(resultado || erro) && (
-              <Button variant="outline" onClick={resetForm}>
-                Novo Arquivo
-              </Button>
-            )}
+            <Button 
+              onClick={handleProcessarPDF} 
+              disabled={!arquivo || processando || visualizando}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              {processando ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Processar Entrada
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={resetForm} 
+              variant="outline"
+              disabled={processando || visualizando}
+            >
+              Resetar
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Preview dos Produtos */}
+      {previewData && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Visualização dos Produtos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium text-blue-900">Nota Fiscal</span>
+                  </div>
+                  <p className="text-blue-700 mt-1">{previewData.nota_fiscal || 'N/A'}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-5 h-5 text-green-600" />
+                    <span className="font-medium text-green-900">Total de Produtos</span>
+                  </div>
+                  <p className="text-green-700 mt-1">{previewData.total_produtos_pdf}</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium text-purple-900">Fornecedor</span>
+                  </div>
+                  <p className="text-purple-700 mt-1">{previewData.fornecedor || 'N/A'}</p>
+                </div>
+              </div>
+
+              {previewData.produtos_encontrados.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    Produtos Encontrados ({previewData.produtos_encontrados.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {previewData.produtos_encontrados.map((produto, index) => (
+                      <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary">{produto.codigo}</Badge>
+                              <span className="font-medium">{produto.nome_sistema}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{produto.descricao_pdf}</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium">Quantidade:</span>
+                                <p>{produto.quantidade}</p>
+                              </div>
+                              {produto.valor_unitario && (
+                                <div>
+                                  <span className="font-medium">Valor Unit.:</span>
+                                  <p>R$ {produto.valor_unitario.toFixed(2)}</p>
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-medium">Estoque Atual:</span>
+                                <p>{produto.estoque_atual || 0}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium">Estoque Projetado:</span>
+                                <p className="text-green-600 font-medium">{produto.estoque_projetado || 0}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {previewData.produtos_nao_encontrados.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    Produtos Não Encontrados ({previewData.produtos_nao_encontrados.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {previewData.produtos_nao_encontrados.map((produto, index) => (
+                      <div key={index} className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="destructive">{produto.codigo}</Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{produto.descricao_pdf}</p>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium">Quantidade:</span>
+                                <p>{produto.quantidade}</p>
+                              </div>
+                              {produto.valor_unitario && (
+                                <div>
+                                  <span className="font-medium">Valor Unit.:</span>
+                                  <p>R$ {produto.valor_unitario.toFixed(2)}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Results Section */}
       {resultado && (
