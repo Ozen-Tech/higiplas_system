@@ -276,7 +276,8 @@ async def preview_pdf_movimentacao(
                     search_name=descricao,
                     db=db,
                     empresa_id=current_user.empresa_id,
-                    limit=5
+                    limit=5,
+                    min_similarity=30  # Threshold mais baixo para encontrar mais produtos similares
                 )
                 produto_info['produtos_similares'] = [
                     {

@@ -197,11 +197,18 @@ export default function MovimentacoesPage() {
     setError(null);
 
     try {
-      const produtosSelecionados = selectedProducts.map(index => previewData.produtos_encontrados[index]);
+      const produtosSelecionados = selectedProducts.map(index => {
+        const produto = previewData.produtos_encontrados[index];
+        return {
+          produto_id: produto.produto_id,
+          quantidade: produto.quantidade
+        };
+      });
       
       const dados = {
         tipo_movimentacao: previewData.tipo_movimentacao,
-        produtos: produtosSelecionados,
+        produtos_confirmados: produtosSelecionados,
+        nota_fiscal: previewData.nota_fiscal,
         arquivo: previewData.arquivo
       };
 
