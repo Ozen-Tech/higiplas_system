@@ -36,7 +36,35 @@ function HistoricoGeralContent() {
       try {
         setLoading(true);
         const response = await apiService.get('/movimentacoes/historico-geral');
-        setMovimentacoes(response?.data || []);
+        // O backend retorna {movimentacoes: [...], estatisticas: {...}}
+        const movimentacoesData = response?.data?.movimentacoes || [];
+        
+        // Mapear os dados para o formato esperado pelo frontend
+        const movimentacoesMapeadas = movimentacoesData.map((mov: any) => {
+          try {
+            return {
+              id: mov.id || 0,
+              produto: {
+                id: mov.produto_id || 0,
+                nome: mov.produto_nome || 'Nome não disponível',
+                codigo: mov.produto_codigo || 'N/A'
+              },
+              tipo_movimentacao: mov.tipo_movimentacao || 'ENTRADA',
+              quantidade: mov.quantidade || 0,
+              data_movimentacao: mov.data_movimentacao || new Date().toISOString(),
+              usuario: {
+                nome: mov.usuario_nome || 'N/A'
+              },
+              observacao: mov.observacao || null,
+              nota_fiscal: mov.nota_fiscal || null
+            };
+          } catch (error) {
+            console.error('Erro ao mapear movimentação:', error, mov);
+            return null;
+          }
+        }).filter(Boolean); // Remove itens nulos
+        
+        setMovimentacoes(movimentacoesMapeadas);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro desconhecido";
         setError(message);
@@ -50,14 +78,28 @@ function HistoricoGeralContent() {
   }, [logout]);
 
   const movimentacoesFiltradas = movimentacoes.filter(mov => {
-    const matchesTipo = filtroTipo === 'TODOS' || mov.tipo_movimentacao === filtroTipo;
-    const matchesSearch = (mov.produto?.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (mov.produto?.codigo || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesTipo && matchesSearch;
+    try {
+      if (!mov || !mov.produto) return false;
+      const matchesTipo = filtroTipo === 'TODOS' || mov.tipo_movimentacao === filtroTipo;
+      const matchesSearch = (mov.produto?.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (mov.produto?.codigo || '').toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesTipo && matchesSearch;
+    } catch (error) {
+      console.error('Erro ao filtrar movimentação:', error, mov);
+      return false;
+    }
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
+    try {
+      if (!dateString) return 'Data não disponível';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Data inválida';
+      return date.toLocaleString('pt-BR');
+    } catch (error) {
+      console.error('Erro ao formatar data:', error, dateString);
+      return 'Data inválida';
+    }
   };
 
   const getTipoIcon = (tipo: string) => {
