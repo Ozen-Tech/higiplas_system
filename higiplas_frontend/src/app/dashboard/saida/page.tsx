@@ -99,7 +99,7 @@ export default function SaidaPage() {
 
     try {
       const formData = new FormData();
-      formData.append('file', arquivo);
+      formData.append('arquivo', arquivo);
       formData.append('tipo_movimentacao', 'SAIDA');
 
       const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
@@ -130,7 +130,7 @@ export default function SaidaPage() {
 
     try {
       const formData = new FormData();
-      formData.append('file', arquivo);
+      formData.append('arquivo', arquivo);
 
       const response = await apiService.postFormData('/movimentacoes/saida/processar-pdf', formData);
       if (response) {
