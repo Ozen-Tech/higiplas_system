@@ -2,36 +2,27 @@
 import json
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from app.db.connection import get_db
 from app.db import models
 from app.dependencies import get_current_user
 from app.services import ai_service
+from app.utils.product_matcher import find_product_by_code_or_name
 
 router = APIRouter(prefix="/invoices", tags=["Processamento de Notas Fiscais"])
 
-def fuzzy_match_product(db: Session, description: str, empresa_id: int):
-    """Tenta encontrar um produto no DB com base na descrição da nota."""
-    # Tenta uma correspondência exata primeiro
-    exact_match = db.query(models.Produto).filter(
-        models.Produto.empresa_id == empresa_id,
-        func.lower(models.Produto.nome) == func.lower(description)
-    ).first()
-    if exact_match:
-        return exact_match
-
-    # Se falhar, tenta uma correspondência parcial (`ilike`)
-    # Dividimos a descrição em palavras para uma busca mais flexível
-    words = description.split()
-    query_filters = [models.Produto.nome.ilike(f"%{word}%") for word in words]
+def fuzzy_match_product(db: Session, description: str, empresa_id: int, codigo: str = None):
+    """Tenta encontrar um produto no DB com base no código ou descrição da nota."""
+    # Usar a nova função que busca por código primeiro, depois por nome
+    produto, metodo_busca, score = find_product_by_code_or_name(
+        db, codigo, description, empresa_id, threshold=0.5
+    )
     
-    partial_match = db.query(models.Produto).filter(
-        models.Produto.empresa_id == empresa_id,
-        or_(*query_filters)
-    ).first()
-
-    return partial_match
+    if produto and metodo_busca == 'nome':
+        print(f"DEBUG: Produto encontrado por nome na NF-e: {description} → {produto.nome} (score: {score:.2f})")
+    
+    return produto
 
 
 @router.post("/parse-and-match", summary="Extrai produtos de uma NF-e e os associa ao estoque")
@@ -59,11 +50,12 @@ async def parse_invoice_and_match_products(
         for item in parsed_products:
             descricao = item.get("descricao")
             quantidade = item.get("quantidade")
+            codigo = item.get("codigo")  # Extrair código se disponível
             
             if not descricao or not quantidade:
                 continue
 
-            matched_product = fuzzy_match_product(db, descricao, current_user.empresa_id)
+            matched_product = fuzzy_match_product(db, descricao, current_user.empresa_id, codigo)
 
             if matched_product:
                 matched_products.append({

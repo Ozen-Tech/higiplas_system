@@ -7,7 +7,7 @@ from ..db import models
 import tempfile
 import os
 from datetime import datetime
-
+from app.utils.product_matcher import find_product_by_code_or_name
 
 from ..crud import movimentacao_estoque as crud_movimentacao
 from ..schemas import movimentacao_estoque as schemas_movimentacao
@@ -94,11 +94,16 @@ async def processar_pdf_saida(
         for produto_pdf in dados_pdf['produtos']:
             print(f"DEBUG: Processando produto: {produto_pdf}")
             
-            # Buscar produto no sistema pelo código
-            produto_sistema = db.query(models.Produto).filter(
-                models.Produto.codigo == produto_pdf.get('codigo'),
-                models.Produto.empresa_id == current_user.empresa_id
-            ).first()
+            codigo = produto_pdf.get('codigo')
+            descricao = produto_pdf.get('descricao', '')
+            
+            # Buscar produto no sistema pelo código ou nome
+            produto_sistema, metodo_busca, score = find_product_by_code_or_name(
+                db, codigo, descricao, current_user.empresa_id
+            )
+            
+            if produto_sistema and metodo_busca == 'nome':
+                print(f"DEBUG: Produto encontrado por nome: {descricao} → {produto_sistema.nome} (score: {score:.2f})")
             
             if produto_sistema:
                 quantidade_saida = float(produto_pdf.get('quantidade', 0))
