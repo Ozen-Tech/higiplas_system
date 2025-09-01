@@ -40,7 +40,7 @@ function HistoricoGeralContent() {
         const movimentacoesData = response?.data?.movimentacoes || [];
         
         // Mapear os dados para o formato esperado pelo frontend
-        const movimentacoesMapeadas = movimentacoesData.map((mov: any) => {
+        const movimentacoesMapeadas = movimentacoesData.map((mov: Record<string, unknown>) => {
           try {
             return {
               id: mov.id || 0,
