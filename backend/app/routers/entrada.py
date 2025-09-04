@@ -7,7 +7,7 @@ from ..db import models
 import tempfile
 import os
 from datetime import datetime
-from app.utils.pdf_extractor_melhorado import extrair_produtos_inteligente_entrada_melhorado
+# Removido: from app.utils.pdf_extractor_melhorado import extrair_produtos_inteligente_entrada_melhorado
 from app.utils.product_matcher import find_product_by_code_or_name
 
 from ..crud import movimentacao_estoque as crud_movimentacao
@@ -58,7 +58,7 @@ async def processar_pdf_entrada(
         
         print(f"DEBUG: Arquivo salvo temporariamente em: {temp_file_path}")
         
-        # Extrair dados do PDF
+        # Extrair dados do PDF (delegando para versão antiga e funcional)
         dados_pdf = extrair_dados_pdf_entrada(temp_file_path)
         print(f"DEBUG: Dados extraídos do PDF: {dados_pdf}")
         
@@ -174,12 +174,12 @@ async def processar_pdf_entrada(
 
 
 def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
-    """Extrai dados específicos de PDFs de entrada (notas fiscais de compra)."""
+    """Usa a versão antiga e funcional: delega para app.routers.movimentacoes.extrair_dados_pdf_entrada."""
     try:
-        dados = extrair_produtos_inteligente_entrada_melhorado(caminho_pdf)
-        return dados
+        from app.routers.movimentacoes import extrair_dados_pdf_entrada as extrair_dados_pdf_entrada_mov
+        return extrair_dados_pdf_entrada_mov(caminho_pdf)
     except Exception as e:
-        print(f"Erro ao extrair dados do PDF de entrada: {e}")
+        print(f"DEBUG: Erro ao delegar extração de ENTRADA: {e}")
         return {
             'produtos': [],
             'nota_fiscal': None,

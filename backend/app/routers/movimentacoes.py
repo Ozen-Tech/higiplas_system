@@ -279,17 +279,24 @@ async def preview_pdf_movimentacao(
                     limit=5,
                     min_similarity=30  # Threshold mais baixo para encontrar mais produtos similares
                 )
-                produto_info['produtos_similares'] = [
-                    {
+                # Mapear incluindo estoque_atual e renomear score para score_similaridade para alinhar com o frontend
+                similares_mapeados = []
+                for p in produtos_similares:
+                    prod_db = db.query(models.Produto).filter(
+                        models.Produto.id == p['id'],
+                        models.Produto.empresa_id == current_user.empresa_id
+                    ).first()
+                    similares_mapeados.append({
                         'produto_id': p['id'],
                         'nome': p['nome'],
                         'codigo': p['codigo'],
-                        'score': p['similarity_score'],
+                        'estoque_atual': getattr(prod_db, 'quantidade_em_estoque', 0) if prod_db else 0,
+                        'score_similaridade': p['similarity_score'],
                         'categoria': p.get('categoria', ''),
                         'unidade_medida': p.get('unidade_medida', ''),
                         'preco_venda': p.get('preco_venda', 0)
-                    } for p in produtos_similares
-                ]
+                    })
+                produto_info['produtos_similares'] = similares_mapeados
                 produtos_nao_encontrados.append(produto_info)
         
         return {
@@ -610,16 +617,21 @@ async def processar_pdf_entrada(
         
         return {
             'sucesso': True,
+            'mensagem': f"PDF de entrada processado com sucesso! {len(movimentacoes_criadas)} movimentações criadas.",
             'arquivo': arquivo.filename,
             'tipo': 'ENTRADA',
+            'tipo_movimentacao': 'ENTRADA',
             'nota_fiscal': dados_extraidos.get('nota_fiscal'),
             'data_emissao': dados_extraidos.get('data_emissao'),
             'fornecedor': dados_extraidos.get('fornecedor'),
             'cnpj_fornecedor': dados_extraidos.get('cnpj_fornecedor'),
             'movimentacoes_criadas': len(movimentacoes_criadas),
-            'produtos_processados': movimentacoes_criadas,
-            'produtos_nao_encontrados': produtos_nao_encontrados,
-            'total_produtos_pdf': len(dados_extraidos['produtos'])
+            'produtos_atualizados': [f"{item['codigo']} - {item['nome']}" for item in movimentacoes_criadas],
+            'detalhes': {
+                'produtos_processados': movimentacoes_criadas,
+                'produtos_nao_encontrados': produtos_nao_encontrados,
+                'total_produtos_pdf': len(dados_extraidos['produtos'])
+            }
         }
         
     except HTTPException as he:
@@ -685,7 +697,10 @@ async def processar_pdf_movimentacao(
         
         # Extrair dados do PDF
         print(f"DEBUG: Iniciando extração de dados do PDF")
-        dados_extraidos = extrair_dados_pdf(temp_file_path)
+        if tipo_movimentacao == 'ENTRADA':
+            dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
+        else:
+            dados_extraidos = extrair_dados_pdf(temp_file_path)
         print(f"DEBUG: Dados extraídos: {dados_extraidos}")
         
         # Limpar arquivo temporário
@@ -704,6 +719,7 @@ async def processar_pdf_movimentacao(
         for produto_data in dados_extraidos['produtos']:
             codigo = produto_data.get('codigo')
             quantidade = produto_data.get('quantidade', 0)
+            descricao = produto_data.get('descricao', '')
             
             if not codigo or quantidade <= 0:
                 continue
@@ -715,9 +731,35 @@ async def processar_pdf_movimentacao(
             ).first()
             
             if not produto:
+                # Buscar produtos similares por nome para auxiliar associação posterior
+                produtos_similares = similarity_service.find_similar_products(
+                    search_name=descricao,
+                    db=db,
+                    empresa_id=current_user.empresa_id,
+                    limit=5,
+                    min_similarity=30
+                ) if descricao else []
+                # Mapear incluindo estoque_atual e renomear score para score_similaridade
+                similares_mapeados = []
+                for p in produtos_similares:
+                    prod_db = db.query(models.Produto).filter(
+                        models.Produto.id == p['id'],
+                        models.Produto.empresa_id == current_user.empresa_id
+                    ).first()
+                    similares_mapeados.append({
+                        'produto_id': p['id'],
+                        'nome': p['nome'],
+                        'codigo': p['codigo'],
+                        'estoque_atual': getattr(prod_db, 'quantidade_em_estoque', 0) if prod_db else 0,
+                        'score_similaridade': p['similarity_score'],
+                        'categoria': p.get('categoria', ''),
+                        'unidade_medida': p.get('unidade_medida', ''),
+                        'preco_venda': p.get('preco_venda', 0)
+                    })
                 produtos_nao_encontrados.append({
                     'codigo': codigo,
-                    'descricao': produto_data.get('descricao', 'N/A')
+                    'descricao': descricao or 'N/A',
+                    'produtos_similares': similares_mapeados
                 })
                 continue
             
@@ -756,14 +798,19 @@ async def processar_pdf_movimentacao(
         
         return {
             'sucesso': True,
-            'arquivo': arquivo.filename,
-            'nota_fiscal': dados_extraidos.get('nota_fiscal'),
-            'data_emissao': dados_extraidos.get('data_emissao'),
-            'cliente': dados_extraidos.get('cliente'),
+            'mensagem': f'PDF processado com sucesso! {len(movimentacoes_criadas)} movimentações criadas.',
             'movimentacoes_criadas': len(movimentacoes_criadas),
-            'produtos_processados': movimentacoes_criadas,
-            'produtos_nao_encontrados': produtos_nao_encontrados,
-            'total_produtos_pdf': len(dados_extraidos['produtos'])
+            'produtos_atualizados': [f"{item['codigo']} - {item['nome']}" for item in movimentacoes_criadas],
+            'tipo_movimentacao': tipo_movimentacao,
+            'detalhes': {
+                'arquivo': arquivo.filename,
+                'nota_fiscal': dados_extraidos.get('nota_fiscal'),
+                'data_emissao': dados_extraidos.get('data_emissao'),
+                'cliente': dados_extraidos.get('cliente'),
+                'produtos_processados': movimentacoes_criadas,
+                'produtos_nao_encontrados': produtos_nao_encontrados,
+                'total_produtos_pdf': len(dados_extraidos['produtos'])
+            }
         }
         
     except HTTPException as he:

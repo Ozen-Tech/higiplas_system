@@ -194,23 +194,17 @@ async def processar_pdf_saida(
 
 
 def extrair_dados_pdf_saida(caminho_pdf: str) -> Dict[str, Any]:
-    """Extrai dados específicos de PDFs de saída (notas fiscais de venda)."""
+    """Usa a versão antiga e funcional: delega para app.routers.movimentacoes.extrair_dados_pdf."""
     try:
-        # Função simples para extrair dados de PDF de saída
-        # Implementação básica que retorna estrutura padrão
-        return {
-            'produtos': [],
-            'nota_fiscal': None,
-            'data_emissao': None,
-            'cliente': None,
-            'cnpj_cliente': None
-        }
+        from app.routers.movimentacoes import extrair_dados_pdf
+        return extrair_dados_pdf(caminho_pdf)
     except Exception as e:
-        print(f"Erro ao extrair dados do PDF de saída: {e}")
+        print(f"DEBUG: Erro ao delegar extração de SAÍDA: {e}")
         return {
-            'produtos': [],
             'nota_fiscal': None,
             'data_emissao': None,
             'cliente': None,
-            'cnpj_cliente': None
+            'cnpj_cliente': None,
+            'valor_total': None,
+            'produtos': []
         }

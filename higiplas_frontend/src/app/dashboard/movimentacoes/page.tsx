@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/dashboard/Header';
 import { apiService } from '@/services/apiService';
 import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon, ArrowUpTrayIcon, CogIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/Button';
+import { useSearchParams } from 'next/navigation';
 
 interface ProdutoSimilar {
   produto_id: number;
@@ -64,6 +65,14 @@ export default function MovimentacoesPage() {
   const [selectedSimilarProducts, setSelectedSimilarProducts] = useState<{[key: number]: number}>({});
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tipo = searchParams.get('tipo');
+    if (tipo === 'ENTRADA' || tipo === 'SAIDA') {
+      setTipoMovimentacao(tipo);
+    }
+  }, [searchParams]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

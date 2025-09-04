@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, ArrowUpIcon, ArrowDownIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
+import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
 import Image from 'next/image'; 
 
 // Define os tipos para os itens de navegação
@@ -24,11 +24,8 @@ const navigation: NavigationItem[] = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
   { 
     name: 'Movimentações', 
-    icon: ArrowsRightLeftIcon,
-    subItems: [
-      { name: 'Entrada de Estoque', href: '/dashboard/entrada', icon: ArrowUpIcon },
-      { name: 'Saída de Estoque', href: '/dashboard/saida', icon: ArrowDownIcon },
-    ]
+    href: '/dashboard/movimentacoes',
+    icon: ArrowsRightLeftIcon
   },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
@@ -40,7 +37,7 @@ const navigation: NavigationItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname(); // Hook para saber qual é a página ativa
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Movimentações']); // Expandir Movimentações por padrão
+  const [expandedItems, setExpandedItems] = useState<string[]>([]); // Sem subitens por padrão
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
