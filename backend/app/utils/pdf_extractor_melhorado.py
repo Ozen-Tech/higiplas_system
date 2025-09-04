@@ -150,6 +150,21 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
     
     print(f"DEBUG: Processando linhas {linha_inicio} a {linha_fim}")
     
+    # Padrão GIRASSOL onde o código do produto vem colado à descrição (sem espaço)
+    # Exemplo de linha real:
+    # 1005805AGUASSANI BB 5L 28289011 000 6101 UN 112       18,30      2.049,60      2.049,60    143,47 7
+    padrao_girassol_compacto = re.compile(
+        r'^(\d{5,})\s*'                               # Código do produto (5+ dígitos)
+        r'([A-Z][A-Z0-9\s\./()\-]{3,}?)\s+'          # Descrição (maiúsculas, números e símbolos usuais)
+        r'(\d{8})\s+'                                  # NCM (8 dígitos)
+        r'(\d{3})\s+'                                  # CST (3 dígitos)
+        r'(\d{4})\s+'                                  # CFOP (4 dígitos)
+        r'([A-Z]{2,})\s+'                               # Unidade (UN, CX, etc.)
+        r'([\d\.]+,[\d]{0,3}|\d+)\s+'               # Quantidade (com ou sem decimais)
+        r'([\d\.]+,[\d]{2})\s+'                       # Valor unitário
+        r'([\d\.]+,[\d]{2})'                           # Valor total
+    )
+    
     # Segunda passada: extrair produtos
     for i in range(linha_inicio, linha_fim if linha_fim > 0 else len(linhas)):
         if i >= len(linhas):
@@ -166,7 +181,36 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         if any(char.isdigit() for char in linha_limpa[:10]):  # Se começa com números
             print(f"DEBUG: Linha {i} candidata: '{linha_limpa[:80]}...'")
         
-        # Padrões mais flexíveis para diferentes formatos de PDF
+        # 1) Tentar primeiro o padrão GIRASSOL compacto (código colado na descrição)
+        try:
+            mg = padrao_girassol_compacto.search(linha_limpa)
+            if mg:
+                codigo = mg.group(1)
+                descricao = mg.group(2).strip()
+                unidade = mg.group(6)
+                # Converter números no formato PT-BR
+                def _ptbr_to_float(s: str) -> float:
+                    return float(s.replace('.', '').replace(',', '.'))
+                quantidade = _ptbr_to_float(mg.group(7))
+                valor_unitario = _ptbr_to_float(mg.group(8))
+                valor_total = _ptbr_to_float(mg.group(9))
+                
+                produto = {
+                    'item': len(produtos) + 1,
+                    'codigo': codigo,
+                    'descricao': descricao,
+                    'unidade': unidade,
+                    'quantidade': quantidade,
+                    'valor_unitario': valor_unitario,
+                    'valor_total': valor_total
+                }
+                produtos.append(produto)
+                print(f"DEBUG: Produto GIRASSOL extraído: {produto}")
+                continue  # Próxima linha
+        except Exception as e:
+            print(f"DEBUG: Erro no parse GIRASSOL compacto: {e}")
+        
+        # 2) Padrões mais flexíveis para diferentes formatos de PDF
         padroes_produto = [
             # Padrão 1: Código de 4+ dígitos + descrição + 3 valores numéricos
             r'^(\d{4,})\s+([A-Za-z][A-Za-z\s/\-()0-9.,]+?)\s+(\d+[,.]?\d*)\s+([\d,]+[,.]\d*)\s+([\d,]+[,.]\d*)',
