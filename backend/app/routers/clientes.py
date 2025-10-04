@@ -2,7 +2,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
+import json
 
 from ..db.connection import get_db
 from ..dependencies import get_current_user
@@ -13,32 +15,164 @@ from ..crud import cliente as crud_cliente
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
+# Schema alternativo para aceitar o formato do frontend
+class ClienteCreateLegacy(BaseModel):
+    """Schema para aceitar o formato legado do frontend"""
+    razao_social: str
+    cpf_cnpj: Optional[str] = None
+    cnpj: Optional[str] = None  # Aceita tanto cnpj quanto cpf_cnpj
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    tipo_pessoa: Optional[str] = None
+    endereco: Optional[Any] = None  # Aceita string ou dict
+    empresa_vinculada: Optional[str] = None
+    status_pagamento: Optional[str] = None
+    observacoes: Optional[str] = None
+
 @router.post("/", response_model=schemas_cliente.Cliente)
 @router.post("", response_model=schemas_cliente.Cliente)  # Rota sem barra final
 def create_cliente(
-    cliente_req: schemas_cliente.ClienteCreateRequest,
+    cliente_req: Dict[str, Any],  # Aceita qualquer formato JSON
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Cria um novo cliente a partir de uma requisição do frontend."""
+    """Cria um novo cliente - aceita formato novo ou legado do frontend."""
     
+    # Detectar formato baseado nos campos recebidos
+    if "nome" in cliente_req:
+        # Formato novo (ClienteCreateRequest)
+        endereco_str = None
+        if cliente_req.get('endereco'):
+            endereco = cliente_req['endereco']
+            if isinstance(endereco, dict):
+                endereco_parts = [
+                    endereco.get('logradouro', ''),
+                    endereco.get('numero', ''),
+                    endereco.get('complemento', ''),
+                    endereco.get('bairro', ''),
+                    endereco.get('cidade', ''),
+                    endereco.get('estado', ''),
+                    endereco.get('cep', '')
+                ]
+                endereco_str = ", ".join(filter(None, endereco_parts))
+            else:
+                endereco_str = str(endereco)
+        
+        cliente_data = schemas_cliente.ClienteCreate(
+            razao_social=cliente_req['nome'],
+            cnpj=cliente_req.get('cpf_cnpj'),
+            email=cliente_req.get('email'),
+            telefone=cliente_req.get('telefone'),
+            endereco=endereco_str,
+            empresa_vinculada=cliente_req.get('empresa_vinculada') or schemas_cliente.EmpresaVinculada.HIGIPLAS,
+        )
+    
+    elif "razao_social" in cliente_req:
+        # Formato legado
+        endereco_str = None
+        if cliente_req.get('endereco'):
+            if isinstance(cliente_req['endereco'], str):
+                try:
+                    # Se é string JSON, fazer parse
+                    endereco_dict = json.loads(cliente_req['endereco'])
+                except json.JSONDecodeError:
+                    # Se não é JSON válido, usar como string simples
+                    endereco_str = cliente_req['endereco']
+                else:
+                    # Montar endereço a partir do dict
+                    endereco_parts = [
+                        endereco_dict.get('logradouro', ''),
+                        endereco_dict.get('numero', ''),
+                        endereco_dict.get('complemento', ''),
+                        endereco_dict.get('bairro', ''),
+                        endereco_dict.get('cidade', ''),
+                        endereco_dict.get('estado', ''),
+                        endereco_dict.get('cep', '')
+                    ]
+                    endereco_str = ", ".join(filter(None, endereco_parts))
+            elif isinstance(cliente_req['endereco'], dict):
+                # Se já é dict, processar diretamente
+                endereco_parts = [
+                    cliente_req['endereco'].get('logradouro', ''),
+                    cliente_req['endereco'].get('numero', ''),
+                    cliente_req['endereco'].get('complemento', ''),
+                    cliente_req['endereco'].get('bairro', ''),
+                    cliente_req['endereco'].get('cidade', ''),
+                    cliente_req['endereco'].get('estado', ''),
+                    cliente_req['endereco'].get('cep', '')
+                ]
+                endereco_str = ", ".join(filter(None, endereco_parts))
+        
+        # Usar cnpj ou cpf_cnpj (o que vier preenchido)
+        cnpj_final = cliente_req.get('cnpj') or cliente_req.get('cpf_cnpj')
+        
+        cliente_data = schemas_cliente.ClienteCreate(
+            razao_social=cliente_req['razao_social'],
+            cnpj=cnpj_final,
+            email=cliente_req.get('email'),
+            telefone=cliente_req.get('telefone'),
+            endereco=endereco_str,
+            empresa_vinculada=cliente_req.get('empresa_vinculada') or schemas_cliente.EmpresaVinculada.HIGIPLAS,
+        )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de requisição inválido. Campo 'nome' ou 'razao_social' é obrigatório."
+        )
+    
+    return crud_cliente.create_cliente(db, cliente_data, current_user.empresa_id)
+
+@router.post("/legacy", response_model=schemas_cliente.Cliente)
+@router.post("/legacy/", response_model=schemas_cliente.Cliente)  # Rota com barra final
+def create_cliente_legacy(
+    cliente_req: ClienteCreateLegacy,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Cria um novo cliente aceitando formato legado do frontend."""
+    
+    # Processar endereço - pode vir como string JSON ou dict
     endereco_str = None
     if cliente_req.endereco:
-        endereco = cliente_req.endereco
-        endereco_parts = [
-            endereco.logradouro,
-            endereco.numero,
-            endereco.complemento,
-            endereco.bairro,
-            endereco.cidade,
-            endereco.estado,
-            endereco.cep
-        ]
-        endereco_str = ", ".join(filter(None, endereco_parts))
+        if isinstance(cliente_req.endereco, str):
+            try:
+                # Se é string JSON, fazer parse
+                endereco_dict = json.loads(cliente_req.endereco)
+            except json.JSONDecodeError:
+                # Se não é JSON válido, usar como string simples
+                endereco_str = cliente_req.endereco
+            else:
+                # Montar endereço a partir do dict
+                endereco_parts = [
+                    endereco_dict.get('logradouro', ''),
+                    endereco_dict.get('numero', ''),
+                    endereco_dict.get('complemento', ''),
+                    endereco_dict.get('bairro', ''),
+                    endereco_dict.get('cidade', ''),
+                    endereco_dict.get('estado', ''),
+                    endereco_dict.get('cep', '')
+                ]
+                endereco_str = ", ".join(filter(None, endereco_parts))
+        elif isinstance(cliente_req.endereco, dict):
+            # Se já é dict, processar diretamente
+            endereco_parts = [
+                cliente_req.endereco.get('logradouro', ''),
+                cliente_req.endereco.get('numero', ''),
+                cliente_req.endereco.get('complemento', ''),
+                cliente_req.endereco.get('bairro', ''),
+                cliente_req.endereco.get('cidade', ''),
+                cliente_req.endereco.get('estado', ''),
+                cliente_req.endereco.get('cep', '')
+            ]
+            endereco_str = ", ".join(filter(None, endereco_parts))
 
+    # Usar cnpj ou cpf_cnpj (o que vier preenchido)
+    cnpj_final = cliente_req.cnpj or cliente_req.cpf_cnpj
+    
+    # Criar o objeto ClienteCreate com os dados convertidos
     cliente_data = schemas_cliente.ClienteCreate(
-        razao_social=cliente_req.nome,
-        cnpj=cliente_req.cpf_cnpj,
+        razao_social=cliente_req.razao_social,
+        cnpj=cnpj_final,
         email=cliente_req.email,
         telefone=cliente_req.telefone,
         endereco=endereco_str,
