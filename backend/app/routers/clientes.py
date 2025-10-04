@@ -14,6 +14,7 @@ from ..crud import cliente as crud_cliente
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
 @router.post("/", response_model=schemas_cliente.Cliente)
+@router.post("", response_model=schemas_cliente.Cliente)  # Rota sem barra final
 def create_cliente(
     cliente_req: schemas_cliente.ClienteCreateRequest,
     db: Session = Depends(get_db),
@@ -82,6 +83,7 @@ def get_cliente(
     return cliente
 
 @router.put("/{cliente_id}", response_model=schemas_cliente.Cliente)
+@router.put("/{cliente_id}/", response_model=schemas_cliente.Cliente)  # Rota com barra final
 def update_cliente(
     cliente_id: int,
     cliente_update: schemas_cliente.ClienteUpdate,
@@ -92,6 +94,7 @@ def update_cliente(
     return crud_cliente.update_cliente(db, cliente_id, cliente_update, current_user.empresa_id)
 
 @router.delete("/{cliente_id}")
+@router.delete("/{cliente_id}/")  # Rota com barra final
 def delete_cliente(
     cliente_id: int,
     db: Session = Depends(get_db),

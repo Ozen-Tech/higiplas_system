@@ -17,6 +17,7 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=schemas_orcamento.Orcamento, status_code=201)
+@router.post("", response_model=schemas_orcamento.Orcamento, status_code=201)  # Rota sem barra final
 def create_new_orcamento(
     orcamento: schemas_orcamento.OrcamentoCreate,
     db: Session = Depends(get_db),
@@ -60,6 +61,7 @@ def read_one_orcamento(
     return orcamento
 
 @router.put("/{orcamento_id}", response_model=schemas_orcamento.Orcamento)
+@router.put("/{orcamento_id}/", response_model=schemas_orcamento.Orcamento)  # Rota com barra final
 def update_orcamento(
     orcamento_id: int,
     orcamento_update: schemas_orcamento.OrcamentoUpdate,
@@ -76,6 +78,7 @@ def update_orcamento(
     )
 
 @router.delete("/{orcamento_id}")
+@router.delete("/{orcamento_id}/")  # Rota com barra final
 def delete_orcamento(
     orcamento_id: int,
     db: Session = Depends(get_db),
