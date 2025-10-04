@@ -1,7 +1,7 @@
 // /src/app/dashboard/clientes/page.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useClientes } from '@/hooks/useClientes';
 import { Header } from '@/components/dashboard/Header';
@@ -21,9 +21,14 @@ import {
 
 
 function ClientesPageContent() {
-  const { clientes, loading, searchClientes, deleteCliente } = useClientes();
+  const { clientes, loading, searchClientes, deleteCliente, fetchClientes } = useClientes();
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+
+  // Recarregar clientes quando o componente montar ou quando voltar de outra página
+  useEffect(() => {
+    fetchClientes();
+  }, []); // Executar apenas na montagem do componente
 
   // Filtrar clientes localmente se não houver termo de busca
   const filteredClientes = useMemo(() => {
