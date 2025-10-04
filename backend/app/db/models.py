@@ -99,13 +99,21 @@ class Cliente(Base):
     cnpj = Column(String, unique=True, index=True, nullable=True)
     endereco = Column(String, nullable=True)
     email = Column(String, nullable=True)
-    telefone = Column(String, nullable=True)
+    telefone = Column(String, nullable=True, index=True)  # Adicionado index
     empresa_vinculada = Column(Enum('HIGIPLAS', 'HIGITEC', name='empresa_vinculada_enum'), nullable=False)
     status_pagamento = Column(Enum('BOM_PAGADOR', 'MAU_PAGADOR', name='status_pagamento_enum'), default='BOM_PAGADOR')
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     
+    # Novos campos v2
+    observacoes = Column(String(500), nullable=True)
+    referencia_localizacao = Column(String(200), nullable=True)
+    vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    atualizado_em = Column(DateTime(timezone=True), nullable=True)
+    
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa")
+    vendedor = relationship("Usuario", foreign_keys=[vendedor_id])
     
     # Relacionamentos
     orcamentos = relationship("Orcamento", back_populates="cliente")
