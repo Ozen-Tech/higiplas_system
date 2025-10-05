@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useClientesV2, ClienteListItem } from '@/hooks/useClientesV2';
+import { useClientesV2, ClienteListItemV2 } from '@/hooks/useClientesV2';
 import { Header } from '@/components/dashboard/Header';
 import { CustomTable, Column } from '@/components/dashboard/CustomTable';
 import ClientLayout from '@/components/ClientLayout';
@@ -34,13 +34,11 @@ function ClientesPageContent() {
     deleteCliente 
   } = useClientesV2();
   
-  const [searchTerm, setSearchTerm] = useState('');
   const [bairroFilter, setBairroFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [meusClientesOnly, setMeusClientesOnly] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Recarregar clientes quando o componente montar
   useEffect(() => {
     fetchClientes();
   }, []);

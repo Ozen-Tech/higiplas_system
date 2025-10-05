@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useClientesV2, ClienteCreate } from '@/hooks/useClientesV2';
+import { useClientesV2, ClienteCreateV2 } from '@/hooks/useClientesV2';
 import { Header } from '@/components/dashboard/Header';
 import ClientLayout from '@/components/ClientLayout';
 import Button from '@/components/Button';
@@ -32,7 +32,7 @@ function NovoClienteV2PageContent() {
   });
   
   // Formulário completo
-  const [formCompleto, setFormCompleto] = useState<ClienteCreate>({
+  const [formCompleto, setFormCompleto] = useState<ClienteCreateV2>({
     nome: '',
     telefone: '',
     tipo_pessoa: 'FISICA',

@@ -32,7 +32,7 @@ function NovoClientePageContent() {
   });
   
   // Formulário completo
-  const [formCompleto, setFormCompleto] = useState<ClienteCreate>({
+  const [formCompleto, setFormCompleto] = useState<ClienteCreateV2>({
     nome: '',
     telefone: '',
     tipo_pessoa: 'FISICA',
