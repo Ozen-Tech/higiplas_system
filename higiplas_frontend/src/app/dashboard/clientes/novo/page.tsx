@@ -4,51 +4,48 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useClientes } from '@/hooks/useClientes';
+import { useClientesV2, ClienteCreate } from '@/hooks/useClientesV2';
 import { Header } from '@/components/dashboard/Header';
 import ClientLayout from '@/components/ClientLayout';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import { ClienteCreate } from '@/types';
 import { 
   UserPlusIcon, 
   ArrowLeftIcon,
   UserIcon,
-  EnvelopeIcon,
-  MapPinIcon
+  PhoneIcon,
+  MapPinIcon,
+  LightningBoltIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 function NovoClientePageContent() {
   const router = useRouter();
-  const { createCliente } = useClientes();
+  const { createCliente, createClienteQuick } = useClientesV2();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<ClienteCreate>({
+  const [modoRapido, setModoRapido] = useState(true);
+  
+  // Formulário rápido (apenas nome e telefone)
+  const [formRapido, setFormRapido] = useState({
     nome: '',
+    telefone: ''
+  });
+  
+  // Formulário completo
+  const [formCompleto, setFormCompleto] = useState<ClienteCreate>({
+    nome: '',
+    telefone: '',
     tipo_pessoa: 'FISICA',
     cpf_cnpj: '',
-    email: '',
-    telefone: '',
-    endereco: {
-      logradouro: '',
-      numero: '',
-      complemento: '',
-      bairro: '',
-      cidade: '',
-      estado: '',
-      cep: ''
-    },
-    ativo: true
+    bairro: '',
+    cidade: '',
+    observacoes: '',
+    referencia_localizacao: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // Limpar erro do campo quando o usuário começar a digitar
+  const handleInputRapido = (field: string, value: string) => {
+    setFormRapido(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -58,14 +55,15 @@ function NovoClientePageContent() {
     }
   };
 
-  const handleEnderecoChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      endereco: {
-        ...prev.endereco,
-        [field]: value
-      }
-    }));
+  const handleInputCompleto = (field: string, value: string) => {
+    setFormCompleto(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const validateForm = (): boolean => {

@@ -1,4 +1,4 @@
-// /src/app/dashboard/clientes/page.tsx
+// /src/app/dashboard/clientes/page-v2.tsx
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -22,8 +22,7 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline';
 
-
-function ClientesPageContent() {
+function ClientesV2PageContent() {
   const { 
     clientes, 
     loading, 
@@ -39,11 +38,6 @@ function ClientesPageContent() {
   const [statusFilter, setStatusFilter] = useState('');
   const [meusClientesOnly, setMeusClientesOnly] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-
-  // Recarregar clientes quando o componente montar
-  useEffect(() => {
-    fetchClientes();
-  }, []);
 
   // Filtrar clientes localmente
   const filteredClientes = useMemo(() => {
@@ -244,6 +238,11 @@ function ClientesPageContent() {
     },
   ];
 
+  // Recarregar quando montar
+  useEffect(() => {
+    fetchClientes();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex">
@@ -254,7 +253,7 @@ function ClientesPageContent() {
                 <UserGroupIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Clientes
+                    Clientes v2
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Sistema otimizado para vendedores
@@ -262,13 +261,13 @@ function ClientesPageContent() {
                 </div>
               </div>
               <div className="flex space-x-3">
-                <Link href="/dashboard/clientes/novo">
+                <Link href="/dashboard/clientes/novo-v2">
                   <Button className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600">
                     <LightningBoltIcon className="h-5 w-5" />
                     <span>Cadastro Rápido</span>
                   </Button>
                 </Link>
-                <Link href="/dashboard/clientes/novo">
+                <Link href="/dashboard/clientes/novo-v2">
                   <Button className="flex items-center space-x-2">
                     <UserPlusIcon className="h-5 w-5" />
                     <span>Novo Cliente</span>
@@ -429,17 +428,17 @@ function ClientesPageContent() {
                     Nenhum cliente encontrado
                   </h3>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {searchTerm ? 'Tente ajustar os termos de busca.' : 'Comece criando um novo cliente.'}
+                    {searchTerm || bairroFilter || statusFilter ? 'Tente ajustar os filtros.' : 'Comece criando um novo cliente.'}
                   </p>
                   {!searchTerm && !bairroFilter && !statusFilter && (
                     <div className="mt-6 flex justify-center space-x-3">
-                      <Link href="/dashboard/clientes/novo">
+                      <Link href="/dashboard/clientes/novo-v2">
                         <Button className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600">
                           <LightningBoltIcon className="h-5 w-5" />
                           <span>Cadastro Rápido</span>
                         </Button>
                       </Link>
-                      <Link href="/dashboard/clientes/novo">
+                      <Link href="/dashboard/clientes/novo-v2">
                         <Button className="flex items-center space-x-2">
                           <UserPlusIcon className="h-5 w-5" />
                           <span>Novo Cliente</span>
@@ -459,10 +458,10 @@ function ClientesPageContent() {
   );
 }
 
-export default function ClientesPage() {
+export default function ClientesV2Page() {
   return (
     <ClientLayout>
-      <ClientesPageContent />
+      <ClientesV2PageContent />
     </ClientLayout>
   );
 }
