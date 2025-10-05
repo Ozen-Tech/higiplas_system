@@ -22,6 +22,7 @@ router = APIRouter(
 # ============= CRIAÇÃO RÁPIDA =============
 
 @router.post("/quick", response_model=schemas.ClienteResponse)
+@router.post("/quick/", response_model=schemas.ClienteResponse)  # Rota com barra final
 def create_cliente_quick(
     cliente: schemas.ClienteQuickCreate,
     db: Session = Depends(get_db),
@@ -42,14 +43,14 @@ def create_cliente_quick(
     # Adicionar campos extras para resposta
     response = schemas.ClienteResponse(
         id=db_cliente.id,
-        nome=db_cliente.razao_social,
-        telefone=db_cliente.telefone,
+        nome=db_cliente.razao_social or cliente.nome,
+        telefone=db_cliente.telefone or cliente.telefone,
         tipo_pessoa="FISICA",
         vendedor_id=current_user.id,
         vendedor_nome=current_user.nome,
         empresa_id=current_user.empresa_id,
         status="ATIVO",
-        criado_em=db_cliente.data_criacao or datetime.now()
+        criado_em=db_cliente.criado_em or db_cliente.data_criacao or datetime.now()
     )
     
     return response
@@ -57,6 +58,7 @@ def create_cliente_quick(
 # ============= CRUD COMPLETO =============
 
 @router.post("/", response_model=schemas.ClienteResponse)
+@router.post("", response_model=schemas.ClienteResponse)  # Rota sem barra final
 def create_cliente(
     cliente: schemas.ClienteCreate,
     db: Session = Depends(get_db),
@@ -233,6 +235,7 @@ def delete_cliente(
 # ============= FUNCIONALIDADES EXTRAS =============
 
 @router.get("/{cliente_id}/stats", response_model=schemas.ClienteStats)
+@router.get("/{cliente_id}/stats/", response_model=schemas.ClienteStats)  # Rota com barra final
 def get_cliente_stats(
     cliente_id: int,
     db: Session = Depends(get_db),
@@ -270,6 +273,7 @@ def bulk_create_clientes(
     }
 
 @router.get("/search/nearby")
+@router.get("/search/nearby/")  # Rota com barra final
 def search_nearby_clientes(
     bairro: str = Query(..., description="Bairro para buscar"),
     limit: int = Query(20, ge=1, le=100),
