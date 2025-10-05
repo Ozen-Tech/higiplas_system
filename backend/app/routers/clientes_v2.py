@@ -15,8 +15,8 @@ from ..schemas import cliente_v2 as schemas
 from ..crud import cliente_v2 as crud
 
 router = APIRouter(
-    prefix="/v2/clientes",
-    tags=["Clientes v2"]
+    prefix="/clientes",  # Agora é o endpoint principal
+    tags=["Clientes"]
 )
 
 # ============= CRIAÇÃO RÁPIDA =============

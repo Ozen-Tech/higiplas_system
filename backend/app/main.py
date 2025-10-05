@@ -66,8 +66,8 @@ app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimen
 app.include_router(upload_excel.router, tags=["Upload Excel"])
 app.include_router(insights.router, tags=["Insights"])
 app.include_router(orcamentos.router)
-app.include_router(clientes.router)
-app.include_router(clientes_v2.router)  # Nova versão simplificada
+# app.include_router(clientes.router)  # REMOVIDO - usando apenas v2
+app.include_router(clientes_v2.router)  # Sistema principal de clientes
 app.include_router(dashboard_kpis.router, tags=["Dashboard"])
 app.include_router(invoice_processing.router) 
 app.include_router(fornecedores.router)
