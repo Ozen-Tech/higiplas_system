@@ -4,10 +4,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
-import Image from 'next/image'; 
+import { 
+  CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, 
+  UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, 
+  ChevronDownIcon, ChevronRightIcon 
+} from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
-// Define os tipos para os itens de navegação
 type NavigationItem = {
   name: string;
   href?: string;
@@ -19,25 +22,21 @@ type NavigationItem = {
   }[];
 };
 
-// Define a estrutura de cada item do menu
 const navigation: NavigationItem[] = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
-  { 
-    name: 'Movimentações', 
-    href: '/dashboard/movimentacoes',
-    icon: ArrowsRightLeftIcon
-  },
+  { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
   { name: 'Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
+  { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
 ];
 
 export function Sidebar() {
-  const pathname = usePathname(); // Hook para saber qual é a página ativa
-  const [expandedItems, setExpandedItems] = useState<string[]>([]); // Sem subitens por padrão
+  const pathname = usePathname();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -49,30 +48,26 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-      {/* Componente Sidebar para desktop */}
       <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-5 pb-4 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
-        {/* O Logo não está mais no Header, mas aqui! */}
         <div className="flex items-center flex-shrink-0 px-4">
-        <Image
+          <Image
             src="/HIGIPLAS-LOGO-2048x761.png"
             alt="Higiplas Logo"
-            width={140} // Ajuste o tamanho conforme preferir
+            width={140}
             height={48}
-            priority // Otimiza o carregamento da logo
+            priority
           />
         </div>
         
         <div className="mt-8 flex-1 flex flex-col">
           <nav className="flex-1 px-2 space-y-1">
             {navigation.map((item) => {
-              // Se o item tem subItems, renderiza de forma diferente
               if ('subItems' in item && item.subItems) {
                 const isExpanded = expandedItems.includes(item.name);
                 const hasActiveSubItem = item.subItems.some(subItem => pathname === subItem.href);
                 
                 return (
                   <div key={item.name}>
-                    {/* Item principal com sub-itens */}
                     <button
                       onClick={() => toggleExpanded(item.name)}
                       className={`
@@ -99,7 +94,6 @@ export function Sidebar() {
                       )}
                     </button>
                     
-                    {/* Sub-itens */}
                     {isExpanded && (
                       <div className="ml-6 mt-1 space-y-1">
                         {item.subItems.map((subItem) => {
@@ -132,7 +126,6 @@ export function Sidebar() {
                 );
               }
               
-              // Item normal sem sub-itens
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -154,7 +147,7 @@ export function Sidebar() {
                   />
                   {item.name}
                 </Link>
-              )
+              );
             })}
           </nav>
         </div>
