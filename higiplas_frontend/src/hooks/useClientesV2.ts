@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import {
   ClienteV2,
   ClienteQuickCreate,
-  ClienteCreateV2,
   ClienteUpdateV2,
   ClienteListItemV2,
   ClienteStats,
@@ -32,7 +31,7 @@ export function useClientesV2() {
       }
       
       // Adicionar à lista local
-      const listItem: ClienteListItem = {
+      const listItem: ClienteListItemV2 = {
         id: newCliente.id,
         nome: newCliente.nome,
         telefone: newCliente.telefone,
@@ -57,7 +56,7 @@ export function useClientesV2() {
 
   // ============= CRIAÇÃO COMPLETA =============
   
-  const createCliente = async (clienteData: ClienteCreateV2): Promise<ClienteV2> => {
+  const createCliente = async (clienteData: { nome: string; telefone: string; tipo_pessoa?: string; cpf_cnpj?: string; bairro?: string; cidade?: string; observacoes?: string; referencia_localizacao?: string }): Promise<ClienteV2> => {
     try {
       setLoading(true);
       const response = await apiService.post('/clientes/', clienteData);
@@ -68,7 +67,7 @@ export function useClientesV2() {
       }
       
       // Adicionar à lista local
-      const listItem: ClienteListItem = {
+      const listItem: ClienteListItemV2 = {
         id: newCliente.id,
         nome: newCliente.nome,
         telefone: newCliente.telefone,
@@ -218,7 +217,7 @@ export function useClientesV2() {
     }
   };
 
-  const searchNearbyClientes = async (bairro: string): Promise<any[]> => {
+  const searchNearbyClientes = async (bairro: string): Promise<ClienteListItemV2[]> => {
     try {
       const response = await apiService.get(`/clientes/search/nearby?bairro=${encodeURIComponent(bairro)}&limit=20`);
       return Array.isArray(response) ? response : [];
@@ -228,7 +227,7 @@ export function useClientesV2() {
     }
   };
 
-  const bulkCreateClientes = async (clientes: ClienteCreate[]): Promise<any> => {
+  const bulkCreateClientes = async (clientes: { nome: string; telefone: string; tipo_pessoa?: string; cpf_cnpj?: string; bairro?: string; cidade?: string; observacoes?: string; referencia_localizacao?: string }[]): Promise<{ criados: number; clientes: number[] }> => {
     try {
       setLoading(true);
       const response = await apiService.post('/clientes/bulk', { clientes });

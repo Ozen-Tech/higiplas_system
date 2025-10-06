@@ -1,10 +1,9 @@
-// /src/app/dashboard/clientes/page-v2.tsx
+// /src/app/dashboard/clientes/page.tsx
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useClientesV2 } from '@/hooks/useClientesV2';
-import { ClienteListItemV2 } from '@/types';
 import { Header } from '@/components/dashboard/Header';
 import { CustomTable, Column } from '@/components/dashboard/CustomTable';
 import ClientLayout from '@/components/ClientLayout';
@@ -23,7 +22,8 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline';
 
-function ClientesV2PageContent() {
+
+function ClientesPageContent() {
   const { 
     clientes, 
     loading, 
@@ -34,11 +34,14 @@ function ClientesV2PageContent() {
     deleteCliente 
   } = useClientesV2();
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [bairroFilter, setBairroFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''));;
   const [statusFilter, setStatusFilter] = useState('');
   const [meusClientesOnly, setMeusClientesOnly] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    fetchClientes();
+  }, [fetchClientes]);
 
   // Filtrar clientes localmente
   const filteredClientes = useMemo(() => {
@@ -65,7 +68,7 @@ function ClientesV2PageContent() {
     }
 
     return result;
-  }, [clientes, searchTerm, bairroFilter, statusFilter]);
+  }, [clientes, bairroFilter, statusFilter]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -110,7 +113,7 @@ function ClientesV2PageContent() {
     }
   };
 
-  const handleDelete = async (cliente: ClienteListItemV2) => {
+  const handleDelete = async (cliente: ClienteListItem) => {
     if (window.confirm(`Tem certeza que deseja remover o cliente "${cliente.nome}"?`)) {
       try {
         await deleteCliente(cliente.id);
@@ -152,7 +155,7 @@ function ClientesV2PageContent() {
     return telefone;
   };
 
-  const columns: Column<ClienteListItemV2>[] = [
+  const columns: Column<ClienteListItem>[] = [
     {
       header: 'Cliente',
       accessor: 'nome',
@@ -239,11 +242,6 @@ function ClientesV2PageContent() {
     },
   ];
 
-  // Recarregar quando montar
-  useEffect(() => {
-    fetchClientes();
-  }, [fetchClientes]);
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex">
@@ -254,7 +252,7 @@ function ClientesV2PageContent() {
                 <UserGroupIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Clientes v2
+                    Clientes
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Sistema otimizado para vendedores
@@ -262,13 +260,13 @@ function ClientesV2PageContent() {
                 </div>
               </div>
               <div className="flex space-x-3">
-                <Link href="/dashboard/clientes/novo-v2">
+                <Link href="/dashboard/clientes/novo">
                   <Button className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600">
                     <BoltIcon className="h-5 w-5" />
                     <span>Cadastro Rápido</span>
                   </Button>
                 </Link>
-                <Link href="/dashboard/clientes/novo-v2">
+                <Link href="/dashboard/clientes/novo">
                   <Button className="flex items-center space-x-2">
                     <UserPlusIcon className="h-5 w-5" />
                     <span>Novo Cliente</span>
@@ -429,17 +427,17 @@ function ClientesV2PageContent() {
                     Nenhum cliente encontrado
                   </h3>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {searchTerm || bairroFilter || statusFilter ? 'Tente ajustar os filtros.' : 'Comece criando um novo cliente.'}
+                    {searchTerm ? 'Tente ajustar os termos de busca.' : 'Comece criando um novo cliente.'}
                   </p>
                   {!searchTerm && !bairroFilter && !statusFilter && (
                     <div className="mt-6 flex justify-center space-x-3">
-                      <Link href="/dashboard/clientes/novo-v2">
+                      <Link href="/dashboard/clientes/novo">
                         <Button className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600">
                           <BoltIcon className="h-5 w-5" />
                           <span>Cadastro Rápido</span>
                         </Button>
                       </Link>
-                      <Link href="/dashboard/clientes/novo-v2">
+                      <Link href="/dashboard/clientes/novo">
                         <Button className="flex items-center space-x-2">
                           <UserPlusIcon className="h-5 w-5" />
                           <span>Novo Cliente</span>
@@ -459,10 +457,10 @@ function ClientesV2PageContent() {
   );
 }
 
-export default function ClientesV2Page() {
+export default function ClientesPage() {
   return (
     <ClientLayout>
-      <ClientesV2PageContent />
+      <ClientesPageContent />
     </ClientLayout>
   );
 }
