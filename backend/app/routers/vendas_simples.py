@@ -4,6 +4,8 @@ from typing import List, Dict
 from app.db import models
 from app.db.connection import get_db
 from app.dependencies import get_current_user
+from pydantic import BaseModel
+
 
 router = APIRouter(
     prefix="/vendas-simples",
