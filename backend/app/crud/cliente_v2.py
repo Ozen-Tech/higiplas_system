@@ -55,7 +55,7 @@ def create_cliente(
 ) -> models.Cliente:
     """Criar cliente completo"""
     
-    # Verificar duplicados por telefone
+    # Verificar duplicados por telefone (se fornecido)
     if cliente.telefone:
         existing = db.query(models.Cliente).filter(
             models.Cliente.telefone == cliente.telefone,
@@ -68,10 +68,10 @@ def create_cliente(
                 detail=f"Cliente já existe com este telefone: {cliente.nome}"
             )
     
-    # Verificar duplicados por CPF/CNPJ
-    if cliente.cpf_cnpj:
+    # Verificar duplicados por CPF/CNPJ apenas se fornecido
+    if cliente.cpf_cnpj and cliente.cpf_cnpj.strip():
         existing = db.query(models.Cliente).filter(
-            models.Cliente.cnpj == cliente.cpf_cnpj,
+            models.Cliente.cnpj == cliente.cpf_cnpj.strip(),
             models.Cliente.empresa_id == empresa_id
         ).first()
         

@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useClientesV2, ClienteCreate } from '@/hooks/useClientesV2';
+import { useClientesV2 } from '@/hooks/useClientesV2';
+import { ClienteCreateV2 } from '@/types';
 import { Header } from '@/components/dashboard/Header';
 import ClientLayout from '@/components/ClientLayout';
 import Button from '@/components/Button';
@@ -13,9 +14,8 @@ import {
   UserPlusIcon, 
   ArrowLeftIcon,
   UserIcon,
-  PhoneIcon,
   MapPinIcon,
-  LightningBoltIcon
+  BoltIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -32,7 +32,7 @@ function NovoClienteV2PageContent() {
   });
   
   // Formulário completo
-  const [formCompleto, setFormCompleto] = useState<ClienteCreate>({
+  const [formCompleto, setFormCompleto] = useState<ClienteCreateV2>({
     nome: '',
     telefone: '',
     tipo_pessoa: 'FISICA',
@@ -145,7 +145,7 @@ function NovoClienteV2PageContent() {
     setLoading(true);
     try {
       // Limpar campos vazios
-      const clienteData: ClienteCreate = {
+      const clienteData: ClienteCreateV2 = {
         nome: formCompleto.nome.trim(),
         telefone: formCompleto.telefone.replace(/\D/g, ''),
         tipo_pessoa: formCompleto.tipo_pessoa,
@@ -210,7 +210,7 @@ function NovoClienteV2PageContent() {
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  <LightningBoltIcon className="h-4 w-4 inline mr-1" />
+                  <BoltIcon className="h-4 w-4 inline mr-1" />
                   Rápido
                 </button>
                 <button
@@ -237,7 +237,7 @@ function NovoClienteV2PageContent() {
                   <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                       <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                        <LightningBoltIcon className="h-5 w-5 mr-2 text-yellow-500" />
+                        <BoltIcon className="h-5 w-5 mr-2 text-yellow-500" />
                         Cadastro Ultra-Rápido
                       </h2>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -282,7 +282,7 @@ function NovoClienteV2PageContent() {
                       disabled={loading}
                       className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600"
                     >
-                      <LightningBoltIcon className="h-5 w-5" />
+                      <BoltIcon className="h-5 w-5" />
                       <span>{loading ? 'Salvando...' : 'Salvar Rápido'}</span>
                     </Button>
                   </div>

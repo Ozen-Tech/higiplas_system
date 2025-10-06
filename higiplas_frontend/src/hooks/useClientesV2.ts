@@ -4,93 +4,17 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
-
-// Tipos simplificados para o sistema v2
-export interface ClienteV2 {
-  id: number;
-  nome: string;
-  telefone: string;
-  tipo_pessoa: 'FISICA' | 'JURIDICA';
-  cpf_cnpj?: string;
-  bairro?: string;
-  cidade?: string;
-  observacoes?: string;
-  referencia_localizacao?: string;
-  status: 'ATIVO' | 'INATIVO' | 'PROSPECTO';
-  vendedor_id: number;
-  vendedor_nome?: string;
-  empresa_id: number;
-  total_vendas?: number;
-  ultima_venda?: string;
-  criado_em: string;
-  atualizado_em?: string;
-}
-
-export interface ClienteQuickCreate {
-  nome: string;
-  telefone: string;
-}
-
-export interface ClienteCreate {
-  nome: string;
-  telefone: string;
-  tipo_pessoa?: 'FISICA' | 'JURIDICA';
-  cpf_cnpj?: string;
-  bairro?: string;
-  cidade?: string;
-  observacoes?: string;
-  referencia_localizacao?: string;
-}
-
-export interface ClienteUpdate {
-  nome?: string;
-  telefone?: string;
-  tipo_pessoa?: 'FISICA' | 'JURIDICA';
-  cpf_cnpj?: string;
-  bairro?: string;
-  cidade?: string;
-  observacoes?: string;
-  referencia_localizacao?: string;
-  status?: 'ATIVO' | 'INATIVO' | 'PROSPECTO';
-}
-
-export interface ClienteListItem {
-  id: number;
-  nome: string;
-  telefone: string;
-  bairro?: string;
-  cidade?: string;
-  status: 'ATIVO' | 'INATIVO' | 'PROSPECTO';
-  ultima_venda?: string;
-}
-
-export interface ClienteStats {
-  total_orcamentos: number;
-  total_vendido: number;
-  ticket_medio: number;
-  produtos_mais_comprados: Array<{
-    produto: string;
-    quantidade: number;
-    valor_total: number;
-  }>;
-  historico_vendas: Array<{
-    data: string;
-    valor: number;
-    id: number;
-  }>;
-}
-
-export interface ClienteSearchParams {
-  search?: string;
-  bairro?: string;
-  cidade?: string;
-  meus_clientes?: boolean;
-  skip?: number;
-  limit?: number;
-}
+import {
+  ClienteV2,
+  ClienteQuickCreate,
+  ClienteUpdateV2,
+  ClienteListItemV2,
+  ClienteStats,
+  ClienteSearchParams
+} from '@/types';
 
 export function useClientesV2() {
-  const [clientes, setClientes] = useState<ClienteListItem[]>([]);
+  const [clientes, setClientes] = useState<ClienteListItemV2[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,7 +31,7 @@ export function useClientesV2() {
       }
       
       // Adicionar à lista local
-      const listItem: ClienteListItem = {
+      const listItem: ClienteListItemV2 = {
         id: newCliente.id,
         nome: newCliente.nome,
         telefone: newCliente.telefone,
@@ -132,7 +56,7 @@ export function useClientesV2() {
 
   // ============= CRIAÇÃO COMPLETA =============
   
-  const createCliente = async (clienteData: ClienteCreate): Promise<ClienteV2> => {
+  const createCliente = async (clienteData: { nome: string; telefone: string; tipo_pessoa?: string; cpf_cnpj?: string; bairro?: string; cidade?: string; observacoes?: string; referencia_localizacao?: string }): Promise<ClienteV2> => {
     try {
       setLoading(true);
       const response = await apiService.post('/clientes/', clienteData);
@@ -143,7 +67,7 @@ export function useClientesV2() {
       }
       
       // Adicionar à lista local
-      const listItem: ClienteListItem = {
+      const listItem: ClienteListItemV2 = {
         id: newCliente.id,
         nome: newCliente.nome,
         telefone: newCliente.telefone,
@@ -168,7 +92,7 @@ export function useClientesV2() {
 
   // ============= LISTAGEM E BUSCA =============
   
-  const fetchClientes = async (params: ClienteSearchParams = {}): Promise<ClienteListItem[]> => {
+  const fetchClientes = async (params: ClienteSearchParams = {}): Promise<ClienteListItemV2[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -198,15 +122,15 @@ export function useClientesV2() {
     }
   };
 
-  const searchClientes = async (searchTerm: string): Promise<ClienteListItem[]> => {
+  const searchClientes = async (searchTerm: string): Promise<ClienteListItemV2[]> => {
     return await fetchClientes({ search: searchTerm, limit: 20 });
   };
 
-  const getClientesByBairro = async (bairro: string): Promise<ClienteListItem[]> => {
+  const getClientesByBairro = async (bairro: string): Promise<ClienteListItemV2[]> => {
     return await fetchClientes({ bairro, limit: 30 });
   };
 
-  const getMeusClientes = async (): Promise<ClienteListItem[]> => {
+  const getMeusClientes = async (): Promise<ClienteListItemV2[]> => {
     return await fetchClientes({ meus_clientes: true, limit: 100 });
   };
 
@@ -226,7 +150,7 @@ export function useClientesV2() {
     }
   };
 
-  const updateCliente = async (id: number, clienteData: ClienteUpdate): Promise<ClienteV2 | null> => {
+  const updateCliente = async (id: number, clienteData: ClienteUpdateV2): Promise<ClienteV2 | null> => {
     try {
       setLoading(true);
       const response = await apiService.put(`/clientes/${id}`, clienteData);
@@ -293,7 +217,7 @@ export function useClientesV2() {
     }
   };
 
-  const searchNearbyClientes = async (bairro: string): Promise<any[]> => {
+  const searchNearbyClientes = async (bairro: string): Promise<ClienteListItemV2[]> => {
     try {
       const response = await apiService.get(`/clientes/search/nearby?bairro=${encodeURIComponent(bairro)}&limit=20`);
       return Array.isArray(response) ? response : [];
@@ -303,7 +227,7 @@ export function useClientesV2() {
     }
   };
 
-  const bulkCreateClientes = async (clientes: ClienteCreate[]): Promise<any> => {
+  const bulkCreateClientes = async (clientes: { nome: string; telefone: string; tipo_pessoa?: string; cpf_cnpj?: string; bairro?: string; cidade?: string; observacoes?: string; referencia_localizacao?: string }[]): Promise<{ criados: number; clientes: number[] }> => {
     try {
       setLoading(true);
       const response = await apiService.post('/clientes/bulk', { clientes });

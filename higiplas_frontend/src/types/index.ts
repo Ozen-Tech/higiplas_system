@@ -1,6 +1,7 @@
 // /src/types/index.ts
 
-// A definição principal de um Produto, como vem da API e é usado na UI.
+// ======================== PRODUTOS ========================
+
 export interface Product {
   id: number;
   nome: string;
@@ -14,12 +15,19 @@ export interface Product {
   empresa_id: number;
   quantidade_em_estoque: number;
   data_validade?: string | null;
-  creationDate: string; // Adicionado para corrigir o erro de lint
+  creationDate: string;
 }
+
+export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>;
+
+export type ProdutoUpdateData = Partial<Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>>;
+
+
+// ======================== ORÇAMENTOS ========================
 
 export interface OrcamentoItem {
   produto_id: number;
-  nome: string; // Adicionamos nome e estoque para exibir na UI
+  nome: string;
   estoque_disponivel: number;
   quantidade: number;
   preco_unitario: number;
@@ -29,7 +37,7 @@ export interface Orcamento {
   id: number;
   nome_cliente: string;
   status: string;
-  data_criacao: string; // Vem como string da API
+  data_criacao: string;
   data_validade?: string | null;
   usuario: {
     id: number;
@@ -47,6 +55,9 @@ export interface Orcamento {
   }[];
 }
 
+
+// ======================== USUÁRIOS ========================
+
 export interface User {
   id: number;
   nome: string;
@@ -57,12 +68,15 @@ export interface User {
   level?: number;
 }
 
+
+// ======================== ORDENS DE COMPRA ========================
+
 export interface OrdemDeCompraItem {
   id: number;
   produto_id: number;
   quantidade_solicitada: number;
   custo_unitario_registrado: number;
-  produto: Product; // Inclui os dados completos do produto
+  produto: Product;
 }
 
 export interface OrdemDeCompra {
@@ -79,13 +93,94 @@ export interface OrdemDeCompra {
 }
 
 
-// Dados necessários para criar um novo produto (sem os campos gerados pelo DB).
-export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>;
+// ======================== CLIENTES (NOVO MODELO V2) ========================
 
-// Dados para a atualização de um produto, onde todos os campos são opcionais.
-export type ProdutoUpdateData = Partial<Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>>;
+export interface ClienteV2 {
+  id: number;
+  nome: string;
+  telefone: string;
+  tipo_pessoa: 'FISICA' | 'JURIDICA';
+  cpf_cnpj?: string;
+  bairro?: string;
+  cidade?: string;
+  observacoes?: string;
+  referencia_localizacao?: string;
+  status: 'ATIVO' | 'INATIVO' | 'PROSPECTO';
+  vendedor_id: number;
+  vendedor_nome?: string;
+  empresa_id: number;
+  total_vendas?: number;
+  ultima_venda?: string;
+  criado_em: string;
+  atualizado_em?: string;
+}
 
-// Tipos para Clientes
+export interface ClienteQuickCreate {
+  nome: string;
+  telefone: string;
+}
+
+export interface ClienteCreateV2 {
+  nome: string;
+  telefone: string;
+  tipo_pessoa?: 'FISICA' | 'JURIDICA';
+  cpf_cnpj?: string;
+  bairro?: string;
+  cidade?: string;
+  observacoes?: string;
+  referencia_localizacao?: string;
+}
+
+export interface ClienteUpdateV2 {
+  nome?: string;
+  telefone?: string;
+  tipo_pessoa?: 'FISICA' | 'JURIDICA';
+  cpf_cnpj?: string;
+  bairro?: string;
+  cidade?: string;
+  observacoes?: string;
+  referencia_localizacao?: string;
+  status?: 'ATIVO' | 'INATIVO' | 'PROSPECTO';
+}
+
+export interface ClienteListItemV2 {
+  id: number;
+  nome: string;
+  telefone: string;
+  bairro?: string;
+  cidade?: string;
+  status: 'ATIVO' | 'INATIVO' | 'PROSPECTO';
+  ultima_venda?: string;
+}
+
+export interface ClienteStats {
+  total_orcamentos: number;
+  total_vendido: number;
+  ticket_medio: number;
+  produtos_mais_comprados: Array<{
+    produto: string;
+    quantidade: number;
+    valor_total: number;
+  }>;
+  historico_vendas: Array<{
+    data: string;
+    valor: number;
+    id: number;
+  }>;
+}
+
+export interface ClienteSearchParams {
+  search?: string;
+  bairro?: string;
+  cidade?: string;
+  meus_clientes?: boolean;
+  skip?: number;
+  limit?: number;
+}
+
+
+// ======================== CLIENTES (MODELO ANTIGO) ========================
+
 export interface Endereco {
   id: number;
   logradouro: string;
@@ -162,12 +257,22 @@ export interface ClienteUpdate {
   };
 }
 
+
+// ======================== HISTÓRICO DE PAGAMENTOS ========================
+
 export interface HistoricoPagamento {
   id: number;
   cliente_id: number;
   valor: number;
   data_pagamento: string;
-  metodo_pagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | 'TRANSFERENCIA' | 'BOLETO' | 'CHEQUE';
+  metodo_pagamento: 
+    | 'DINHEIRO' 
+    | 'CARTAO_CREDITO' 
+    | 'CARTAO_DEBITO' 
+    | 'PIX' 
+    | 'TRANSFERENCIA' 
+    | 'BOLETO' 
+    | 'CHEQUE';
   observacoes?: string | null;
   orcamento_id?: number | null;
   status?: string;
@@ -177,10 +282,20 @@ export interface HistoricoPagamentoCreate {
   cliente_id: number;
   valor: number;
   data_pagamento: string;
-  metodo_pagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | 'TRANSFERENCIA' | 'BOLETO' | 'CHEQUE';
+  metodo_pagamento: 
+    | 'DINHEIRO' 
+    | 'CARTAO_CREDITO' 
+    | 'CARTAO_DEBITO' 
+    | 'PIX' 
+    | 'TRANSFERENCIA' 
+    | 'BOLETO' 
+    | 'CHEQUE';
   observacoes?: string | null;
   orcamento_id?: number | null;
 }
+
+
+// ======================== RESUMO DE VENDAS ========================
 
 export interface ResumoVendasCliente {
   mes: string;
