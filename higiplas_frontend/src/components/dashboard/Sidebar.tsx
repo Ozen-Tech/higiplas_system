@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // Ícones que vamos usar
 import Image from 'next/image'; 
+import { ShoppingCart } from 'lucide-react';
 
 // Define os tipos para os itens de navegação
 type NavigationItem = {
@@ -32,6 +33,7 @@ const navigation: NavigationItem[] = [
   { name: 'Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
+  { name: 'Vendas Mobile', icon: ShoppingCart, href: '/dashboard/vendas'},
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
 ];
 
