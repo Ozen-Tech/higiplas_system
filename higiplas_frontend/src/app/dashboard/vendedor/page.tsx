@@ -27,9 +27,8 @@ export default function VendedorPage() {
 
   const handleSubmit = async () => {
     const itens = Object.entries(quantidades)
-  .filter(([, quantidade]) => quantidade > 0) // <- aqui só usamos quantidade
-  .map(([produto_id, quantidade]) => ({ produto_id: Number(produto_id), quantidade }));
-
+      .filter(([_, qtd]) => qtd > 0)
+      .map(([produto_id, quantidade]) => ({ produto_id: Number(produto_id), quantidade }));
 
     if (itens.length === 0) {
       alert("Selecione pelo menos um produto para vender.");
