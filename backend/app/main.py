@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
-    insights, orcamentos, dashboard_kpis, invoice_processing,
+    insights, dashboard_kpis, invoice_processing,
     fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock
 )
 from app.create_superuser import create_initial_superuser
