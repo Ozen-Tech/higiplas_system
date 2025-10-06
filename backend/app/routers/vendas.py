@@ -1,4 +1,4 @@
-# /backend/app/routers/vendas.py
+# backend/app/routers/vendas.py
 """
 Router para o módulo de vendas mobile
 Focado em operações rápidas para vendedores de rua
@@ -14,7 +14,6 @@ from ..db.connection import get_db
 from ..dependencies import get_current_user
 from ..db import models
 from ..schemas import vendas as schemas
-from ..crud import movimentacao_estoque as crud_movimentacao
 
 router = APIRouter(
     prefix="/vendas",
@@ -28,12 +27,8 @@ def get_vendedor_dashboard(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """
-    Dashboard do vendedor com estatísticas do dia
-    """
     hoje = date.today()
     
-    # Buscar vendas do dia (movimentações de saída do vendedor)
     vendas_hoje = db.query(models.MovimentacaoEstoque).join(
         models.Produto
     ).filter(
@@ -42,25 +37,20 @@ def get_vendedor_dashboard(
         func.date(models.MovimentacaoEstoque.data_movimentacao) == hoje
     ).all()
     
-    # Calcular estatísticas
     total_vendido = 0
     quantidade_pedidos = len(set([v.observacao for v in vendas_hoje if v.observacao]))
     
     for venda in vendas_hoje:
-        produto = db.query(models.Produto).filter(
-            models.Produto.id == venda.produto_id
-        ).first()
+        produto = db.query(models.Produto).filter(models.Produto.id == venda.produto_id).first()
         if produto:
             total_vendido += venda.quantidade * produto.preco_venda
     
-    # Buscar clientes visitados hoje
     clientes_hoje = db.query(models.Cliente).filter(
         models.Cliente.vendedor_id == current_user.id,
         func.date(models.Cliente.atualizado_em) == hoje
     ).count() if hasattr(models.Cliente, 'atualizado_em') else 0
     
-    # Meta do dia (pode vir de configuração)
-    meta_dia = 2000.00  # Exemplo fixo, pode ser configurável
+    meta_dia = 2000.00  # Ajustável
     
     return schemas.VendedorDashboard(
         total_vendido_hoje=total_vendido,
@@ -80,10 +70,6 @@ def busca_rapida_clientes(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """
-    Busca rápida de clientes para o vendedor
-    Otimizado para resultados instantâneos
-    """
     query = db.query(models.Cliente).filter(
         models.Cliente.empresa_id == current_user.empresa_id,
         models.Cliente.vendedor_id == current_user.id
@@ -99,14 +85,10 @@ def busca_rapida_clientes(
     if bairro:
         query = query.filter(models.Cliente.endereco.ilike(f"%{bairro}%"))
     
-    clientes = query.order_by(
-        models.Cliente.razao_social
-    ).limit(limit).all()
+    clientes = query.order_by(models.Cliente.razao_social).limit(limit).all()
     
-    # Mapear para resposta simplificada
     resultado = []
     for cliente in clientes:
-        # Extrair bairro e cidade do endereço
         bairro_cliente = None
         cidade_cliente = None
         if cliente.endereco:
@@ -114,15 +96,10 @@ def busca_rapida_clientes(
             bairro_cliente = partes[0].strip() if len(partes) > 0 else None
             cidade_cliente = partes[1].strip() if len(partes) > 1 else None
         
-        # Buscar última compra
-        ultima_venda = db.query(models.MovimentacaoEstoque).join(
-            models.Produto
-        ).filter(
+        ultima_venda = db.query(models.MovimentacaoEstoque).join(models.Produto).filter(
             models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
             models.MovimentacaoEstoque.observacao.ilike(f"%{cliente.razao_social}%")
-        ).order_by(
-            desc(models.MovimentacaoEstoque.data_movimentacao)
-        ).first()
+        ).order_by(desc(models.MovimentacaoEstoque.data_movimentacao)).first()
         
         resultado.append(schemas.ClienteRapido(
             id=cliente.id,
@@ -144,10 +121,6 @@ def listar_produtos_venda(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """
-    Lista produtos disponíveis para venda
-    Apenas produtos com estoque > 0
-    """
     query = db.query(models.Produto).filter(
         models.Produto.empresa_id == current_user.empresa_id,
         models.Produto.quantidade_em_estoque > 0
@@ -185,26 +158,15 @@ def registrar_venda(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """
-    Registra uma venda completa
-    - Cria movimentações de saída para cada produto
-    - Atualiza estoque
-    - Registra histórico do cliente
-    """
     try:
-        # Validar cliente
         cliente = db.query(models.Cliente).filter(
             models.Cliente.id == venda.cliente_id,
             models.Cliente.empresa_id == current_user.empresa_id
         ).first()
         
         if not cliente:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
         
-        # Validar estoque de todos os produtos antes de processar
         produtos_info = []
         total_venda = 0
         
@@ -215,24 +177,14 @@ def registrar_venda(
             ).first()
             
             if not produto:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Produto ID {item.produto_id} não encontrado"
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Produto ID {item.produto_id} não encontrado")
             
             if produto.quantidade_em_estoque < item.quantidade:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Estoque insuficiente para {produto.nome}. Disponível: {produto.quantidade_em_estoque}"
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Estoque insuficiente para {produto.nome}")
             
-            produtos_info.append({
-                'produto': produto,
-                'quantidade': item.quantidade
-            })
+            produtos_info.append({'produto': produto, 'quantidade': item.quantidade})
             total_venda += produto.preco_venda * item.quantidade
         
-        # Processar movimentações
         movimentacoes_criadas = []
         observacao_base = f"Venda para {cliente.razao_social}"
         if venda.observacao:
@@ -241,8 +193,6 @@ def registrar_venda(
         for info in produtos_info:
             produto = info['produto']
             quantidade = info['quantidade']
-            
-            # Criar movimentação de saída
             movimentacao = models.MovimentacaoEstoque(
                 produto_id=produto.id,
                 tipo_movimentacao='SAIDA',
@@ -250,10 +200,7 @@ def registrar_venda(
                 observacao=observacao_base,
                 usuario_id=current_user.id
             )
-            
-            # Atualizar estoque
             produto.quantidade_em_estoque -= quantidade
-            
             db.add(movimentacao)
             movimentacoes_criadas.append({
                 'produto_nome': produto.nome,
@@ -262,9 +209,7 @@ def registrar_venda(
                 'valor_total': produto.preco_venda * quantidade
             })
         
-        # Atualizar data de última compra do cliente
         cliente.atualizado_em = datetime.now()
-        
         db.commit()
         
         return schemas.VendaResponse(
@@ -282,148 +227,4 @@ def registrar_venda(
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao registrar venda: {str(e)}"
-        )
-
-# ============= HISTÓRICO DE VENDAS =============
-
-@router.get("/historico", response_model=List[schemas.VendaHistorico])
-def listar_historico_vendas(
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
-    cliente_id: Optional[int] = None,
-    limit: int = 50,
-    db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(get_current_user)
-):
-    """
-    Lista histórico de vendas do vendedor
-    """
-    if not data_inicio:
-        data_inicio = date.today() - timedelta(days=30)
-    
-    if not data_fim:
-        data_fim = date.today()
-    
-    # Buscar movimentações de saída
-    query = db.query(models.MovimentacaoEstoque).join(
-        models.Produto
-    ).filter(
-        models.MovimentacaoEstoque.usuario_id == current_user.id,
-        models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
-        func.date(models.MovimentacaoEstoque.data_movimentacao) >= data_inicio,
-        func.date(models.MovimentacaoEstoque.data_movimentacao) <= data_fim,
-        models.Produto.empresa_id == current_user.empresa_id
-    )
-    
-    movimentacoes = query.order_by(
-        desc(models.MovimentacaoEstoque.data_movimentacao)
-    ).limit(limit).all()
-    
-    # Agrupar por venda (usando observação como chave)
-    vendas_agrupadas = {}
-    
-    for mov in movimentacoes:
-        chave = f"{mov.data_movimentacao.date()}_{mov.observacao}"
-        
-        if chave not in vendas_agrupadas:
-            vendas_agrupadas[chave] = {
-                'data': mov.data_movimentacao,
-                'cliente_nome': mov.observacao.replace('Venda para ', '').split(' - ')[0],
-                'observacao': mov.observacao,
-                'itens': [],
-                'total': 0
-            }
-        
-        produto = db.query(models.Produto).filter(
-            models.Produto.id == mov.produto_id
-        ).first()
-        
-        if produto:
-            valor_item = produto.preco_venda * mov.quantidade
-            vendas_agrupadas[chave]['itens'].append({
-                'produto': produto.nome,
-                'quantidade': mov.quantidade,
-                'valor': valor_item
-            })
-            vendas_agrupadas[chave]['total'] += valor_item
-    
-    # Converter para lista
-    resultado = [
-        schemas.VendaHistorico(
-            data=v['data'],
-            cliente_nome=v['cliente_nome'],
-            total=v['total'],
-            quantidade_itens=len(v['itens']),
-            observacao=v['observacao']
-        ) for v in vendas_agrupadas.values()
-    ]
-    
-    return sorted(resultado, key=lambda x: x.data, reverse=True)
-
-# ============= ESTATÍSTICAS =============
-
-@router.get("/estatisticas/periodo", response_model=schemas.EstatisticasVendas)
-def estatisticas_periodo(
-    dias: int = 30,
-    db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(get_current_user)
-):
-    """
-    Estatísticas de vendas do período
-    """
-    data_inicio = date.today() - timedelta(days=dias)
-    
-    # Buscar vendas do período
-    vendas = db.query(models.MovimentacaoEstoque).join(
-        models.Produto
-    ).filter(
-        models.MovimentacaoEstoque.usuario_id == current_user.id,
-        models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
-        func.date(models.MovimentacaoEstoque.data_movimentacao) >= data_inicio,
-        models.Produto.empresa_id == current_user.empresa_id
-    ).all()
-    
-    # Calcular estatísticas
-    total_vendido = 0
-    produtos_vendidos = {}
-    
-    for venda in vendas:
-        produto = db.query(models.Produto).filter(
-            models.Produto.id == venda.produto_id
-        ).first()
-        
-        if produto:
-            valor = produto.preco_venda * venda.quantidade
-            total_vendido += valor
-            
-            if produto.nome not in produtos_vendidos:
-                produtos_vendidos[produto.nome] = {
-                    'quantidade': 0,
-                    'valor': 0
-                }
-            
-            produtos_vendidos[produto.nome]['quantidade'] += venda.quantidade
-            produtos_vendidos[produto.nome]['valor'] += valor
-    
-    # Top 5 produtos
-    top_produtos = sorted(
-        [
-            {'produto': k, 'quantidade': v['quantidade'], 'valor_total': v['valor']}
-            for k, v in produtos_vendidos.items()
-        ],
-        key=lambda x: x['valor_total'],
-        reverse=True
-    )[:5]
-    
-    quantidade_vendas = len(set([v.observacao for v in vendas]))
-    ticket_medio = total_vendido / quantidade_vendas if quantidade_vendas > 0 else 0
-    
-    return schemas.EstatisticasVendas(
-        total_vendido=total_vendido,
-        quantidade_vendas=quantidade_vendas,
-        ticket_medio=ticket_medio,
-        produtos_mais_vendidos=top_produtos
-    )
+        raise HTTPException(status_code=500, detail=str(e))
