@@ -4,7 +4,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
     insights, dashboard_kpis, invoice_processing,
-    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas
+    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas_simples
 )
 from app.create_superuser import create_initial_superuser
 from contextlib import asynccontextmanager
@@ -62,7 +62,7 @@ app.include_router(auth.router, prefix="/users", tags=["Usuários e Autenticaç�
 app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
 app.include_router(produtos.router, tags=["Produtos"])
 app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
-app.include_router(vendas.router)  
+app.include_router(vendas_simples.router)
 app.include_router(upload_excel.router, tags=["Upload Excel"])
 app.include_router(insights.router, tags=["Insights"])
 app.include_router(clientes_v2.router)  # Sistema principal de clientes
