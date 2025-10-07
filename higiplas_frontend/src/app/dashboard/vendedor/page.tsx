@@ -1,3 +1,5 @@
+// /src/app/dashboard/vendedor/page.tsx - CORREÇÃO FINAL DE LINTING
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -171,7 +173,8 @@ export default function VendedorHubPage() {
                     <div className="text-center py-12 text-gray-500">
                         <List size={48} className="mx-auto mb-4" />
                         <h3 className="font-semibold text-lg">Nenhum orçamento encontrado.</h3>
-                        <p>Comece a vender na aba "Novo Pedido".</p>
+                        {/* AQUI ESTÁ A CORREÇÃO */}
+                        <p>Comece a vender na aba 'Novo Pedido'.</p>
                     </div>
                 )}
               </CardContent>
