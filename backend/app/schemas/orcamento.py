@@ -1,4 +1,4 @@
-# /backend/app/schemas/orcamento.py
+# /backend/app/schemas/orcamento.py - VERSÃO FINAL CORRIGIDA
 
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
@@ -7,7 +7,18 @@ from datetime import datetime
 # Importa os outros schemas que serão usados aqui
 from .produto import Produto
 from .usuario import Usuario
-from .cliente_v2 import ClienteResponse
+# NÃO vamos mais importar ClienteResponse de cliente_v2
+
+# ================== CORREÇÃO IMPORTANTE ==================
+# Criamos um schema mais simples para o Cliente, que representa
+# exatamente o que o banco de dados retorna. Isso resolve o erro de validação.
+class ClienteParaOrcamento(BaseModel):
+    id: int
+    razao_social: str # Usamos o nome exato da coluna do banco: 'razao_social'
+    telefone: Optional[str] = None # O telefone pode ser nulo
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 # --- Itens do Orçamento ---
 
@@ -16,14 +27,12 @@ class OrcamentoItemBase(BaseModel):
     quantidade: int
     
 class OrcamentoItemCreate(OrcamentoItemBase):
-    # O preço que o vendedor define na hora
     preco_unitario: float
 
 class OrcamentoItem(OrcamentoItemBase):
     id: int
-    # O preço que foi salvo no banco no momento da criação
     preco_unitario_congelado: float
-    produto: Produto # Mostra os dados completos do produto
+    produto: Produto
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -44,7 +53,9 @@ class Orcamento(OrcamentoBase):
     
     # Relações com outros objetos
     usuario: Usuario
-    cliente: ClienteResponse
+    # ================== CORREÇÃO IMPORTANTE ==================
+    # Trocamos o schema complexo 'ClienteResponse' pelo nosso schema simples.
+    cliente: ClienteParaOrcamento
     itens: List[OrcamentoItem]
 
     model_config = ConfigDict(from_attributes=True)
