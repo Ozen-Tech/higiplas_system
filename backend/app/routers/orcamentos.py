@@ -1,4 +1,4 @@
-# backend/app/routers/orcamentos.py - VERSÃO ATUALIZADA
+# backend/app/routers/orcamentos.py - VERSÃO FINAL E CORRIGIDA
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -20,17 +20,18 @@ router = APIRouter(
     tags=["Orçamentos"]
 )
 
-# ROTA PRINCIPAL PARA O VENDEDOR CRIAR UM ORÇAMENTO
+# ROTA PARA CRIAR ORÇAMENTO (COM E SEM BARRA)
+@router.post("", response_model=schemas_orcamento.Orcamento, include_in_schema=False)
 @router.post("/", response_model=schemas_orcamento.Orcamento, summary="Cria um novo orçamento")
 def criar_novo_orcamento(
     orcamento_in: schemas_orcamento.OrcamentoCreate,
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    # O status será 'RASCUNHO' ou o que vier do frontend ('ENVIADO', por exemplo)
     return crud_orcamento.create_orcamento(db=db, orcamento_in=orcamento_in, vendedor_id=current_user.id)
 
-# ROTA PARA O VENDEDOR VER SEU HISTÓRICO DE ORÇAMENTOS
+# ROTA PARA O VENDEDOR VER SEU HISTÓRICO (COM E SEM BARRA)
+@router.get("/me", response_model=List[schemas_orcamento.Orcamento], include_in_schema=False)
 @router.get("/me/", response_model=List[schemas_orcamento.Orcamento], summary="Lista os orçamentos do vendedor logado")
 def listar_meus_orcamentos(
     db: Session = Depends(get_db),
@@ -38,7 +39,8 @@ def listar_meus_orcamentos(
 ):
     return crud_orcamento.get_orcamentos_by_vendedor(db=db, vendedor_id=current_user.id)
 
-# ===== NOVA ROTA PARA GERAR PDF =====
+# ROTA PARA GERAR PDF (COM E SEM BARRA)
+@router.get("/{orcamento_id}/pdf", include_in_schema=False)
 @router.get("/{orcamento_id}/pdf/", summary="Gera um PDF para um orçamento específico")
 def gerar_orcamento_pdf(
     orcamento_id: int,
@@ -59,8 +61,8 @@ def gerar_orcamento_pdf(
     pdf = FPDF()
     pdf.add_page()
 
-    # Cabeçalho com Logo (ajuste o caminho da sua logo)
-    # pdf.image('path/to/your/logo.png', x=10, y=8, w=40)
+    # Cabeçalho (Adicione o caminho para sua logo se tiver)
+    # pdf.image('path/to/logo.png', x=10, y=8, w=40)
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, 'Orçamento de Venda', 0, 1, 'C')
     pdf.ln(10)
@@ -88,6 +90,7 @@ def gerar_orcamento_pdf(
         subtotal = item.quantidade * item.preco_unitario_congelado
         total_orcamento += subtotal
         
+        # Usando multi_cell para quebrar a linha do nome do produto se for muito longo
         pdf.cell(95, 7, item.produto.nome, 1)
         pdf.cell(20, 7, str(item.quantidade), 1, 0, 'C')
         pdf.cell(35, 7, f'R$ {item.preco_unitario_congelado:.2f}', 1, 0, 'R')

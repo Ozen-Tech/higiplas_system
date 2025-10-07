@@ -1,4 +1,4 @@
-// /src/app/dashboard/vendedor/novo/page.tsx - CORRIGIDO
+// /src/app/dashboard/vendedor/novo/page.tsx - VERSÃO ÚNICA E CORRETA
 
 'use client';
 
@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useVendas } from '@/hooks/useVendas';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
 import { Cliente, Produto } from '@/types/vendas';
+import { ClienteV2 } from '@/types'; // Importando o tipo ClienteV2 para o cast
 import { ItemCarrinhoOrcamento, OrcamentoCreatePayload } from '@/types/orcamentos';
 import toast from 'react-hot-toast';
 
@@ -16,27 +17,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  Users, Package, ShoppingCart, PlusCircle, Trash2, ArrowLeft, Send, Share2 
-  // CORREÇÃO: Ícones 'Search' e 'Save' removidos da importação
+  Users, Package, ShoppingCart, PlusCircle, Trash2, ArrowLeft, Send, Share2, UserPlus 
 } from 'lucide-react';
 
 export default function NovoOrcamentoPage() {
   const router = useRouter();
-  const { clientes, produtos, buscarClientes, buscarProdutos } = useVendas();
+  const { clientes, produtos, buscarClientes, buscarProdutos, criarClienteRapido, loading: vendasLoading } = useVendas();
   const { criarOrcamento, loading: orcamentoLoading } = useOrcamentos();
 
-  // Estados do formulário
+  // Estados do formulário e UI
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [carrinho, setCarrinho] = useState<ItemCarrinhoOrcamento[]>([]);
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>('À vista');
-  
-  // Estados da UI
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [novoClienteNome, setNovoClienteNome] = useState('');
+  const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
   const [termoBuscaCliente, setTermoBuscaCliente] = useState('');
   const [termoBuscaProduto, setTermoBuscaProduto] = useState('');
   const [orcamentoFinalizado, setOrcamentoFinalizado] = useState<number | null>(null);
 
   useEffect(() => {
-    // Busca inicial
     buscarClientes();
     buscarProdutos();
   }, [buscarClientes, buscarProdutos]);
@@ -101,30 +101,49 @@ export default function NovoOrcamentoPage() {
   const handleShareWhatsApp = () => {
       if(!clienteSelecionado) return;
       const mensagem = `Olá, ${clienteSelecionado.nome}! Segue o orçamento solicitado. Estou à disposição para qualquer dúvida.`;
-      const fone = clienteSelecionado.telefone.replace(/\D/g, ''); // Remove não-números
+      const fone = clienteSelecionado.telefone.replace(/\D/g, '');
       const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
       window.open(whatsappUrl, '_blank');
   };
 
-  if(orcamentoFinalizado) {
-      return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
-              <Card className="max-w-md text-center">
-                  <CardHeader>
-                      <CardTitle className="text-2xl text-green-600">Orçamento #{orcamentoFinalizado} Gerado com Sucesso!</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      <p className="mb-6">O PDF do orçamento foi baixado. Você agora pode compartilhá-lo com o cliente.</p>
-                      <Button onClick={handleShareWhatsApp} className="w-full gap-2 mb-4" size="lg" style={{backgroundColor: '#25D366', color: 'white'}}>
-                          <Share2/> Compartilhar no WhatsApp
-                      </Button>
-                      <Button onClick={() => router.push('/dashboard/vendedor')} className="w-full gap-2" variant="outline">
-                          <ArrowLeft/> Voltar para o Histórico
-                      </Button>
-                  </CardContent>
-              </Card>
-          </div>
-      )
+  const handleCriarNovoCliente = async () => {
+    if (!novoClienteNome || !novoClienteTelefone) {
+        toast.error("Nome e telefone são obrigatórios.");
+        return;
+    }
+    const novoCliente: ClienteV2 | null = await criarClienteRapido(novoClienteNome, novoClienteTelefone);
+    if (novoCliente) {
+        const clienteFormatado: Cliente = {
+            id: novoCliente.id,
+            nome: novoCliente.nome,
+            telefone: novoCliente.telefone,
+            bairro: novoCliente.bairro || null,
+            cidade: novoCliente.cidade || null,
+            ultima_compra: null
+        };
+        setClienteSelecionado(clienteFormatado);
+        setIsClientModalOpen(false);
+        setNovoClienteNome('');
+        setNovoClienteTelefone('');
+        buscarClientes();
+    }
+  };
+
+  if (orcamentoFinalizado) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
+        <Card className="max-w-md text-center">
+          <CardHeader>
+            <CardTitle className="text-2xl text-green-600">Orçamento #{orcamentoFinalizado} Gerado com Sucesso!</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-6">O PDF do orçamento foi baixado. Você agora pode compartilhá-lo com o cliente.</p>
+            <Button onClick={handleShareWhatsApp} className="w-full gap-2 mb-4" size="lg" style={{backgroundColor: '#25D366', color: 'white'}}><Share2/> Compartilhar no WhatsApp</Button>
+            <Button onClick={() => router.push('/dashboard/vendedor')} className="w-full gap-2" variant="outline"><ArrowLeft/> Voltar para o Histórico</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -136,19 +155,23 @@ export default function NovoOrcamentoPage() {
           <h1 className="text-xl font-bold">Novo Orçamento</h1>
       </Header>
       <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna Esquerda: Clientes e Produtos */}
           <div className="lg:col-span-2 space-y-6">
               <Card>
                   <CardHeader><CardTitle className="flex items-center gap-2"><Users/> Selecionar Cliente</CardTitle></CardHeader>
                   <CardContent>
                     {clienteSelecionado ? (
-                        <div className="p-4 bg-blue-100 rounded-lg">
+                        <div className="p-4 bg-blue-100 rounded-lg flex justify-between items-center">
                             <p>Cliente: <span className="font-bold">{clienteSelecionado.nome}</span></p>
                             <Button variant="link" size="sm" onClick={() => setClienteSelecionado(null)}>Trocar cliente</Button>
                         </div>
                     ) : (
                         <>
-                            <Input placeholder="Buscar cliente por nome..." value={termoBuscaCliente} onChange={(e) => setTermoBuscaCliente(e.target.value)} />
+                            <div className="flex gap-2">
+                                <Input placeholder="Buscar cliente por nome..." value={termoBuscaCliente} onChange={(e) => setTermoBuscaCliente(e.target.value)} />
+                                <Button onClick={() => setIsClientModalOpen(true)} className="gap-2 flex-shrink-0">
+                                    <UserPlus size={16} /> Novo Cliente
+                                </Button>
+                            </div>
                             <div className="max-h-48 overflow-y-auto mt-2">
                                 {clientes.filter(c => c.nome.toLowerCase().includes(termoBuscaCliente.toLowerCase())).map(c => (
                                     <div key={c.id} onClick={() => setClienteSelecionado(c)} className="p-2 hover:bg-gray-100 cursor-pointer rounded">{c.nome}</div>
@@ -178,7 +201,6 @@ export default function NovoOrcamentoPage() {
               </Card>
           </div>
           
-          {/* Coluna Direita: Resumo do Orçamento */}
           <div className="lg:col-span-1 space-y-6">
               <Card>
                   <CardHeader><CardTitle className="flex items-center gap-2"><ShoppingCart/> Itens do Pedido</CardTitle></CardHeader>
@@ -200,7 +222,7 @@ export default function NovoOrcamentoPage() {
                                 </div>
                                 <div>
                                     <label className="text-xs">Preço Unit. (R$)</label>
-                                    <Input type="number" value={item.preco_unitario_editavel} onChange={(e) => atualizarItemCarrinho(item.produto_id, 'preco', parseFloat(e.target.value))}/>
+                                    <Input type="number" step="0.01" value={item.preco_unitario_editavel} onChange={(e) => atualizarItemCarrinho(item.produto_id, 'preco', parseFloat(e.target.value))}/>
                                 </div>
                             </div>
                         </div>
@@ -231,6 +253,32 @@ export default function NovoOrcamentoPage() {
               </Card>
           </div>
       </main>
+
+      {isClientModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><UserPlus /> Cadastrar Novo Cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <label className="text-sm font-medium">Nome do Cliente</label>
+                        <Input placeholder="Nome completo" value={novoClienteNome} onChange={(e) => setNovoClienteNome(e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">Telefone (WhatsApp)</label>
+                        <Input placeholder="Ex: 88912345678" value={novoClienteTelefone} onChange={(e) => setNovoClienteTelefone(e.target.value)} />
+                    </div>
+                </CardContent>
+                <div className="flex justify-end gap-4 p-6 pt-0">
+                    <Button variant="ghost" onClick={() => setIsClientModalOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleCriarNovoCliente} disabled={vendasLoading}>
+                        {vendasLoading ? 'Salvando...' : 'Salvar Cliente'}
+                    </Button>
+                </div>
+            </Card>
+        </div>
+      )}
     </>
   );
 }
