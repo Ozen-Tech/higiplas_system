@@ -1,261 +1,139 @@
-// /src/app/dashboard/vendedor/page.tsx - VERSÃO CORRIGIDA
+// /src/app/dashboard/vendedor/page.tsx - CORRIGIDO
 
 'use client';
 
-import { useEffect, useState } from 'react';
-// CORRIGIDO: 'Dashboard' foi removido pois não era usado no componente.
-import { Cliente, Produto, ItemCarrinho } from '@/types/vendas'; 
-import { useVendas } from '@/hooks/useVendas';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+// CORREÇÃO: Trocamos 'ListBulletIcon' pelo ícone correto 'List'
+import { PlusCircle, List } from 'lucide-react';
 
-// Componentes da UI (simplificados para o exemplo)
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Header } from '@/components/dashboard/Header';
+import { useOrcamentos } from '@/hooks/useOrcamentos';
+import { Orcamento } from '@/types/orcamentos';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  DollarSign, ShoppingCart, Users, Target, Search, Package, PlusCircle, XCircle 
-} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// CORRIGIDO: Definida uma interface para as props do InfoCard para evitar o erro de `any`
-interface InfoCardProps {
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  title: string;
-  value: string | number;
-  color: string;
-}
+// Mapeamento de status para cores do Badge
+const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  ENVIADO: 'secondary', // Amarelo/Pendente
+  APROVADO: 'default',   // Verde/Sucesso
+  REJEITADO: 'destructive',
+  RASCUNHO: 'outline',
+};
 
-export default function VendasMobilePage() {
-  // 1. Usando o hook correto com toda a lógica pronta
-  const { 
-    dashboard, 
-    clientes, 
-    produtos, 
-    loading, 
-    error, // A variável 'error' agora será usada
-    carregarDashboard, 
-    buscarClientes, 
-    buscarProdutos, 
-    registrarVenda,
-    // CORRIGIDO: 'criarClienteRapido' removido pois não estava sendo usado na interface.
-  } = useVendas();
+export default function VendedorHubPage() {
+  const { orcamentos, loading, error, listarOrcamentosVendedor } = useOrcamentos();
+  const [activeTab, setActiveTab] = useState('historico');
 
-  // 2. Estados para controlar a interface
-  const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
-  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
-  const [termoBuscaCliente, setTermoBuscaCliente] = useState('');
-  const [termoBuscaProduto, setTermoBuscaProduto] = useState('');
-  
-  // Carrega os dados iniciais quando a página abre
   useEffect(() => {
-    carregarDashboard();
-    buscarProdutos();
-    buscarClientes();
-    // CORRIGIDO: Adicionadas as dependências que o React solicitou
-  }, [carregarDashboard, buscarProdutos, buscarClientes]);
+    // Busca os orçamentos quando o componente é montado
+    listarOrcamentosVendedor();
+  }, [listarOrcamentosVendedor]);
 
-  // 3. Funções para interagir com o carrinho
-  const adicionarAoCarrinho = (produto: Produto) => {
-    if (carrinho.find(item => item.id === produto.id)) {
-      toast.error(`${produto.nome} já está no carrinho.`);
-      return;
-    }
-    setCarrinho([...carrinho, { ...produto, id: produto.id, preco: produto.preco, quantidade: 1 }]);
-  };
-
-  const atualizarQuantidadeCarrinho = (produtoId: number, quantidade: number) => {
-    setCarrinho(carrinho.map(item => 
-      item.id === produtoId ? { ...item, quantidade: Math.max(0, quantidade) } : item
-    ));
-  };
-
-  const removerDoCarrinho = (produtoId: number) => {
-    setCarrinho(carrinho.filter(item => item.id !== produtoId));
+  // Função para calcular o total de um orçamento
+  const calcularTotal = (orcamento: Orcamento) => {
+    return orcamento.itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario_congelado), 0);
   };
   
-  const totalCarrinho = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
-
-  // 4. Função para finalizar a venda
-  const handleFinalizarVenda = async () => {
-    if (!clienteSelecionado) {
-      toast.error('Selecione um cliente antes de finalizar a venda.');
-      return;
-    }
-    if (carrinho.length === 0 || carrinho.every(item => item.quantidade === 0)) {
-        toast.error('Adicione pelo menos um produto ao carrinho.');
-        return;
-    }
-
-    const vendaPayload = {
-      cliente_id: clienteSelecionado.id,
-      itens: carrinho
-        .filter(item => item.quantidade > 0)
-        .map(item => ({ produto_id: item.id, quantidade: item.quantidade })),
-    };
-
-    try {
-      await registrarVenda(vendaPayload);
-      // Limpa tudo após o sucesso
-      setCarrinho([]);
-      setClienteSelecionado(null);
-      setTermoBuscaCliente('');
-      // Recarrega os produtos para atualizar o estoque
-      buscarProdutos();
-    } catch (e) {
-      // O hook `useVendas` já mostra o toast de erro.
-      console.error("Falha ao registrar venda:", e);
-    }
+  // Função para baixar o PDF
+  const handleDownloadPDF = (orcamentoId: number) => {
+      const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}/orcamentos/${orcamentoId}/pdf/`;
+      window.open(pdfUrl, '_blank');
   };
 
-  // Renderização da Página
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Área do Vendedor</h1>
+    <>
+      <Header>
+        <h1 className="text-xl font-bold">Portal do Vendedor</h1>
+      </Header>
+      <main className="flex-1 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Abas de Navegação */}
+          <div className="mb-6 flex border-b">
+            <button 
+              onClick={() => setActiveTab('novo')}
+              className={`flex items-center gap-2 px-4 py-3 font-semibold ${activeTab === 'novo' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+            >
+              <PlusCircle size={18} /> Novo Pedido
+            </button>
+            <button 
+              onClick={() => setActiveTab('historico')}
+              className={`flex items-center gap-2 px-4 py-3 font-semibold ${activeTab === 'historico' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+            >
+              {/* CORREÇÃO: Ícone substituído */}
+              <List size={18} /> Histórico de Pedidos
+            </button>
+          </div>
 
-      {/* ADICIONADO: Exibe a mensagem de erro, se houver */}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">Ocorreu um erro: </strong>
-            <span className="block sm:inline">{error}</span>
-        </div>
-      )}
-
-      {/* Dashboard Resumido */}
-      {dashboard && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <InfoCard icon={DollarSign} title="Vendas Hoje" value={`R$ ${dashboard.total_vendido_hoje.toFixed(2)}`} color="green" />
-          <InfoCard icon={ShoppingCart} title="Pedidos Hoje" value={dashboard.quantidade_pedidos_hoje} color="blue" />
-          <InfoCard icon={Users} title="Clientes Atendidos" value={dashboard.clientes_visitados_hoje} color="purple" />
-          <InfoCard icon={Target} title="Meta do Dia" value={`${dashboard.progresso_meta.toFixed(1)}%`} color="yellow" />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Coluna da Esquerda: Clientes e Produtos */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Card de Clientes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Users /> Clientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mb-4">
-                <Input placeholder="Buscar cliente por nome ou telefone..." value={termoBuscaCliente} onChange={(e) => setTermoBuscaCliente(e.target.value)} />
-                <Button onClick={() => buscarClientes(termoBuscaCliente)}><Search className="w-4 h-4" /></Button>
-              </div>
-              {clienteSelecionado && (
-                  <div className="bg-blue-100 border border-blue-300 text-blue-800 p-3 rounded-lg mb-4">
-                      <strong>Cliente Selecionado:</strong> {clienteSelecionado.nome}
-                  </div>
-              )}
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {clientes.map(cliente => (
-                  <div key={cliente.id} onClick={() => setClienteSelecionado(cliente)} 
-                       className={`p-3 rounded-lg cursor-pointer ${clienteSelecionado?.id === cliente.id ? 'bg-blue-200' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                    <p className="font-semibold">{cliente.nome}</p>
-                    <p className="text-sm text-gray-600">{cliente.telefone}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Card de Produtos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Package /> Produtos Disponíveis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mb-4">
-                  <Input placeholder="Buscar produto por nome ou código..." value={termoBuscaProduto} onChange={e => setTermoBuscaProduto(e.target.value)} />
-                  <Button onClick={() => buscarProdutos(termoBuscaProduto)}><Search className="w-4 h-4" /></Button>
-              </div>
-              <div className="max-h-96 overflow-y-auto space-y-2">
-                {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase()) || p.codigo.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(produto => (
-                    <div key={produto.id} className="flex justify-between items-center p-3 bg-gray-100 rounded-lg">
-                        <div>
-                            <p className="font-semibold">{produto.nome}</p>
-                            <p className="text-sm text-gray-600">Estoque: {produto.estoque_disponivel} | R$ {produto.preco.toFixed(2)}</p>
-                        </div>
-                        <Button size="sm" onClick={() => adicionarAoCarrinho(produto)}><PlusCircle className="w-4 h-4 mr-2" /> Adicionar</Button>
-                    </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Coluna da Direita: Carrinho */}
-        <div className="lg:col-span-1">
+          {/* Conteúdo das Abas */}
+          {activeTab === 'novo' && (
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><ShoppingCart /> Carrinho de Compras</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {carrinho.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">O carrinho está vazio.</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {carrinho.map(item => (
-                                <div key={item.id} className="flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <p className="font-semibold">{item.nome}</p>
-                                        <p className="text-sm">R$ {item.preco.toFixed(2)}</p>
-                                    </div>
-                                    <Input 
-                                        type="number" 
-                                        value={item.quantidade} 
-                                        onChange={(e) => atualizarQuantidadeCarrinho(item.id, parseInt(e.target.value))}
-                                        className="w-20 text-center"
-                                        min="0"
-                                        max={item.estoque_disponivel}
-                                    />
-                                    <Button size="icon" variant="ghost" onClick={() => removerDoCarrinho(item.id)}>
-                                        <XCircle className="w-5 h-5 text-red-500" />
-                                    </Button>
-                                </div>
-                            ))}
-                            <div className="border-t pt-4 mt-4">
-                                <p className="text-xl font-bold text-right">
-                                    Total: R$ {totalCarrinho.toFixed(2)}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                    <Button 
-                      className="w-full mt-6" 
-                      onClick={handleFinalizarVenda} 
-                      disabled={loading || !clienteSelecionado || carrinho.length === 0}
-                    >
-                      {loading ? 'Finalizando...' : 'Finalizar Venda'}
-                    </Button>
-                </CardContent>
+              <CardHeader>
+                <CardTitle>Iniciar um Novo Pedido</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center py-12">
+                <p className="text-gray-600 mb-4">Clique no botão abaixo para criar um novo orçamento para um cliente.</p>
+                <Link href="/dashboard/vendedor/novo">
+                  <Button size="lg" className="gap-2">
+                    <PlusCircle /> Criar Novo Orçamento
+                  </Button>
+                </Link>
+              </CardContent>
             </Card>
+          )}
+
+          {activeTab === 'historico' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Seus Orçamentos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading && <p>Carregando histórico...</p>}
+                {error && <p className="text-red-500">{error}</p>}
+                {!loading && !error && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>#ID</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Valor Total</TableHead>
+                        <TableHead className="text-center">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orcamentos.map(orc => (
+                        <TableRow key={orc.id}>
+                          <TableCell className="font-mono">#{orc.id}</TableCell>
+                          <TableCell className="font-medium">{orc.cliente.razao_social}</TableCell>
+                          <TableCell>{new Date(orc.data_criacao).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>
+                            <Badge variant={statusColors[orc.status] || 'outline'}>{orc.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            R$ {calcularTotal(orc).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(orc.id)}>
+                              Baixar PDF
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                {orcamentos.length === 0 && !loading && (
+                    <p className="text-center py-8 text-gray-500">Nenhum orçamento encontrado.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }
-
-// Componente auxiliar para os cards do dashboard
-// CORRIGIDO: Props agora usam a interface InfoCardProps
-const InfoCard = ({ icon: Icon, title, value, color }: InfoCardProps) => {
-    const colors: { [key: string]: string } = {
-      green: 'text-green-600',
-      blue: 'text-blue-600',
-      purple: 'text-purple-600',
-      yellow: 'text-yellow-600',
-    };
-  
-    return (
-      <Card>
-        <CardContent className="p-4 flex items-center">
-          <Icon className={`w-8 h-8 mr-4 ${colors[color]}`} />
-          <div>
-            <p className="text-sm text-gray-500">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
