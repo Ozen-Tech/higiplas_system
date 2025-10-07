@@ -1,4 +1,4 @@
-# /backend/app/crud/orcamento.py - CORREÇÃO FINAL
+# /backend/app/crud/orcamento.py - VERSÃO FINAL COM PROTEÇÃO
 
 from sqlalchemy.orm import Session, joinedload
 from typing import List
@@ -33,14 +33,19 @@ def create_orcamento(db: Session, orcamento_in: schemas_orcamento.OrcamentoCreat
 
 def get_orcamentos_by_vendedor(db: Session, vendedor_id: int) -> List[models.Orcamento]:
     """
-    Lista todos os orçamentos criados por um vendedor específico, carregando
-    TODOS os dados relacionados para evitar erros de validação.
+    Lista todos os orçamentos criados por um vendedor específico,
+    carregando os dados relacionados e IGNORANDO registros órfãos.
     """
     return db.query(models.Orcamento).options(
-        # Carrega os dados do cliente relacionado
         joinedload(models.Orcamento.cliente),
-        # CORREÇÃO: Adiciona o carregamento dos dados do usuário (vendedor)
         joinedload(models.Orcamento.usuario),
-        # Carrega os itens e, para cada item, carrega o produto
         joinedload(models.Orcamento.itens).joinedload(models.OrcamentoItem.produto)
-    ).filter(models.Orcamento.usuario_id == vendedor_id).order_by(models.Orcamento.data_criacao.desc()).all()
+    ).filter(
+        models.Orcamento.usuario_id == vendedor_id,
+        # ===== CORREÇÃO FINAL =====
+        # Adiciona um filtro para garantir que o orçamento tenha um cliente.
+        # Isso previne o erro 500 se houver dados inválidos no banco.
+        models.Orcamento.cliente_id.isnot(None)
+    ).order_by(
+        models.Orcamento.data_criacao.desc()
+    ).all()
