@@ -1,4 +1,4 @@
-// /src/app/dashboard/vendedor/novo/page.tsx - VERSÃO ÚNICA E CORRETA
+// /src/app/dashboard/vendedor/novo/page.tsx - CORREÇÃO DE DOWNLOAD
 
 'use client';
 
@@ -7,10 +7,11 @@ import { useRouter } from 'next/navigation';
 import { useVendas } from '@/hooks/useVendas';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
 import { Cliente, Produto } from '@/types/vendas';
-import { ClienteV2 } from '@/types'; // Importando o tipo ClienteV2 para o cast
-import { ItemCarrinhoOrcamento, OrcamentoCreatePayload } from '@/types/orcamentos';
-import toast from 'react-hot-toast';
+import { ClienteV2 } from '@/types';
+import toast from 'react-hot-toast'; 
+import { apiService } from '@/services/apiService'; // Importa o apiService
 
+import { ItemCarrinhoOrcamento, OrcamentoCreatePayload } from '@/types/orcamentos';
 import { Header } from '@/components/dashboard/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ export default function NovoOrcamentoPage() {
   const { clientes, produtos, buscarClientes, buscarProdutos, criarClienteRapido, loading: vendasLoading } = useVendas();
   const { criarOrcamento, loading: orcamentoLoading } = useOrcamentos();
 
-  // Estados do formulário e UI
+  // Estados
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [carrinho, setCarrinho] = useState<ItemCarrinhoOrcamento[]>([]);
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>('À vista');
@@ -90,11 +91,46 @@ export default function NovoOrcamentoPage() {
     };
     
     const novoOrcamento = await criarOrcamento(payload);
+
     if (novoOrcamento) {
         setOrcamentoFinalizado(novoOrcamento.id);
-        const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}/orcamentos/${novoOrcamento.id}/pdf/`;
-        window.open(pdfUrl, '_blank');
-        toast.success("PDF gerado! Compartilhe com o cliente.");
+        toast.success("Orçamento salvo! Gerando PDF...");
+
+        try {
+            // 1. Faz a requisição autenticada usando a nova função getBlob
+            const response = await apiService.getBlob(`/orcamentos/${novoOrcamento.id}/pdf/`);
+            const blob = await response.blob();
+            
+            // 2. Extrai o nome do arquivo do cabeçalho
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = `orcamento_${novoOrcamento.id}.pdf`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                if (filenameMatch && filenameMatch.length > 1) {
+                    filename = filenameMatch[1];
+                }
+            }
+
+            // 3. Cria uma URL temporária para o arquivo
+            const url = window.URL.createObjectURL(blob);
+            
+            // 4. Cria um link invisível e simula o clique para baixar
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+
+            // 5. Limpa a URL e o link
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            toast.success("PDF gerado! Compartilhe com o cliente.");
+
+        } catch (downloadError) {
+            console.error("Erro ao baixar o PDF:", downloadError);
+            toast.error("Orçamento salvo, mas falha ao gerar o PDF. Baixe-o na tela de Histórico.");
+        }
     }
   };
 
@@ -181,7 +217,6 @@ export default function NovoOrcamentoPage() {
                     )}
                   </CardContent>
               </Card>
-
               <Card>
                   <CardHeader><CardTitle className="flex items-center gap-2"><Package/> Adicionar Produtos</CardTitle></CardHeader>
                   <CardContent>
@@ -253,7 +288,6 @@ export default function NovoOrcamentoPage() {
               </Card>
           </div>
       </main>
-
       {isClientModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
             <Card className="w-full max-w-md">
