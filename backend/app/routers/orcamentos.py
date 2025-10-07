@@ -1,4 +1,4 @@
-# /backend/app/routers/orcamentos.py - CORREÇÃO FINAL
+# /backend/app/routers/orcamentos.py - CORREÇÃO DE RESPOSTA E PDF
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -18,16 +18,27 @@ router = APIRouter(
     tags=["Orçamentos"]
 )
 
-# Rota para criar (sem alterações)
 @router.post("/", response_model=schemas_orcamento.Orcamento, summary="Cria um novo orçamento")
 def criar_novo_orcamento(
     orcamento_in: schemas_orcamento.OrcamentoCreate,
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    return crud_orcamento.create_orcamento(db=db, orcamento_in=orcamento_in, vendedor_id=current_user.id)
+    # 1. Cria o orçamento
+    db_orcamento = crud_orcamento.create_orcamento(db=db, orcamento_in=orcamento_in, vendedor_id=current_user.id)
+    
+    # ===== CORREÇÃO IMPORTANTE =====
+    # 2. Busca novamente o orçamento recém-criado, mas agora com todos os dados
+    #    necessários (cliente, usuario, itens) para que a resposta seja validada com sucesso.
+    #    Isso garante que a resposta do POST seja igual à resposta do GET /me/.
+    orcamento_completo = db.query(models.Orcamento).options(
+        joinedload(models.Orcamento.cliente),
+        joinedload(models.Orcamento.usuario),
+        joinedload(models.Orcamento.itens).joinedload(models.OrcamentoItem.produto)
+    ).filter(models.Orcamento.id == db_orcamento.id).first()
 
-# Rota para histórico (sem alterações)
+    return orcamento_completo
+
 @router.get("/me/", response_model=List[schemas_orcamento.Orcamento], summary="Lista os orçamentos do vendedor logado")
 def listar_meus_orcamentos(
     db: Session = Depends(get_db),
@@ -35,24 +46,21 @@ def listar_meus_orcamentos(
 ):
     return crud_orcamento.get_orcamentos_by_vendedor(db=db, vendedor_id=current_user.id)
 
-# Rota de PDF
 @router.get("/{orcamento_id}/pdf/", summary="Gera um PDF para um orçamento específico")
 def gerar_orcamento_pdf(
     orcamento_id: int,
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    # CORREÇÃO: Adicionado o joinedload para o 'usuario' também aqui
     orcamento = db.query(models.Orcamento).options(
         joinedload(models.Orcamento.cliente),
-        joinedload(models.Orcamento.usuario), # <<< LINHA ADICIONADA
+        joinedload(models.Orcamento.usuario),
         joinedload(models.Orcamento.itens).joinedload(models.OrcamentoItem.produto)
     ).filter(models.Orcamento.id == orcamento_id).first()
 
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
 
-    # ... Lógica de criação do PDF (sem alterações)
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
@@ -76,7 +84,7 @@ def gerar_orcamento_pdf(
     for item in orcamento.itens:
         subtotal = item.quantidade * item.preco_unitario_congelado
         total_orcamento += subtotal
-        pdf.cell(95, 7, item.produto.nome, 1)
+        pdf.cell(95, 7, item.produto.nome.encode('latin-1', 'replace').decode('latin-1'), 1) # Tratamento de caracteres
         pdf.cell(20, 7, str(item.quantidade), 1, 0, 'C')
         pdf.cell(35, 7, f'R$ {item.preco_unitario_congelado:.2f}', 1, 0, 'R')
         pdf.cell(35, 7, f'R$ {subtotal:.2f}', 1, 1, 'R')
@@ -84,7 +92,11 @@ def gerar_orcamento_pdf(
     pdf.cell(150, 10, 'Valor Total do Orçamento:', 0, 0, 'R')
     pdf.set_fill_color(230, 230, 230)
     pdf.cell(40, 10, f'R$ {total_orcamento:.2f}', 1, 1, 'C', 1)
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
+
+    # ===== CORREÇÃO IMPORTANTE DO PDF =====
+    # A função .output('S') já retorna os bytes. Não precisa de .encode()
+    pdf_bytes = pdf.output(dest='S')
+    
     return StreamingResponse(
         BytesIO(pdf_bytes),
         media_type="application/pdf",
