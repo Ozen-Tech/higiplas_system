@@ -1,8 +1,4 @@
-# backend/app/routers/vendas.py
-"""
-Router para o módulo de vendas mobile
-Focado em operações rápidas para vendedores de rua
-"""
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -22,7 +18,8 @@ router = APIRouter(
 
 # ============= DASHBOARD DO VENDEDOR =============
 
-@router.get("/dashboard", response_model=schemas.VendedorDashboard)
+@router.get("/dashboard", response_model=schemas.VendedorDashboard, include_in_schema=False)
+@router.get("/dashboard/", response_model=schemas.VendedorDashboard) # Rota com a barra
 def get_vendedor_dashboard(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
@@ -38,6 +35,7 @@ def get_vendedor_dashboard(
     ).all()
     
     total_vendido = 0
+    # Contabiliza pedidos únicos baseados na observação da movimentação
     quantidade_pedidos = len(set([v.observacao for v in vendas_hoje if v.observacao]))
     
     for venda in vendas_hoje:
@@ -45,12 +43,13 @@ def get_vendedor_dashboard(
         if produto:
             total_vendido += venda.quantidade * produto.preco_venda
     
+    # Conta clientes únicos que tiveram alguma atividade hoje pelo vendedor logado
     clientes_hoje = db.query(models.Cliente).filter(
         models.Cliente.vendedor_id == current_user.id,
         func.date(models.Cliente.atualizado_em) == hoje
     ).count() if hasattr(models.Cliente, 'atualizado_em') else 0
     
-    meta_dia = 2000.00  # Ajustável
+    meta_dia = 2000.00  # Valor da meta pode vir do banco de dados no futuro
     
     return schemas.VendedorDashboard(
         total_vendido_hoje=total_vendido,
@@ -62,7 +61,8 @@ def get_vendedor_dashboard(
 
 # ============= BUSCA RÁPIDA DE CLIENTES =============
 
-@router.get("/clientes/busca-rapida", response_model=List[schemas.ClienteRapido])
+@router.get("/clientes/busca-rapida", response_model=List[schemas.ClienteRapido], include_in_schema=False)
+@router.get("/clientes/busca-rapida/", response_model=List[schemas.ClienteRapido]) # Rota com a barra
 def busca_rapida_clientes(
     termo: Optional[str] = None,
     bairro: Optional[str] = None,
@@ -98,6 +98,7 @@ def busca_rapida_clientes(
         
         ultima_venda = db.query(models.MovimentacaoEstoque).join(models.Produto).filter(
             models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
+            # Assumindo que a observação contém o nome do cliente
             models.MovimentacaoEstoque.observacao.ilike(f"%{cliente.razao_social}%")
         ).order_by(desc(models.MovimentacaoEstoque.data_movimentacao)).first()
         
@@ -114,7 +115,8 @@ def busca_rapida_clientes(
 
 # ============= PRODUTOS DISPONÍVEIS =============
 
-@router.get("/produtos/disponiveis", response_model=List[schemas.ProdutoVenda])
+@router.get("/produtos/disponiveis", response_model=List[schemas.ProdutoVenda], include_in_schema=False)
+@router.get("/produtos/disponiveis/", response_model=List[schemas.ProdutoVenda]) # Rota com a barra
 def listar_produtos_venda(
     busca: Optional[str] = None,
     categoria: Optional[str] = None,
@@ -152,13 +154,16 @@ def listar_produtos_venda(
 
 # ============= REGISTRAR VENDA =============
 
-@router.post("/registrar", response_model=schemas.VendaResponse)
+@router.post("/registrar", response_model=schemas.VendaResponse, include_in_schema=False)
+@router.post("/registrar/", response_model=schemas.VendaResponse) # Rota com a barra
 def registrar_venda(
     venda: schemas.VendaCreate,
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
     try:
+        db.begin() # Inicia uma transação para garantir atomicidade
+
         cliente = db.query(models.Cliente).filter(
             models.Cliente.id == venda.cliente_id,
             models.Cliente.empresa_id == current_user.empresa_id
@@ -171,7 +176,7 @@ def registrar_venda(
         total_venda = 0
         
         for item in venda.itens:
-            produto = db.query(models.Produto).filter(
+            produto = db.query(models.Produto).with_for_update().filter( # Adiciona lock para evitar race condition
                 models.Produto.id == item.produto_id,
                 models.Produto.empresa_id == current_user.empresa_id
             ).first()
@@ -209,8 +214,10 @@ def registrar_venda(
                 'valor_total': produto.preco_venda * quantidade
             })
         
-        cliente.atualizado_em = datetime.now()
-        db.commit()
+        if hasattr(cliente, 'atualizado_em'):
+            cliente.atualizado_em = datetime.now()
+
+        db.commit() # Comita todas as alterações da transação
         
         return schemas.VendaResponse(
             sucesso=True,
@@ -222,9 +229,9 @@ def registrar_venda(
             detalhes=movimentacoes_criadas
         )
         
-    except HTTPException:
-        db.rollback()
-        raise
+    except HTTPException as e:
+        db.rollback() # Reverte a transação em caso de erro conhecido
+        raise e
     except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        db.rollback() # Reverte a transação em caso de erro inesperado
+        raise HTTPException(status_code=500, detail=f"Erro interno ao registrar venda: {str(e)}")
