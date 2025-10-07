@@ -1,11 +1,8 @@
-// /src/app/dashboard/vendedor/page.tsx - CORRIGIDO
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-// CORREÇÃO: Trocamos 'ListBulletIcon' pelo ícone correto 'List'
-import { PlusCircle, List } from 'lucide-react';
+import { PlusCircle, List, Download } from 'lucide-react';
 
 import { Header } from '@/components/dashboard/Header';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
@@ -14,33 +11,71 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { apiService } from '@/services/apiService';
+import toast from 'react-hot-toast';
 
 // Mapeamento de status para cores do Badge
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  ENVIADO: 'secondary', // Amarelo/Pendente
-  APROVADO: 'default',   // Verde/Sucesso
+  ENVIADO: 'secondary',
+  APROVADO: 'default',
   REJEITADO: 'destructive',
   RASCUNHO: 'outline',
 };
 
 export default function VendedorHubPage() {
   const { orcamentos, loading, error, listarOrcamentosVendedor } = useOrcamentos();
-  const [activeTab, setActiveTab] = useState('historico');
+  const [activeTab, setActiveTab] = useState<'historico' | 'novo'>('historico');
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
-    // Busca os orçamentos quando o componente é montado
     listarOrcamentosVendedor();
   }, [listarOrcamentosVendedor]);
 
-  // Função para calcular o total de um orçamento
   const calcularTotal = (orcamento: Orcamento) => {
+    if (!orcamento.itens) return 0;
     return orcamento.itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario_congelado), 0);
   };
   
-  // Função para baixar o PDF
-  const handleDownloadPDF = (orcamentoId: number) => {
-      const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}/orcamentos/${orcamentoId}/pdf/`;
-      window.open(pdfUrl, '_blank');
+  const handleDownloadPDF = async (orcamentoId: number) => {
+    setDownloadingId(orcamentoId);
+    toast.loading(`Gerando PDF #${orcamentoId}...`);
+
+    try {
+        const response = await apiService.getBlob(`/orcamentos/${orcamentoId}/pdf/`);
+        const blob = await response.blob();
+
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = `orcamento_${orcamentoId}.pdf`;
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch && filenameMatch.length > 1) {
+                filename = filenameMatch[1];
+            }
+        }
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        
+        toast.dismiss(); // Remove o "loading..."
+        toast.success(`PDF #${orcamentoId} baixado!`);
+        
+        // Limpeza
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            link.remove();
+        }, 100);
+
+    } catch (downloadError) {
+        toast.dismiss();
+        toast.error("Falha ao gerar o PDF. Verifique o console.");
+        console.error("Erro no download:", downloadError);
+    } finally {
+        setDownloadingId(null);
+    }
   };
 
   return (
@@ -62,7 +97,6 @@ export default function VendedorHubPage() {
               onClick={() => setActiveTab('historico')}
               className={`flex items-center gap-2 px-4 py-3 font-semibold ${activeTab === 'historico' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
             >
-              {/* CORREÇÃO: Ícone substituído */}
               <List size={18} /> Histórico de Pedidos
             </button>
           </div>
@@ -90,8 +124,8 @@ export default function VendedorHubPage() {
                 <CardTitle>Seus Orçamentos</CardTitle>
               </CardHeader>
               <CardContent>
-                {loading && <p>Carregando histórico...</p>}
-                {error && <p className="text-red-500">{error}</p>}
+                {loading && <p className="text-center py-8">Carregando histórico...</p>}
+                {error && <p className="text-red-500 text-center py-8">{error}</p>}
                 {!loading && !error && (
                   <Table>
                     <TableHeader>
@@ -117,8 +151,15 @@ export default function VendedorHubPage() {
                             R$ {calcularTotal(orc).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(orc.id)}>
-                              Baixar PDF
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleDownloadPDF(orc.id)}
+                              disabled={downloadingId === orc.id}
+                              className="gap-2"
+                            >
+                              {downloadingId === orc.id ? 'Gerando...' : <Download size={14} />}
+                              {downloadingId !== orc.id && 'Baixar PDF'}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -127,7 +168,11 @@ export default function VendedorHubPage() {
                   </Table>
                 )}
                 {orcamentos.length === 0 && !loading && (
-                    <p className="text-center py-8 text-gray-500">Nenhum orçamento encontrado.</p>
+                    <div className="text-center py-12 text-gray-500">
+                        <List size={48} className="mx-auto mb-4" />
+                        <h3 className="font-semibold text-lg">Nenhum orçamento encontrado.</h3>
+                        <p>Comece a vender na aba "Novo Pedido".</p>
+                    </div>
                 )}
               </CardContent>
             </Card>
