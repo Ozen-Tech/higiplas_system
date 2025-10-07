@@ -3,7 +3,7 @@ fastapi
 uvicorn[standard]
 python-dotenv
 pydantic-settings
-
+fpdf2
 # Banco de Dados e ORM
 SQLAlchemy[asyncio]
 psycopg2-binary
