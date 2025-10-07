@@ -1,12 +1,13 @@
-// /src/components/dashboard/Sidebar.tsx
+// /src/components/dashboard/Sidebar.tsx - VERSÃO CORRIGIDA
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { 
-  CubeIcon, SparklesIcon, ClipboardDocumentListIcon, ShoppingCartIcon, 
-  UserGroupIcon, ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, 
+  CubeIcon, SparklesIcon, ShoppingCartIcon, 
+  // CORRIGIDO: Ícones não utilizados foram removidos da importação.
+  ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, 
   ChevronDownIcon, ChevronRightIcon 
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
@@ -27,9 +28,7 @@ const navigation: NavigationItem[] = [
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
-  { name: 'Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
-  { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
   { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
 ];
@@ -46,6 +45,7 @@ export function Sidebar() {
     );
   };
 
+  // Resto do componente permanece o mesmo...
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
       <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-5 pb-4 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
