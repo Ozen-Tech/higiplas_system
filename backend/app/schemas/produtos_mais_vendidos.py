@@ -17,30 +17,30 @@ class ProdutoMaisVendidoDetalhado(BaseModel):
     categoria: str
     preco_atual: float = Field(..., description="Preço atual do produto")
     estoque_atual: int = Field(..., description="Quantidade atual em estoque")
-    
+
     # Métricas de vendas
     total_quantidade_vendida: float = Field(..., description="Quantidade total vendida no período")
     valor_total_vendido: float = Field(..., description="Valor total vendido no período")
     numero_vendas: int = Field(..., description="Número de transações de venda")
     quantidade_media_por_venda: float = Field(..., description="Quantidade média por transação")
     frequencia_vendas_por_dia: float = Field(..., description="Frequência de vendas por dia")
-    
+
     # Datas importantes
     primeira_venda: datetime = Field(..., description="Data da primeira venda no período")
     ultima_venda: datetime = Field(..., description="Data da última venda no período")
     dias_desde_ultima_venda: int = Field(..., description="Dias desde a última venda")
-    
+
     # Métricas calculadas
     @property
     def ticket_medio(self) -> float:
         """Valor médio por venda"""
         return round(self.valor_total_vendido / max(self.numero_vendas, 1), 2)
-    
+
     @property
     def rotatividade_estoque(self) -> float:
         """Quantas vezes o estoque atual foi vendido no período"""
         return round(self.total_quantidade_vendida / max(self.estoque_atual, 1), 2)
-    
+
     @property
     def status_estoque(self) -> str:
         """Status do estoque baseado na rotatividade"""
@@ -52,7 +52,7 @@ class ProdutoMaisVendidoDetalhado(BaseModel):
             return "MEDIA_ROTACAO"
         else:
             return "BAIXA_ROTACAO"
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class EstatisticasGerais(BaseModel):
@@ -72,7 +72,7 @@ class ProdutosMaisVendidosResponse(BaseModel):
     produtos: List[ProdutoMaisVendidoDetalhado]
     estatisticas: EstatisticasGerais
     filtros_aplicados: Dict[str, Any]
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class TendenciaMensal(BaseModel):
@@ -105,7 +105,7 @@ class FiltrosProdutosMaisVendidos(BaseModel):
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
     limite: int = Field(50, ge=1, le=500, description="Limite de produtos")
-    ordenar_por: str = Field("quantidade", regex="^(quantidade|valor|frequencia)$")
+    ordenar_por: str = Field("quantidade", pattern="^(quantidade|valor|frequencia)$")
     vendedor_id: Optional[int] = None
     categoria: Optional[str] = None
     apenas_com_estoque: bool = Field(False, description="Apenas produtos com estoque > 0")
@@ -126,7 +126,7 @@ class DashboardProdutosMaisVendidos(BaseModel):
     top_5_produtos: List[ProdutoMaisVendidoDetalhado]
     grafico_tendencias: List[TendenciaMensal]
     alerta_estoque_baixo: List[ProdutoMaisVendidoDetalhado]
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 # Schemas para relatórios
@@ -136,14 +136,14 @@ class RelatorioVendasProduto(BaseModel):
     vendas_por_mes: List[TendenciaMensal]
     vendedores_que_venderam: List[ComparativoVendedor]
     clientes_que_compraram: List[Dict[str, Any]]  # Será implementado depois
-    
+
 class ConfiguracaoRelatorio(BaseModel):
     """Configurações para geração de relatórios"""
     incluir_graficos: bool = True
     incluir_detalhes_vendedores: bool = True
     incluir_historico_precos: bool = False
-    formato_saida: str = Field("json", regex="^(json|pdf|excel)$")
-    
+    formato_saida: str = Field("json", pattern="^(json|pdf|excel)$")
+
 # Schemas para cache e performance
 class CacheInfo(BaseModel):
     """Informações sobre cache dos dados"""
