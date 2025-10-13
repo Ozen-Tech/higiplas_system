@@ -114,3 +114,52 @@ async def options_handler(request: Request):
             "Access-Control-Allow-Credentials": "true"
         }
     )
+# Configuração de CORS mais robusta
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:3001", 
+    "http://127.0.0.1:3000",
+    "https://higiplas-system.vercel.app",
+    "https://higiplas-system.onrender.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permitir todas as origens temporariamente para debug
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600  # Cache preflight por 1 hora
+)
+
+# Middleware de hosts confiáveis
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["*"]
+)
+
+# Middleware para logar requisições e adicionar headers CORS manualmente
+@app.middleware("http")
+async def add_cors_and_log(request: Request, call_next):
+    logger.info(f"Requisição: {request.method} {request.url}")
+    logger.info(f"Headers: {dict(request.headers)}")
+    
+    # Processar a requisição
+    try:
+        response = await call_next(request)
+        
+        # Adicionar headers CORS manualmente
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        
+        logger.info(f"Resposta: {response.status_code}")
+        return response
+    except Exception as e:
+        logger.error(f"Erro ao processar requisição: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
