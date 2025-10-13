@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc, and_, extract
 from typing import List, Optional
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from collections import defaultdict
 
 from ..db.connection import get_db
@@ -36,7 +36,7 @@ def get_produtos_mais_vendidos(
     Retorna os produtos mais vendidos baseado no histórico real de movimentações de SAÍDA.
     Calcula métricas avançadas como quantidade total, valor total, frequência de vendas, etc.
     """
-    
+
     # Definir período de análise
     if data_inicio and data_fim:
         inicio = datetime.combine(data_inicio, datetime.min.time())
@@ -44,7 +44,7 @@ def get_produtos_mais_vendidos(
     else:
         fim = datetime.now()
         inicio = fim - timedelta(days=periodo_dias)
-    
+
     # Query base para movimentações de SAÍDA
     query = db.query(
         models.MovimentacaoEstoque.produto_id,
@@ -68,11 +68,11 @@ def get_produtos_mais_vendidos(
             models.Produto.empresa_id == current_user.empresa_id
         )
     )
-    
+
     # Filtro por vendedor se especificado
     if vendedor_id:
         query = query.filter(models.MovimentacaoEstoque.usuario_id == vendedor_id)
-    
+
     # Agrupar por produto
     query = query.group_by(
         models.MovimentacaoEstoque.produto_id,
@@ -82,7 +82,7 @@ def get_produtos_mais_vendidos(
         models.Produto.categoria,
         models.Produto.quantidade_em_estoque
     )
-    
+
     # Ordenação
     if ordenar_por == "quantidade":
         query = query.order_by(desc('total_quantidade'))
@@ -90,24 +90,24 @@ def get_produtos_mais_vendidos(
         query = query.order_by(desc(func.sum(models.MovimentacaoEstoque.quantidade * models.Produto.preco_venda)))
     elif ordenar_por == "frequencia":
         query = query.order_by(desc('numero_vendas'))
-    
+
     # Aplicar limite
     resultados = query.limit(limite).all()
-    
+
     # Processar resultados e calcular métricas adicionais
     produtos_processados = []
     total_geral_quantidade = 0
     total_geral_valor = 0
-    
+
     for resultado in resultados:
         valor_total = float(resultado.total_quantidade * resultado.preco_atual)
         total_geral_quantidade += resultado.total_quantidade
         total_geral_valor += valor_total
-        
+
         # Calcular frequência (vendas por dia)
         dias_periodo = (resultado.ultima_venda - resultado.primeira_venda).days + 1
         frequencia_diaria = resultado.numero_vendas / max(dias_periodo, 1)
-        
+
         produto = schemas.ProdutoMaisVendidoDetalhado(
             produto_id=resultado.produto_id,
             nome=resultado.produto_nome,
@@ -125,7 +125,7 @@ def get_produtos_mais_vendidos(
             dias_desde_ultima_venda=(datetime.now() - resultado.ultima_venda).days
         )
         produtos_processados.append(produto)
-    
+
     # Calcular estatísticas gerais
     estatisticas = schemas.EstatisticasGerais(
         total_produtos_analisados=len(produtos_processados),
@@ -138,7 +138,7 @@ def get_produtos_mais_vendidos(
         produto_mais_vendido=produtos_processados[0].nome if produtos_processados else None,
         categoria_mais_vendida=_calcular_categoria_mais_vendida(produtos_processados)
     )
-    
+
     return schemas.ProdutosMaisVendidosResponse(
         produtos=produtos_processados,
         estatisticas=estatisticas,
@@ -162,10 +162,10 @@ def get_tendencias_vendas(
     """
     Retorna tendências de vendas por mês para análise de sazonalidade
     """
-    
+
     fim = datetime.now()
     inicio = fim - timedelta(days=periodo_meses * 30)
-    
+
     # Query para dados mensais
     query = db.query(
         extract('year', models.MovimentacaoEstoque.data_movimentacao).label('ano'),
@@ -183,14 +183,14 @@ def get_tendencias_vendas(
             models.Produto.empresa_id == current_user.empresa_id
         )
     )
-    
+
     if produto_id:
         query = query.filter(models.MovimentacaoEstoque.produto_id == produto_id)
-    
+
     query = query.group_by('ano', 'mes', models.Produto.nome).order_by('ano', 'mes')
-    
+
     resultados = query.all()
-    
+
     # Processar dados mensais
     tendencias_mensais = []
     for resultado in resultados:
@@ -202,7 +202,7 @@ def get_tendencias_vendas(
             valor_vendido=float(resultado.valor_mensal)
         )
         tendencias_mensais.append(tendencia)
-    
+
     return schemas.TendenciasVendasResponse(
         tendencias=tendencias_mensais,
         periodo_meses=periodo_meses,
@@ -218,10 +218,10 @@ def get_comparativo_vendedores(
     """
     Compara performance de vendedores nos produtos mais vendidos
     """
-    
+
     fim = datetime.now()
     inicio = fim - timedelta(days=periodo_dias)
-    
+
     query = db.query(
         models.Usuario.nome.label('vendedor_nome'),
         models.Usuario.id.label('vendedor_id'),
@@ -243,9 +243,9 @@ def get_comparativo_vendedores(
     ).group_by(
         models.Usuario.nome, models.Usuario.id
     ).order_by(desc('total_valor'))
-    
+
     resultados = query.all()
-    
+
     comparativo = []
     for resultado in resultados:
         vendedor = schemas.ComparativoVendedor(
@@ -258,18 +258,18 @@ def get_comparativo_vendedores(
             ticket_medio=round(float(resultado.total_valor) / max(resultado.numero_vendas, 1), 2)
         )
         comparativo.append(vendedor)
-    
+
     return comparativo
 
 def _calcular_categoria_mais_vendida(produtos: List[schemas.ProdutoMaisVendidoDetalhado]) -> Optional[str]:
     """Calcula qual categoria teve mais vendas em quantidade"""
     if not produtos:
         return None
-    
+
     categorias = defaultdict(float)
     for produto in produtos:
         categorias[produto.categoria] += produto.total_quantidade_vendida
-    
+
     return max(categorias.items(), key=lambda x: x[1])[0] if categorias else None
 @router.get("/", response_model=schemas.ProdutosMaisVendidosResponse)
 def get_produtos_mais_vendidos(
@@ -286,7 +286,7 @@ def get_produtos_mais_vendidos(
     Retorna os produtos mais vendidos baseado no histórico real de movimentações de SAÍDA.
     Calcula métricas avançadas como quantidade total, valor total, frequência de vendas, etc.
     """
-    
+
     try:
         # Definir período de análise
         if data_inicio and data_fim:
@@ -295,7 +295,7 @@ def get_produtos_mais_vendidos(
         else:
             fim = datetime.now()
             inicio = fim - timedelta(days=periodo_dias)
-        
+
         # Query base para movimentações de SAÍDA
         query = db.query(
             models.MovimentacaoEstoque.produto_id,
@@ -319,11 +319,11 @@ def get_produtos_mais_vendidos(
                 models.Produto.empresa_id == current_user.empresa_id
             )
         )
-        
+
         # Filtro por vendedor se especificado
         if vendedor_id:
             query = query.filter(models.MovimentacaoEstoque.usuario_id == vendedor_id)
-        
+
         # Agrupar por produto
         query = query.group_by(
             models.MovimentacaoEstoque.produto_id,
@@ -333,7 +333,7 @@ def get_produtos_mais_vendidos(
             models.Produto.categoria,
             models.Produto.quantidade_em_estoque
         )
-        
+
         # Ordenação
         if ordenar_por == "quantidade":
             query = query.order_by(desc('total_quantidade'))
@@ -341,24 +341,32 @@ def get_produtos_mais_vendidos(
             query = query.order_by(desc(func.sum(models.MovimentacaoEstoque.quantidade * models.Produto.preco_venda)))
         elif ordenar_por == "frequencia":
             query = query.order_by(desc('numero_vendas'))
-        
+
         # Aplicar limite
         resultados = query.limit(limite).all()
-        
+
         # Processar resultados e calcular métricas adicionais
         produtos_processados = []
         total_geral_quantidade = 0
         total_geral_valor = 0
-        
+
+        # Get current time with timezone awareness
+        now = datetime.now(timezone.utc)
+
         for resultado in resultados:
             valor_total = float(resultado.total_quantidade * resultado.preco_atual)
             total_geral_quantidade += resultado.total_quantidade
             total_geral_valor += valor_total
-            
+
             # Calcular frequência (vendas por dia)
             dias_periodo = (resultado.ultima_venda - resultado.primeira_venda).days + 1
             frequencia_diaria = resultado.numero_vendas / max(dias_periodo, 1)
-            
+
+            # Handle timezone-aware datetime subtraction
+            ultima_venda = resultado.ultima_venda
+            if ultima_venda is not None and ultima_venda.tzinfo is None:
+                ultima_venda = ultima_venda.replace(tzinfo=timezone.utc)
+
             produto = schemas.ProdutoMaisVendidoDetalhado(
                 produto_id=resultado.produto_id,
                 nome=resultado.produto_nome,
@@ -373,10 +381,10 @@ def get_produtos_mais_vendidos(
                 frequencia_vendas_por_dia=round(frequencia_diaria, 2),
                 primeira_venda=resultado.primeira_venda,
                 ultima_venda=resultado.ultima_venda,
-                dias_desde_ultima_venda=(datetime.now() - resultado.ultima_venda).days
+                dias_desde_ultima_venda=(now - ultima_venda).days if ultima_venda is not None else None
             )
             produtos_processados.append(produto)
-        
+
         # Calcular estatísticas gerais
         estatisticas = schemas.EstatisticasGerais(
             total_produtos_analisados=len(produtos_processados),
@@ -389,7 +397,7 @@ def get_produtos_mais_vendidos(
             produto_mais_vendido=produtos_processados[0].nome if produtos_processados else None,
             categoria_mais_vendida=_calcular_categoria_mais_vendida(produtos_processados)
         )
-        
+
         return schemas.ProdutosMaisVendidosResponse(
             produtos=produtos_processados,
             estatisticas=estatisticas,
@@ -402,7 +410,7 @@ def get_produtos_mais_vendidos(
                 "vendedor_id": vendedor_id
             }
         )
-    
+
     except Exception as e:
         import traceback
         import logging
