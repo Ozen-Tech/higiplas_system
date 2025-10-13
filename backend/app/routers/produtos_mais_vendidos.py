@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc, and_, extract
 from typing import List, Optional
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from collections import defaultdict
 
 from ..db.connection import get_db
@@ -122,7 +122,7 @@ def get_produtos_mais_vendidos(
             frequencia_vendas_por_dia=round(frequencia_diaria, 2),
             primeira_venda=resultado.primeira_venda,
             ultima_venda=resultado.ultima_venda,
-            dias_desde_ultima_venda=(datetime.now() - resultado.ultima_venda).days
+            dias_desde_ultima_venda=(datetime.now(timezone.utc) - (resultado.ultima_venda if resultado.ultima_venda.tzinfo else resultado.ultima_venda.replace(tzinfo=timezone.utc))).days
         )
         produtos_processados.append(produto)
     
@@ -373,7 +373,7 @@ def get_produtos_mais_vendidos(
                 frequencia_vendas_por_dia=round(frequencia_diaria, 2),
                 primeira_venda=resultado.primeira_venda,
                 ultima_venda=resultado.ultima_venda,
-                dias_desde_ultima_venda=(datetime.now() - resultado.ultima_venda).days
+                dias_desde_ultima_venda=(datetime.now(timezone.utc) - (resultado.ultima_venda if resultado.ultima_venda.tzinfo else resultado.ultima_venda.replace(tzinfo=timezone.utc))).days
             )
             produtos_processados.append(produto)
         
