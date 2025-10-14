@@ -99,14 +99,30 @@ def get_produtos_mais_vendidos(
     total_geral_quantidade = 0
     total_geral_valor = 0
 
+    # Get current time with timezone awareness
+    now = datetime.now(timezone.utc)
+
     for resultado in resultados:
         valor_total = float(resultado.total_quantidade * resultado.preco_atual)
         total_geral_quantidade += resultado.total_quantidade
         total_geral_valor += valor_total
 
-        # Calcular frequência (vendas por dia)
-        dias_periodo = (resultado.ultima_venda - resultado.primeira_venda).days + 1
+        # Preparar datas de primeira/ultima venda de forma segura (evita problemas de timezone)
+        primeira_venda = resultado.primeira_venda
+        ultima_venda_raw = resultado.ultima_venda
+
+        if primeira_venda is not None and ultima_venda_raw is not None:
+            # Use apenas a parte date para evitar mismatches entre aware/naive
+            dias_periodo = (ultima_venda_raw.date() - primeira_venda.date()).days + 1
+        else:
+            dias_periodo = 1
+
         frequencia_diaria = resultado.numero_vendas / max(dias_periodo, 1)
+
+        # Tornar ultima_venda timezone-aware se estiver sem tzinfo
+        ultima_venda = ultima_venda_raw
+        if ultima_venda is not None and ultima_venda.tzinfo is None:
+            ultima_venda = ultima_venda.replace(tzinfo=timezone.utc)
 
         produto = schemas.ProdutoMaisVendidoDetalhado(
             produto_id=resultado.produto_id,
@@ -120,9 +136,9 @@ def get_produtos_mais_vendidos(
             numero_vendas=resultado.numero_vendas,
             quantidade_media_por_venda=round(float(resultado.quantidade_media_por_venda), 2),
             frequencia_vendas_por_dia=round(frequencia_diaria, 2),
-            primeira_venda=resultado.primeira_venda,
-            ultima_venda=resultado.ultima_venda,
-            dias_desde_ultima_venda=(datetime.now() - resultado.ultima_venda).days
+            primeira_venda=primeira_venda,
+            ultima_venda=ultima_venda,
+            dias_desde_ultima_venda=(now - ultima_venda).days if ultima_venda is not None else None
         )
         produtos_processados.append(produto)
 
