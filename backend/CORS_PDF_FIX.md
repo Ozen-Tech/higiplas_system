@@ -1,4 +1,4 @@
-# 🔧 Correção do CORS para Download de PDF
+# 🔧 Correção do CORS e Encoding para Download de PDF
 
 ## 🐛 Problemas Identificados
 
@@ -7,12 +7,12 @@
 Ao tentar baixar o PDF do orçamento, o navegador bloqueava a requisição com os seguintes erros:
 
 ```
-Aviso de requisição de origem cruzada (cross-origin): A diretiva de mesma origem (same origin) 
-em breve não permitirá a leitura do recurso remoto. Motivo: quando o valor de 
+Aviso de requisição de origem cruzada (cross-origin): A diretiva de mesma origem (same origin)
+em breve não permitirá a leitura do recurso remoto. Motivo: quando o valor de
 `Access-Control-Allow-Headers` é `*`, o cabeçalho `Authorization` não é coberto.
 
-Requisição cross-origin bloqueada: A diretiva Same Origin (mesma origem) não permite a leitura 
-do recurso remoto (motivo: falta cabeçalho 'Access-Control-Allow-Origin' no CORS). 
+Requisição cross-origin bloqueada: A diretiva Same Origin (mesma origem) não permite a leitura
+do recurso remoto (motivo: falta cabeçalho 'Access-Control-Allow-Origin' no CORS).
 Código de status: 500.
 ```
 
@@ -27,6 +27,23 @@ File "/code/app/routers/orcamentos.py", line 117, in secao_cliente
 ```
 
 **Causa:** O método `.get('cnpj', 'N/A')` retorna o valor padrão `'N/A'` apenas quando a chave não existe. Se a chave existe mas o valor é `None`, ele retorna `None`, causando o erro ao tentar fazer `.encode()`.
+
+### 3. Erro de Unicode Encoding no PDF
+
+Após corrigir os valores None, um terceiro erro apareceu:
+
+```python
+fpdf.errors.FPDFUnicodeEncodingException: Character "•" at index 0 in text is outside the range
+of characters supported by the font used: "helvetica". Please consider using a Unicode font.
+
+File "/code/app/routers/orcamentos.py", line 250, in secao_observacoes
+    self.multi_cell(0, 5, obs)
+```
+
+**Causa:** A fonte `Arial/Helvetica` usa encoding `latin-1` que não suporta caracteres Unicode como:
+- `•` (bullet point - U+2022)
+- Acentos portugueses: `ç`, `ã`, `õ`, `á`, `é`, `í`, `ó`, `ú`
+- Outros caracteres especiais
 
 ## 🔍 Causa Raiz
 
@@ -106,7 +123,45 @@ self.cell(0, 5, cnpj, 0, 1)
 - `email`: `self.orcamento_data['cliente'].get('email') or 'N/A'`
 - `endereco`: `self.orcamento_data['cliente'].get('endereco') or 'N/A'`
 
-### 3. **Handler OPTIONS Atualizado**
+### 3. **Remoção de Caracteres Unicode no PDF**
+
+**Problema:** A fonte Arial/Helvetica usa encoding `latin-1` que não suporta caracteres Unicode.
+
+**Solução:** Substituir todos os caracteres especiais por equivalentes ASCII.
+
+**Antes:**
+```python
+observacoes = [
+    '• Este orçamento tem validade de 30 dias a partir da data de emissão.',
+    '• Os preços estão sujeitos a alteração sem aviso prévio.',
+    '• O prazo de entrega será informado após confirmação do pedido.',
+    '• Frete não incluso no valor do orçamento.',
+    '• Pagamento conforme condição especificada acima.',
+]
+# ❌ Caracteres • (bullet) e acentos não funcionam com latin-1
+```
+
+**Depois:**
+```python
+observacoes = [
+    '- Este orcamento tem validade de 30 dias a partir da data de emissao.',
+    '- Os precos estao sujeitos a alteracao sem aviso previo.',
+    '- O prazo de entrega sera informado apos confirmacao do pedido.',
+    '- Frete nao incluso no valor do orcamento.',
+    '- Pagamento conforme condicao especificada acima.',
+]
+# ✅ Apenas caracteres ASCII simples
+```
+
+**Caracteres substituídos:**
+- `•` → `-` (bullet point para hífen)
+- `ç` → `c` (cedilha removida)
+- `ã`, `õ` → `a`, `o` (til removido)
+- `á`, `é`, `í`, `ó`, `ú` → `a`, `e`, `i`, `o`, `u` (acentos removidos)
+
+**Alternativa futura:** Usar fonte Unicode como DejaVu que suporta todos os caracteres especiais.
+
+### 4. **Handler OPTIONS Atualizado**
 
 ```python
 @app.options("/{path:path}")
