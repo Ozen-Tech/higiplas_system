@@ -95,44 +95,49 @@ class OrcamentoPDF(FPDF):
         self.set_font('Arial', 'B', 11)
         self.cell(0, 8, 'DADOS DO CLIENTE', 0, 1, 'L', True)
         self.set_text_color(0, 0, 0)
-        
+
         # Box com informações do cliente
         self.set_fill_color(245, 245, 245)  # Cinza claro
         self.rect(10, self.get_y(), 190, 25, 'F')
-        
+
         y_start = self.get_y() + 3
         self.set_y(y_start)
-        
+
         # Coluna esquerda
         self.set_font('Arial', 'B', 9)
         self.set_x(12)
         self.cell(40, 5, 'Razão Social:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(0, 5, self.orcamento_data['cliente']['razao_social'], 0, 1)
-        
+        razao = self.orcamento_data['cliente'].get('razao_social') or 'N/A'
+        self.cell(0, 5, razao, 0, 1)
+
         self.set_font('Arial', 'B', 9)
         self.set_x(12)
         self.cell(40, 5, 'CNPJ/CPF:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(0, 5, self.orcamento_data['cliente'].get('cnpj', 'N/A'), 0, 1)
-        
+        cnpj = self.orcamento_data['cliente'].get('cnpj') or 'N/A'
+        self.cell(0, 5, cnpj, 0, 1)
+
         self.set_font('Arial', 'B', 9)
         self.set_x(12)
         self.cell(40, 5, 'Telefone:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(60, 5, self.orcamento_data['cliente']['telefone'], 0, 0)
-        
+        telefone = self.orcamento_data['cliente'].get('telefone') or 'N/A'
+        self.cell(60, 5, telefone, 0, 0)
+
         self.set_font('Arial', 'B', 9)
         self.cell(30, 5, 'Email:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(0, 5, self.orcamento_data['cliente'].get('email', 'N/A'), 0, 1)
-        
+        email = self.orcamento_data['cliente'].get('email') or 'N/A'
+        self.cell(0, 5, email, 0, 1)
+
         self.set_font('Arial', 'B', 9)
         self.set_x(12)
         self.cell(40, 5, 'Endereço:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.multi_cell(0, 5, self.orcamento_data['cliente'].get('endereco', 'N/A'))
-        
+        endereco = self.orcamento_data['cliente'].get('endereco') or 'N/A'
+        self.multi_cell(0, 5, endereco)
+
         self.ln(3)
     
     def secao_vendedor(self):
