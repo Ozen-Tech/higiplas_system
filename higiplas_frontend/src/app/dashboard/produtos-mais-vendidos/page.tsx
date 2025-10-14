@@ -21,10 +21,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
+  Line
 } from 'recharts';
 
 // Interfaces atualizadas
