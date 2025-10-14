@@ -10,7 +10,9 @@ import {
   UserGroupIcon,
   ExclamationTriangleIcon,
   FunnelIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  TrophyIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import {
   BarChart,
@@ -23,6 +25,27 @@ import {
   LineChart,
   Line
 } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 // Interfaces atualizadas
 interface ProdutoMaisVendido {
@@ -108,9 +131,8 @@ export default function ProdutosMaisVendidos() {
     ordenar_por: 'quantidade',
     vendedor_id: null as number | null
   });
-  
+
   // Estados de visualização
-  const [abaSelecionada, setAbaSelecionada] = useState<'produtos' | 'tendencias' | 'vendedores'>('produtos');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   const fetchDados = useCallback(async () => {
@@ -203,13 +225,13 @@ export default function ProdutosMaisVendidos() {
     return new Intl.NumberFormat('pt-BR').format(value);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" => {
     switch (status) {
-      case 'ALTA_ROTACAO': return 'bg-green-100 text-green-800 border-green-200';
-      case 'MEDIA_ROTACAO': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'BAIXA_ROTACAO': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'PARADO': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'ALTA_ROTACAO': return 'success';
+      case 'MEDIA_ROTACAO': return 'info';
+      case 'BAIXA_ROTACAO': return 'warning';
+      case 'PARADO': return 'destructive';
+      default: return 'secondary';
     }
   };
 
@@ -225,30 +247,37 @@ export default function ProdutosMaisVendidos() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando dados de vendas...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <Card className="w-64">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="text-sm text-muted-foreground">Carregando dados de vendas...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
-          <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro ao carregar dados</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={fetchDados}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <ArrowPathIcon className="h-4 w-4 mr-2" />
-            Tentar novamente
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <Card className="w-96">
+          <CardHeader>
+            <div className="flex items-center justify-center mb-4">
+              <ExclamationTriangleIcon className="h-12 w-12 text-destructive" />
+            </div>
+            <CardTitle className="text-center">Erro ao carregar dados</CardTitle>
+            <CardDescription className="text-center">{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={fetchDados} className="w-full">
+              <ArrowPathIcon className="h-4 w-4 mr-2" />
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -256,508 +285,517 @@ export default function ProdutosMaisVendidos() {
   if (!dados) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <ArrowTrendingUpIcon className="h-8 w-8 text-blue-600 mr-3" />
-                Produtos Mais Vendidos
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Análise baseada em {formatNumber(dados.estatisticas.total_produtos_analisados)} produtos 
-                nos últimos {dados.estatisticas.periodo_analise_dias} dias
-              </p>
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-br from-primary to-blue-600 rounded-xl shadow-lg">
+                <TrophyIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent flex items-center">
+                  Produtos Mais Vendidos
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Análise de {formatNumber(dados.estatisticas.total_produtos_analisados)} produtos
+                  nos últimos {dados.estatisticas.periodo_analise_dias} dias
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <button
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
                 onClick={() => setMostrarFiltros(!mostrarFiltros)}
-                className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <FunnelIcon className="h-4 w-4 mr-2" />
                 Filtros
-              </button>
-              <button
-                onClick={fetchDados}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
+              </Button>
+              <Button onClick={fetchDados}>
                 <ArrowPathIcon className="h-4 w-4 mr-2" />
                 Atualizar
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Filtros Expandidos */}
         {mostrarFiltros && (
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros de Análise</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Período (dias)
-                </label>
-                <select
-                  value={filtros.periodo_dias}
-                  onChange={(e) => setFiltros({...filtros, periodo_dias: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={30}>30 dias</option>
-                  <option value={90}>90 dias</option>
-                  <option value={180}>6 meses</option>
-                  <option value={365}>1 ano</option>
-                  <option value={730}>2 anos</option>
-                </select>
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtros de Análise</CardTitle>
+              <CardDescription>Personalize a análise de produtos mais vendidos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="periodo">Período (dias)</Label>
+                  <Select
+                    value={filtros.periodo_dias.toString()}
+                    onValueChange={(value) => setFiltros({...filtros, periodo_dias: parseInt(value)})}
+                  >
+                    <SelectTrigger id="periodo">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 dias</SelectItem>
+                      <SelectItem value="90">90 dias</SelectItem>
+                      <SelectItem value="180">6 meses</SelectItem>
+                      <SelectItem value="365">1 ano</SelectItem>
+                      <SelectItem value="730">2 anos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ordenar">Ordenar por</Label>
+                  <Select
+                    value={filtros.ordenar_por}
+                    onValueChange={(value) => setFiltros({...filtros, ordenar_por: value})}
+                  >
+                    <SelectTrigger id="ordenar">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quantidade">Quantidade</SelectItem>
+                      <SelectItem value="valor">Valor Total</SelectItem>
+                      <SelectItem value="frequencia">Frequência</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="limite">Limite</Label>
+                  <Select
+                    value={filtros.limite.toString()}
+                    onValueChange={(value) => setFiltros({...filtros, limite: parseInt(value)})}
+                  >
+                    <SelectTrigger id="limite">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 produtos</SelectItem>
+                      <SelectItem value="25">25 produtos</SelectItem>
+                      <SelectItem value="50">50 produtos</SelectItem>
+                      <SelectItem value="100">100 produtos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="data-inicio">Data Início</Label>
+                  <Input
+                    id="data-inicio"
+                    type="date"
+                    value={filtros.data_inicio}
+                    onChange={(e) => setFiltros({...filtros, data_inicio: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="data-fim">Data Fim</Label>
+                  <Input
+                    id="data-fim"
+                    type="date"
+                    value={filtros.data_fim}
+                    onChange={(e) => setFiltros({...filtros, data_fim: e.target.value})}
+                  />
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ordenar por
-                </label>
-                <select
-                  value={filtros.ordenar_por}
-                  onChange={(e) => setFiltros({...filtros, ordenar_por: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="quantidade">Quantidade</option>
-                  <option value="valor">Valor Total</option>
-                  <option value="frequencia">Frequência</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Limite
-                </label>
-                <select
-                  value={filtros.limite}
-                  onChange={(e) => setFiltros({...filtros, limite: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={10}>10 produtos</option>
-                  <option value={25}>25 produtos</option>
-                  <option value={50}>50 produtos</option>
-                  <option value={100}>100 produtos</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data Início
-                </label>
-                <input
-                  type="date"
-                  value={filtros.data_inicio}
-                  onChange={(e) => setFiltros({...filtros, data_inicio: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data Fim
-                </label>
-                <input
-                  type="date"
-                  value={filtros.data_fim}
-                  onChange={(e) => setFiltros({...filtros, data_fim: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Cards de Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <ShoppingBagIcon className="h-6 w-6 text-blue-600" />
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Vendido</p>
+                  <p className="text-3xl font-bold mt-2">
+                    {formatNumber(dados.estatisticas.total_quantidade_vendida)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">unidades</p>
+                </div>
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                  <ShoppingBagIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Vendido</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatNumber(dados.estatisticas.total_quantidade_vendida)}
-                </p>
-                <p className="text-xs text-gray-500">unidades</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CurrencyDollarIcon className="h-6 w-6 text-green-600" />
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
+                  <p className="text-3xl font-bold mt-2">
+                    {formatCurrency(dados.estatisticas.total_valor_vendido)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">em vendas</p>
+                </div>
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                  <CurrencyDollarIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Valor Total</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(dados.estatisticas.total_valor_vendido)}
-                </p>
-                <p className="text-xs text-gray-500">em vendas</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <ChartBarIcon className="h-6 w-6 text-purple-600" />
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Ticket Médio</p>
+                  <p className="text-3xl font-bold mt-2">
+                    {formatCurrency(dados.estatisticas.ticket_medio)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">por venda</p>
+                </div>
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                  <ChartBarIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Ticket Médio</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(dados.estatisticas.ticket_medio)}
-                </p>
-                <p className="text-xs text-gray-500">por venda</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <ArrowTrendingUpIcon className="h-6 w-6 text-orange-600" />
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Produtos Ativos</p>
+                  <p className="text-3xl font-bold mt-2">
+                    {dados.estatisticas.total_produtos_analisados}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">com vendas</p>
+                </div>
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                  <SparklesIcon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Produtos Ativos</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {dados.estatisticas.total_produtos_analisados}
-                </p>
-                <p className="text-xs text-gray-500">com vendas</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Abas de Navegação */}
-        <div className="bg-white rounded-lg shadow-sm border mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
-              <button
-                onClick={() => setAbaSelecionada('produtos')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  abaSelecionada === 'produtos'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Ranking de Produtos
-              </button>
-              <button
-                onClick={() => setAbaSelecionada('tendencias')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  abaSelecionada === 'tendencias'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Tendências
-              </button>
-              <button
-                onClick={() => setAbaSelecionada('vendedores')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  abaSelecionada === 'vendedores'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Performance Vendedores
-              </button>
-            </nav>
-          </div>
+        <Card>
+          <Tabs defaultValue="produtos" className="w-full">
+            <CardHeader className="pb-3">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="produtos">
+                  Ranking de Produtos
+                </TabsTrigger>
+                <TabsTrigger value="tendencias">
+                  Tendências
+                </TabsTrigger>
+                <TabsTrigger value="vendedores">
+                  Performance Vendedores
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
 
-          <div className="p-6">
-            {/* Aba Produtos */}
-            {abaSelecionada === 'produtos' && (
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Top {dados.produtos.length} Produtos Mais Vendidos
-                  </h3>
-                  <p className="text-gray-600">
-                    Ordenado por {filtros.ordenar_por === 'quantidade' ? 'quantidade vendida' : 
-                                 filtros.ordenar_por === 'valor' ? 'valor total' : 'frequência de vendas'}
-                  </p>
-                </div>
+            <CardContent>
+                <TabsContent value="produtos" className="mt-0">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      Top {dados.produtos.length} Produtos Mais Vendidos
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Ordenado por {filtros.ordenar_por === 'quantidade' ? 'quantidade vendida' :
+                                   filtros.ordenar_por === 'valor' ? 'valor total' : 'frequência de vendas'}
+                    </p>
+                  </div>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          #
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Produto
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Categoria
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Qtd. Vendida
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Valor Total
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nº Vendas
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ticket Médio
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Estoque
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {dados.produtos.map((produto, index) => (
-                        <tr key={produto.produto_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                                index < 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">#</TableHead>
+                          <TableHead>Produto</TableHead>
+                          <TableHead>Categoria</TableHead>
+                          <TableHead className="text-right">Qtd. Vendida</TableHead>
+                          <TableHead className="text-right">Valor Total</TableHead>
+                          <TableHead className="text-right">Nº Vendas</TableHead>
+                          <TableHead className="text-right">Ticket Médio</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Estoque</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dados.produtos.map((produto, index) => (
+                          <TableRow key={produto.produto_id}>
+                            <TableCell>
+                              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                                index === 0 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                index === 1 ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' :
+                                index === 2 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                                'bg-muted text-muted-foreground'
                               }`}>
                                 {index + 1}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{produto.nome}</div>
+                                <div className="text-sm text-muted-foreground">{produto.codigo}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{produto.categoria}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatNumber(produto.total_quantidade_vendida)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(produto.valor_total_vendido)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {produto.numero_vendas}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(produto.ticket_medio)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusVariant(produto.status_estoque)}>
+                                {getStatusText(produto.status_estoque)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className={produto.estoque_atual < 10 ? 'text-destructive font-medium' : ''}>
+                                {formatNumber(produto.estoque_atual)}
                               </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{produto.nome}</div>
-                              <div className="text-sm text-gray-500">{produto.codigo}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {produto.categoria}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatNumber(produto.total_quantidade_vendida)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {formatCurrency(produto.valor_total_vendido)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {produto.numero_vendas}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatCurrency(produto.ticket_medio)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(produto.status_estoque)}`}>
-                              {getStatusText(produto.status_estoque)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{produto.estoque_atual}</div>
-                            <div className="text-xs text-gray-500">
-                              {produto.dias_desde_ultima_venda} dias
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Aba Tendências */}
-            {abaSelecionada === 'tendencias' && (
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Tendências de Vendas (Últimos 6 Meses)
-                  </h3>
-                  <p className="text-gray-600">
-                    Evolução das vendas por mês para análise de sazonalidade
-                  </p>
-                </div>
-
-                {tendencias.length > 0 ? (
-                  <div className="h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={tendencias}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="mes_ano" />
-                        <YAxis />
-                        <Tooltip
-                          formatter={(value, name) => [
-                            name === 'quantidade_vendida' ? formatNumber(value as number) : formatCurrency(value as number),
-                            name === 'quantidade_vendida' ? 'Quantidade' : 'Valor'
-                          ]}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="quantidade_vendida"
-                          stroke="#3B82F6"
-                          strokeWidth={2}
-                          name="quantidade_vendida"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="valor_vendido"
-                          stroke="#10B981"
-                          strokeWidth={2}
-                          name="valor_vendido"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <ChartBarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Nenhum dado de tendência disponível</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Aba Vendedores */}
-            {abaSelecionada === 'vendedores' && (
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Performance dos Vendedores (Últimos 30 Dias)
-                  </h3>
-                  <p className="text-gray-600">
-                    Comparativo de vendas entre vendedores
-                  </p>
                 </div>
+              </TabsContent>
 
-                {comparativoVendedores.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Tabela de Vendedores */}
-                    <div>
-                      <h4 className="text-md font-medium text-gray-900 mb-4">Ranking de Vendedores</h4>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Vendedor
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Valor Total
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Vendas
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Ticket Médio
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {comparativoVendedores.map((vendedor, index) => (
-                              <tr key={vendedor.vendedor_id}>
-                                <td className="px-4 py-4">
-                                  <div className="flex items-center">
-                                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium mr-3 ${
-                                      index < 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'
-                                    }`}>
-                                      {index + 1}
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">
-                                      {vendedor.vendedor_nome}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                                  {formatCurrency(vendedor.total_valor_vendido)}
-                                </td>
-                                <td className="px-4 py-4 text-sm text-gray-900">
-                                  {vendedor.numero_vendas}
-                                </td>
-                                <td className="px-4 py-4 text-sm text-gray-900">
-                                  {formatCurrency(vendedor.ticket_medio)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+              <TabsContent value="tendencias" className="mt-0">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      Tendências de Vendas (Últimos 6 Meses)
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Evolução das vendas por mês para análise de sazonalidade
+                    </p>
+                  </div>
+
+                  {tendencias.length > 0 ? (
+                    <div className="h-96 p-4 bg-muted/30 rounded-lg">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={tendencias}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis
+                            dataKey="mes_ano"
+                            className="text-xs"
+                          />
+                          <YAxis className="text-xs" />
+                          <Tooltip
+                            formatter={(value, name) => [
+                              name === 'quantidade_vendida' ? formatNumber(value as number) : formatCurrency(value as number),
+                              name === 'quantidade_vendida' ? 'Quantidade' : 'Valor'
+                            ]}
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--background))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '0.5rem'
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="quantidade_vendida"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth={3}
+                            name="quantidade_vendida"
+                            dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="valor_vendido"
+                            stroke="hsl(142, 76%, 36%)"
+                            strokeWidth={3}
+                            name="valor_vendido"
+                            dot={{ fill: 'hsl(142, 76%, 36%)', r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
-
-                    {/* Gráfico de Vendedores */}
-                    <div>
-                      <h4 className="text-md font-medium text-gray-900 mb-4">Distribuição de Vendas</h4>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={comparativoVendedores.slice(0, 8)}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="vendedor_nome"
-                              angle={-45}
-                              textAnchor="end"
-                              height={80}
-                            />
-                            <YAxis />
-                            <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                            <Bar dataKey="total_valor_vendido" fill="#3B82F6" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <ChartBarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhum dado de tendência disponível</p>
                     </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="vendedores" className="mt-0">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      Performance dos Vendedores (Últimos 30 Dias)
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Comparativo de vendas entre vendedores
+                    </p>
                   </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <UserGroupIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Nenhum dado de vendedor disponível</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+
+                  {comparativoVendedores.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Tabela de Vendedores */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Ranking de Vendedores</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="rounded-md border">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Vendedor</TableHead>
+                                  <TableHead className="text-right">Valor Total</TableHead>
+                                  <TableHead className="text-right">Vendas</TableHead>
+                                  <TableHead className="text-right">Ticket Médio</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {comparativoVendedores.map((vendedor, index) => (
+                                  <TableRow key={vendedor.vendedor_id}>
+                                    <TableCell>
+                                      <div className="flex items-center gap-3">
+                                        <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
+                                          index === 0 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                          index === 1 ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' :
+                                          index === 2 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                                          'bg-muted text-muted-foreground'
+                                        }`}>
+                                          {index + 1}
+                                        </div>
+                                        <span className="font-medium">
+                                          {vendedor.vendedor_nome}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right font-medium">
+                                      {formatCurrency(vendedor.total_valor_vendido)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {vendedor.numero_vendas}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {formatCurrency(vendedor.ticket_medio)}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Gráfico de Vendedores */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Distribuição de Vendas</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={comparativoVendedores.slice(0, 8)}>
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                <XAxis
+                                  dataKey="vendedor_nome"
+                                  angle={-45}
+                                  textAnchor="end"
+                                  height={80}
+                                  className="text-xs"
+                                />
+                                <YAxis className="text-xs" />
+                                <Tooltip
+                                  formatter={(value) => formatCurrency(value as number)}
+                                  contentStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: '0.5rem'
+                                  }}
+                                />
+                                <Bar
+                                  dataKey="total_valor_vendido"
+                                  fill="hsl(var(--primary))"
+                                  radius={[8, 8, 0, 0]}
+                                />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <UserGroupIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhum dado de vendedor disponível</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
+        </Card>
 
         {/* Informações Adicionais */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações do Período</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-center">
-              <CalendarIcon className="h-5 w-5 text-gray-400 mr-2" />
-              <div>
-                <p className="text-sm text-gray-500">Período Analisado</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {new Date(dados.estatisticas.data_inicio).toLocaleDateString('pt-BR')} até{' '}
-                  {new Date(dados.estatisticas.data_fim).toLocaleDateString('pt-BR')}
-                </p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações do Período</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <CalendarIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Período Analisado</p>
+                  <p className="text-sm font-medium">
+                    {new Date(dados.estatisticas.data_inicio).toLocaleDateString('pt-BR')} até{' '}
+                    {new Date(dados.estatisticas.data_fim).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <ArrowTrendingUpIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Produto Mais Vendido</p>
+                  <p className="text-sm font-medium">
+                    {dados.estatisticas.produto_mais_vendido || 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <ShoppingBagIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Categoria Mais Vendida</p>
+                  <p className="text-sm font-medium">
+                    {dados.estatisticas.categoria_mais_vendida || 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-center">
-              <ArrowTrendingUpIcon className="h-5 w-5 text-gray-400 mr-2" />
-              <div>
-                <p className="text-sm text-gray-500">Produto Mais Vendido</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {dados.estatisticas.produto_mais_vendido || 'N/A'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <ShoppingBagIcon className="h-5 w-5 text-gray-400 mr-2" />
-              <div>
-                <p className="text-sm text-gray-500">Categoria Mais Vendida</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {dados.estatisticas.categoria_mais_vendida || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
