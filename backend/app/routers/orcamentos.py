@@ -34,28 +34,30 @@ class OrcamentoPDF(FPDF):
         logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'HIGIPLAS-LOGO-2048x761.png')
         if os.path.exists(logo_path):
             self.image(logo_path, 10, 8, 60)
-        
+
         # Informações da empresa no canto direito
         self.set_font('Arial', 'B', 10)
         self.set_xy(130, 10)
         self.cell(70, 5, 'HIGIPLAS INDÚSTRIA E COMÉRCIO', 0, 1, 'R')
-        
+
         self.set_font('Arial', '', 8)
         self.set_x(130)
-        self.cell(70, 4, 'CNPJ: 00.000.000/0001-00', 0, 1, 'R')
+        self.cell(70, 4, 'CNPJ: 22.599.389/0001-76', 0, 1, 'R')
         self.set_x(130)
-        self.cell(70, 4, 'Rua Exemplo, 123 - São Luís/MA', 0, 1, 'R')
+        self.cell(70, 4, 'Rua 59, Quadra 41, 1 - Bequimão', 0, 1, 'R')
         self.set_x(130)
-        self.cell(70, 4, 'Tel: (98) 3000-0000', 0, 1, 'R')
+        self.cell(70, 4, 'São Luís/MA - CEP: 65.062-100', 0, 1, 'R')
         self.set_x(130)
-        self.cell(70, 4, 'contato@higiplas.com.br', 0, 1, 'R')
-        
+        self.cell(70, 4, 'Tel: +55 98 8911-8396', 0, 1, 'R')
+        self.set_x(130)
+        self.cell(70, 4, 'vendas01@higiplas.com.br', 0, 1, 'R')
+
         # Linha separadora
-        self.set_y(35)
+        self.set_y(40)
         self.set_draw_color(0, 102, 204)  # Azul
         self.set_line_width(0.5)
-        self.line(10, 35, 200, 35)
-        
+        self.line(10, 40, 200, 40)
+
         self.ln(5)
     
     def footer(self):
