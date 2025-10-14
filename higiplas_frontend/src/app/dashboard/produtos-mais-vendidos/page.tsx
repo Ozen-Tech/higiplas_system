@@ -12,7 +12,6 @@ import {
   FunnelIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-/*
 import {
   BarChart,
   Bar,
@@ -27,7 +26,6 @@ import {
   Pie,
   Cell
 } from 'recharts';
-*/
 
 // Interfaces atualizadas
 interface ProdutoMaisVendido {
@@ -592,12 +590,6 @@ export default function ProdutosMaisVendidos() {
 
                 {tendencias.length > 0 ? (
                   <div className="h-96">
-                    {/* GRÁFICO TEMPORARIAMENTE COMENTADO - RECHARTS NÃO INSTALADO */}
-                    <div className="text-center py-12">
-                      <ChartBarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">Gráfico de tendências indisponível (Recharts necessário)</p>
-                    </div>
-                    {/*
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={tendencias}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -625,7 +617,6 @@ export default function ProdutosMaisVendidos() {
                         />
                       </LineChart>
                     </ResponsiveContainer>
-                    */}
                   </div>
                 ) : (
                   <div className="text-center py-12">
@@ -706,12 +697,6 @@ export default function ProdutosMaisVendidos() {
                     <div>
                       <h4 className="text-md font-medium text-gray-900 mb-4">Distribuição de Vendas</h4>
                       <div className="h-64">
-                        {/* GRÁFICO TEMPORARIAMENTE COMENTADO - RECHARTS NÃO INSTALADO */}
-                        <div className="text-center py-12">
-                          <ChartBarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500">Gráfico de vendedores indisponível (Recharts necessário)</p>
-                        </div>
-                        {/*
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={comparativoVendedores.slice(0, 8)}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -726,7 +711,6 @@ export default function ProdutosMaisVendidos() {
                             <Bar dataKey="total_valor_vendido" fill="#3B82F6" />
                           </BarChart>
                         </ResponsiveContainer>
-                        */}
                       </div>
                     </div>
                   </div>
