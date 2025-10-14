@@ -1,6 +1,8 @@
 # 🔧 Correção do CORS para Download de PDF
 
-## 🐛 Problema Identificado
+## 🐛 Problemas Identificados
+
+### 1. Erro de CORS com Authorization Header
 
 Ao tentar baixar o PDF do orçamento, o navegador bloqueava a requisição com os seguintes erros:
 
@@ -14,9 +16,21 @@ do recurso remoto (motivo: falta cabeçalho 'Access-Control-Allow-Origin' no COR
 Código de status: 500.
 ```
 
+### 2. Erro de NoneType no PDF
+
+Após corrigir o CORS, um segundo erro apareceu:
+
+```python
+AttributeError: 'NoneType' object has no attribute 'encode'
+File "/code/app/routers/orcamentos.py", line 117, in secao_cliente
+    self.cell(0, 5, self.orcamento_data['cliente'].get('cnpj', 'N/A'), 0, 1)
+```
+
+**Causa:** O método `.get('cnpj', 'N/A')` retorna o valor padrão `'N/A'` apenas quando a chave não existe. Se a chave existe mas o valor é `None`, ele retorna `None`, causando o erro ao tentar fazer `.encode()`.
+
 ## 🔍 Causa Raiz
 
-O problema ocorria porque:
+### Problema 1: CORS
 
 1. **Wildcard `*` não cobre `Authorization`**: Quando `Access-Control-Allow-Headers` é definido como `*`, o navegador **não inclui automaticamente** o cabeçalho `Authorization` por questões de segurança.
 
@@ -24,7 +38,11 @@ O problema ocorria porque:
 
 3. **Inconsistência entre middleware e configuração**: Havia configurações conflitantes entre o middleware CORS do FastAPI e o middleware customizado.
 
-## ✅ Solução Implementada
+### Problema 2: Valores None
+
+Campos opcionais do cliente (`cnpj`, `email`, `endereco`, `telefone`) podem ter valor `None` no banco de dados, e o código não estava tratando isso corretamente.
+
+## ✅ Soluções Implementadas
 
 ### 1. **Configuração Explícita do CORS Middleware**
 
@@ -67,7 +85,28 @@ app.add_middleware(
 )
 ```
 
-### 2. **Handler OPTIONS Atualizado**
+### 2. **Tratamento de Valores None no PDF**
+
+**Antes:**
+```python
+self.cell(0, 5, self.orcamento_data['cliente'].get('cnpj', 'N/A'), 0, 1)
+# ❌ Se cnpj=None, retorna None em vez de 'N/A'
+```
+
+**Depois:**
+```python
+cnpj = self.orcamento_data['cliente'].get('cnpj') or 'N/A'
+self.cell(0, 5, cnpj, 0, 1)
+# ✅ Se cnpj=None ou '', retorna 'N/A'
+```
+
+**Campos corrigidos:**
+- `cnpj`: `self.orcamento_data['cliente'].get('cnpj') or 'N/A'`
+- `telefone`: `self.orcamento_data['cliente']['telefone'] or 'N/A'`
+- `email`: `self.orcamento_data['cliente'].get('email') or 'N/A'`
+- `endereco`: `self.orcamento_data['cliente'].get('endereco') or 'N/A'`
+
+### 3. **Handler OPTIONS Atualizado**
 
 ```python
 @app.options("/{path:path}")
@@ -86,7 +125,7 @@ async def options_handler(request: Request):
     )
 ```
 
-### 3. **Middleware Customizado Atualizado**
+### 4. **Middleware Customizado Atualizado**
 
 ```python
 @app.middleware("http")
@@ -166,36 +205,71 @@ Access-Control-Expose-Headers: Content-Disposition, Content-Type, Content-Length
 
 3. **Expose Headers**: O navegador só permite que o JavaScript acesse cabeçalhos que estejam explicitamente listados em `Access-Control-Expose-Headers`.
 
+## 💡 Lições Aprendidas
+
+### Diferença entre `.get()` e `or`
+
+```python
+# ❌ ERRADO - .get() com valor padrão não funciona para None
+value = dict.get('key', 'default')  # Se key=None, retorna None
+
+# ✅ CORRETO - usar 'or' para tratar None e valores falsy
+value = dict.get('key') or 'default'  # Se key=None ou '', retorna 'default'
+```
+
+### Quando usar cada abordagem:
+
+| Situação | Solução | Exemplo |
+|----------|---------|---------|
+| Chave pode não existir | `.get('key', 'default')` | Campos opcionais novos |
+| Chave existe mas pode ser None | `.get('key') or 'default'` | Campos nullable no DB |
+| Chave sempre existe | `dict['key'] or 'default'` | Campos obrigatórios |
+
 ## 📚 Referências
 
 - [MDN - CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 - [MDN - Access-Control-Allow-Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers)
 - [MDN - Access-Control-Expose-Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers)
 - [FastAPI CORS Middleware](https://fastapi.tiangolo.com/tutorial/cors/)
+- [Python dict.get() documentation](https://docs.python.org/3/library/stdtypes.html#dict.get)
 
 ## ✅ Resultado
 
 Após essas correções:
 - ✅ O cabeçalho `Authorization` é aceito nas requisições
 - ✅ O cabeçalho `Content-Disposition` é acessível pelo JavaScript
+- ✅ Valores `None` são tratados corretamente no PDF
 - ✅ O download do PDF funciona corretamente
 - ✅ Não há mais erros de CORS no console
+- ✅ Não há mais erros de `AttributeError: 'NoneType'`
 
 ## 🚀 Deploy
 
-Após fazer o commit e push:
+Commits realizados:
 ```bash
-git add backend/app/main.py
+# Correção do CORS
 git commit -m "fix: Explicitly allow Authorization header in CORS configuration for PDF download"
+
+# Documentação do CORS
+git commit -m "docs: Add comprehensive documentation for CORS PDF download fix"
+
+# Correção dos valores None
+git commit -m "fix: Handle None values in PDF generation for cliente fields (cnpj, telefone, email, endereco)"
+
 git push origin raking_de_vendas
 ```
 
-O Render.com irá automaticamente fazer o deploy da nova versão com as correções de CORS.
+O Render.com irá automaticamente fazer o deploy da nova versão com as correções.
 
 **Tempo estimado de deploy**: 2-5 minutos
 
 ---
 
-**Commit:** `52e31ca` - "fix: Explicitly allow Authorization header in CORS configuration for PDF download"
+**Commits:** 
+- `52e31ca` - "fix: Explicitly allow Authorization header in CORS configuration for PDF download"
+- `aa511b9` - "docs: Add comprehensive documentation for CORS PDF download fix"
+- `5efc297` - "fix: Handle None values in PDF generation for cliente fields"
+
 **Data:** 2025
 **Branch:** `raking_de_vendas`
+**Status:** ✅ **Deployed**
