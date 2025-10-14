@@ -24,22 +24,25 @@ class ClienteBase(BaseModel):
     telefone: str = Field(..., min_length=10, max_length=20, description="WhatsApp ou telefone principal")
     tipo_pessoa: TipoPessoa = TipoPessoa.FISICA
     cpf_cnpj: Optional[str] = Field(None, description="CPF ou CNPJ (opcional)")
-    
+
     # Localização simplificada
     bairro: Optional[str] = Field(None, max_length=100)
     cidade: Optional[str] = Field(None, max_length=100)
-    
+
+    # Email
+    email: Optional[str] = Field(None, max_length=200, description="Email do cliente")
+
     # Informações do vendedor
     observacoes: Optional[str] = Field(None, max_length=500, description="Notas do vendedor")
     referencia_localizacao: Optional[str] = Field(None, max_length=200, description="Ponto de referência")
-    
+
     @validator('telefone')
     def clean_telefone(cls, v):
         """Remove caracteres não numéricos do telefone"""
         if v:
             return ''.join(filter(str.isdigit, v))
         return v
-    
+
     @validator('cpf_cnpj')
     def clean_cpf_cnpj(cls, v):
         """Remove caracteres não numéricos do CPF/CNPJ"""
@@ -57,6 +60,7 @@ class ClienteUpdate(BaseModel):
     telefone: Optional[str] = None
     tipo_pessoa: Optional[TipoPessoa] = None
     cpf_cnpj: Optional[str] = None
+    email: Optional[str] = None
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     observacoes: Optional[str] = None
@@ -75,15 +79,15 @@ class ClienteResponse(ClienteBase):
     vendedor_id: int
     vendedor_nome: Optional[str] = None
     empresa_id: int
-    
+
     # Estatísticas
     total_vendas: Optional[float] = 0
     ultima_venda: Optional[datetime] = None
-    
+
     # Timestamps
     criado_em: datetime
     atualizado_em: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -93,10 +97,10 @@ class ClienteList(BaseModel):
     nome: str
     telefone: str
     bairro: Optional[str]
-    cidade: Optional[str] 
+    cidade: Optional[str]
     status: StatusCliente
     ultima_venda: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
@@ -111,7 +115,7 @@ class ClienteSearch(BaseModel):
 class ClienteBulkCreate(BaseModel):
     """Criação em lote de clientes"""
     clientes: list[ClienteCreate]
-    
+
 class ClienteStats(BaseModel):
     """Estatísticas do cliente"""
     total_orcamentos: int = 0

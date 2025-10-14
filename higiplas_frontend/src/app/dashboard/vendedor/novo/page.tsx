@@ -23,7 +23,14 @@ import {
 
 export default function NovoOrcamentoPage() {
   const router = useRouter();
-  const { clientes, produtos, buscarClientes, buscarProdutos, criarClienteRapido, loading: vendasLoading } = useVendas();
+  const {
+    clientes,
+    produtos,
+    buscarClientes,
+    buscarProdutos,
+    criarClienteCompleto,
+    loading: vendasLoading
+  } = useVendas();
   const { criarOrcamento, loading: orcamentoLoading } = useOrcamentos();
 
   // Estados
@@ -33,6 +40,11 @@ export default function NovoOrcamentoPage() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [novoClienteNome, setNovoClienteNome] = useState('');
   const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
+  const [novoClienteCnpj, setNovoClienteCnpj] = useState('');
+  const [novoClienteEmail, setNovoClienteEmail] = useState('');
+  const [novoClienteEndereco, setNovoClienteEndereco] = useState('');
+  const [novoClienteBairro, setNovoClienteBairro] = useState('');
+  const [novoClienteCidade, setNovoClienteCidade] = useState('');
   const [termoBuscaCliente, setTermoBuscaCliente] = useState('');
   const [termoBuscaProduto, setTermoBuscaProduto] = useState('');
   const [orcamentoFinalizado, setOrcamentoFinalizado] = useState<number | null>(null);
@@ -144,10 +156,21 @@ export default function NovoOrcamentoPage() {
 
   const handleCriarNovoCliente = async () => {
     if (!novoClienteNome || !novoClienteTelefone) {
-        toast.error("Nome e telefone são obrigatórios.");
+        toast.error("Nome/Razão Social e Telefone são obrigatórios.");
         return;
     }
-    const novoCliente: ClienteV2 | null = await criarClienteRapido(novoClienteNome, novoClienteTelefone);
+
+    // Usar a nova função para criar cliente completo
+    const novoCliente: ClienteV2 | null = await criarClienteCompleto(
+      novoClienteNome,
+      novoClienteTelefone,
+      novoClienteCnpj,
+      novoClienteEmail,
+      novoClienteEndereco,
+      novoClienteBairro,
+      novoClienteCidade
+    );
+
     if (novoCliente) {
         const clienteFormatado: Cliente = {
             id: novoCliente.id,
@@ -159,8 +182,14 @@ export default function NovoOrcamentoPage() {
         };
         setClienteSelecionado(clienteFormatado);
         setIsClientModalOpen(false);
+        // Limpar todos os campos
         setNovoClienteNome('');
         setNovoClienteTelefone('');
+        setNovoClienteCnpj('');
+        setNovoClienteEmail('');
+        setNovoClienteEndereco('');
+        setNovoClienteBairro('');
+        setNovoClienteCidade('');
         buscarClientes();
     }
   };
@@ -289,30 +318,87 @@ export default function NovoOrcamentoPage() {
           </div>
       </main>
       {isClientModalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><UserPlus /> Cadastrar Novo Cliente</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <label className="text-sm font-medium">Nome do Cliente</label>
-                        <Input placeholder="Nome completo" value={novoClienteNome} onChange={(e) => setNovoClienteNome(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium">Telefone (WhatsApp)</label>
-                        <Input placeholder="Ex: 88912345678" value={novoClienteTelefone} onChange={(e) => setNovoClienteTelefone(e.target.value)} />
-                    </div>
-                </CardContent>
-                <div className="flex justify-end gap-4 p-6 pt-0">
-                    <Button variant="ghost" onClick={() => setIsClientModalOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleCriarNovoCliente} disabled={vendasLoading}>
-                        {vendasLoading ? 'Salvando...' : 'Salvar Cliente'}
-                    </Button>
-                </div>
-            </Card>
-        </div>
-      )}
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><UserPlus /> Cadastrar Novo Cliente</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                              <label className="text-sm font-medium">Nome/Razão Social *</label>
+                              <Input
+                                  placeholder="Nome completo ou razão social"
+                                  value={novoClienteNome}
+                                  onChange={(e) => setNovoClienteNome(e.target.value)}
+                              />
+                          </div>
+                          <div>
+                              <label className="text-sm font-medium">Telefone (WhatsApp) *</label>
+                              <Input
+                                  placeholder="Ex: 98912345678"
+                                  value={novoClienteTelefone}
+                                  onChange={(e) => setNovoClienteTelefone(e.target.value)}
+                              />
+                          </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                              <label className="text-sm font-medium">CNPJ/CPF</label>
+                              <Input
+                                  placeholder="CNPJ ou CPF"
+                                  value={novoClienteCnpj}
+                                  onChange={(e) => setNovoClienteCnpj(e.target.value)}
+                              />
+                          </div>
+                          <div>
+                              <label className="text-sm font-medium">Email</label>
+                              <Input
+                                  placeholder="cliente@exemplo.com"
+                                  value={novoClienteEmail}
+                                  onChange={(e) => setNovoClienteEmail(e.target.value)}
+                              />
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-sm font-medium">Endereço</label>
+                          <Input
+                              placeholder="Rua, número, complemento"
+                              value={novoClienteEndereco}
+                              onChange={(e) => setNovoClienteEndereco(e.target.value)}
+                          />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                              <label className="text-sm font-medium">Bairro</label>
+                              <Input
+                                  placeholder="Bairro"
+                                  value={novoClienteBairro}
+                                  onChange={(e) => setNovoClienteBairro(e.target.value)}
+                              />
+                          </div>
+                          <div>
+                              <label className="text-sm font-medium">Cidade</label>
+                              <Input
+                                  placeholder="Cidade"
+                                  value={novoClienteCidade}
+                                  onChange={(e) => setNovoClienteCidade(e.target.value)}
+                              />
+                          </div>
+                      </div>
+                  </CardContent>
+                  <div className="flex justify-end gap-4 p-6 pt-0">
+                      <Button variant="ghost" onClick={() => setIsClientModalOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleCriarNovoCliente} disabled={vendasLoading}>
+                          {vendasLoading ? 'Salvando...' : 'Salvar Cliente'}
+                      </Button>
+                  </div>
+              </Card>
+          </div>
+        )}
     </>
   );
 }

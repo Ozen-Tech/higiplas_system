@@ -1,9 +1,9 @@
-// /src/hooks/useVendas.ts - VERSÃO ATUALIZADA
+ // /src/hooks/useVendas.ts - VERSÃO ATUALIZADA
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 // ATENÇÃO: Importe o tipo ClienteV2 que é o correto para a nova API de clientes
-import { ClienteV2 } from '@/types'; 
+import { ClienteV2 } from '@/types';
 import { Dashboard, Cliente, Produto, VendaCreate, VendaResponse } from '@/types/vendas';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
@@ -95,6 +95,40 @@ export function useVendas() {
     }
   }, [handleApiError]);
 
+  // Nova função para criar cliente com todos os campos
+  const criarClienteCompleto = useCallback(async (
+    nome: string,
+    telefone: string,
+    cnpj?: string,
+    email?: string,
+    endereco?: string,
+    bairro?: string,
+    cidade?: string
+  ): Promise<ClienteV2 | null> => {
+    setLoading(true);
+    try {
+      // Chama o endpoint POST /clientes para criar cliente completo
+      const payload = {
+        nome,
+        telefone,
+        cpf_cnpj: cnpj,
+        email,
+        endereco,
+        bairro,
+        cidade,
+        tipo_pessoa: cnpj ? "JURIDICA" : "FISICA"
+      };
+      const response = await apiService.post('/clientes', payload);
+      toast.success('Cliente criado com sucesso!');
+      return response?.data || null;
+    } catch (err) {
+      handleApiError(err);
+      return null;
+    } finally {
+        setLoading(false);
+    }
+  }, [handleApiError]);
+
   // Registrar venda (sem alterações)
   const registrarVenda = useCallback(async (venda: VendaCreate): Promise<VendaResponse> => {
     // ...
@@ -125,6 +159,7 @@ export function useVendas() {
     buscarClientes,
     buscarProdutos,
     criarClienteRapido, // <-- Exporta a nova função
+    criarClienteCompleto,
     registrarVenda,
   };
 }
