@@ -227,6 +227,9 @@ class OrcamentoPDF(FPDF):
     
     def secao_observacoes(self):
         """Seção de observações e termos"""
+        # Resetar posição X para margem esquerda
+        self.set_x(10)
+
         # Título da seção
         self.set_fill_color(0, 102, 204)
         self.set_text_color(255, 255, 255)
@@ -247,6 +250,7 @@ class OrcamentoPDF(FPDF):
         ]
 
         for obs in observacoes:
+            self.set_x(10)  # Resetar X antes de cada linha
             self.multi_cell(0, 5, obs)
 
         self.ln(5)
