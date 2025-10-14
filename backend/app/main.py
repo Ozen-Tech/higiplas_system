@@ -37,8 +37,21 @@ app.add_middleware(
     allow_origins=["*"],  # Permitir todas as origens temporariamente para debug
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "User-Agent",
+        "DNT",
+        "Cache-Control",
+        "X-Requested-With"
+    ],
+    expose_headers=[
+        "Content-Disposition",
+        "Content-Type",
+        "Content-Length"
+    ],
     max_age=3600  # Cache preflight por 1 hora
 )
 
@@ -101,9 +114,10 @@ async def options_handler(request: Request):
         status_code=200,
         headers={
             "Access-Control-Allow-Origin": allow_origin,
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Credentials": "true"
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, User-Agent, DNT, Cache-Control, X-Requested-With",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Content-Disposition, Content-Type, Content-Length"
         }
     )
 
@@ -121,7 +135,8 @@ async def add_cors_and_log(request: Request, call_next):
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, User-Agent, DNT, Cache-Control, X-Requested-With"
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Type, Content-Length"
 
         logger.info(f"Resposta: {response.status_code}")
         return response
