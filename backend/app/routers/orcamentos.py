@@ -233,28 +233,28 @@ class OrcamentoPDF(FPDF):
         self.set_font('Arial', 'B', 11)
         self.cell(0, 8, 'OBSERVAÇÕES E TERMOS', 0, 1, 'L', True)
         self.set_text_color(0, 0, 0)
-        
+
         self.ln(2)
-        
-        # Observações
+
+        # Observacoes
         self.set_font('Arial', '', 9)
         observacoes = [
-            '• Este orçamento tem validade de 30 dias a partir da data de emissão.',
-            '• Os preços estão sujeitos a alteração sem aviso prévio.',
-            '• O prazo de entrega será informado após confirmação do pedido.',
-            '• Frete não incluso no valor do orçamento.',
-            '• Pagamento conforme condição especificada acima.',
+            '- Este orcamento tem validade de 30 dias a partir da data de emissao.',
+            '- Os precos estao sujeitos a alteracao sem aviso previo.',
+            '- O prazo de entrega sera informado apos confirmacao do pedido.',
+            '- Frete nao incluso no valor do orcamento.',
+            '- Pagamento conforme condicao especificada acima.',
         ]
-        
+
         for obs in observacoes:
             self.multi_cell(0, 5, obs)
-        
+
         self.ln(5)
-        
+
         # Assinatura
         self.set_font('Arial', 'I', 9)
         self.set_text_color(128, 128, 128)
-        self.cell(0, 5, 'Agradecemos a preferência e estamos à disposição para esclarecimentos.', 0, 1, 'C')
+        self.cell(0, 5, 'Agradecemos a preferencia e estamos a disposicao para esclarecimentos.', 0, 1, 'C')
         self.set_text_color(0, 0, 0)
 
 @router.post("/", response_model=schemas_orcamento.Orcamento, summary="Cria um novo orçamento")
