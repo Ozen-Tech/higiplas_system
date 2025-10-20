@@ -123,7 +123,8 @@ def listar_produtos_venda(
 ):
     query = db.query(models.Produto).filter(
         models.Produto.empresa_id == current_user.empresa_id,
-        models.Produto.quantidade_em_estoque > 0
+        # CORREÇÃO: Remover filtro de estoque > 0 para permitir orçamentos com produtos zerados
+        # models.Produto.quantidade_em_estoque > 0  # <-- COMENTAR OU REMOVER ESTA LINHA
     )
     
     if busca:
@@ -131,6 +132,8 @@ def listar_produtos_venda(
         query = query.filter(
             (models.Produto.nome.ilike(termo_busca)) |
             (models.Produto.codigo.ilike(termo_busca))
+
+
         )
     
     if categoria:
@@ -149,7 +152,7 @@ def listar_produtos_venda(
             unidade_medida=p.unidade_medida
         ) for p in produtos
     ]
-
+    
 # ============= REGISTRAR VENDA =============
 
 @router.post("/registrar", response_model=schemas.VendaResponse)
