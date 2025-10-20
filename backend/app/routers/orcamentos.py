@@ -38,7 +38,7 @@ class OrcamentoPDF(FPDF):
         # Informações da empresa no canto direito
         self.set_font('Arial', 'B', 10)
         self.set_xy(130, 10)
-        self.cell(70, 5, 'HIGIPLAS INDÚSTRIA E COMÉRCIO', 0, 1, 'R')
+        self.cell(70, 5, 'T M Penha', 0, 1, 'R')
 
         self.set_font('Arial', '', 8)
         self.set_x(130)
@@ -108,7 +108,7 @@ class OrcamentoPDF(FPDF):
         # Coluna esquerda
         self.set_font('Arial', 'B', 9)
         self.set_x(12)
-        self.cell(40, 5, 'Razão Social:', 0, 0)
+        self.cell(40, 5, 'Nome:', 0, 0)
         self.set_font('Arial', '', 9)
         razao = self.orcamento_data['cliente'].get('razao_social') or 'N/A'
         self.cell(0, 5, razao, 0, 1)
