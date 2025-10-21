@@ -7,7 +7,7 @@ from datetime import datetime, date
 # Schema simples para Cliente
 class ClienteParaProposta(BaseModel):
     id: int
-    razao_social: str
+    razao_social: Optional[str] = "Cliente sem nome"  # Aceita None com valor padrão
     telefone: Optional[str] = None
     email: Optional[str] = None
     endereco: Optional[str] = None
