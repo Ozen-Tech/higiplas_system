@@ -258,22 +258,53 @@ def listar_minhas_propostas(
 ):
     """Lista todas as propostas criadas pelo vendedor logado"""
     try:
-        logger.info(f"Buscando propostas para vendedor {current_user.id}")
+        logger.info(f"Buscando propostas para vendedor {current_user.id} ({current_user.email})")
         propostas = crud_proposta.get_propostas_by_vendedor(db, current_user.id)
         logger.info(f"Encontradas {len(propostas)} propostas para vendedor {current_user.id}")
 
-        # Filtrar propostas com dados válidos
+        # Filtrar e validar propostas
         propostas_validas = []
-        for proposta in propostas:
-            if proposta.cliente and (proposta.cliente.razao_social or proposta.cliente.telefone):
-                propostas_validas.append(proposta)
-            else:
-                logger.warning(f"Proposta {proposta.id} tem cliente inválido ou sem dados")
+        for idx, proposta in enumerate(propostas):
+            try:
+                # Validar cliente
+                if not proposta.cliente:
+                    logger.warning(f"Proposta {proposta.id} sem cliente")
+                    continue
 
-        logger.info(f"Retornando {len(propostas_validas)} propostas válidas")
+                # Validar usuario
+                if not proposta.usuario:
+                    logger.warning(f"Proposta {proposta.id} sem usuario")
+                    continue
+
+                # Validar itens
+                if not proposta.itens or len(proposta.itens) == 0:
+                    logger.warning(f"Proposta {proposta.id} sem itens")
+                    continue
+
+                # Validar dados do cliente
+                if not proposta.cliente.razao_social and not proposta.cliente.telefone:
+                    logger.warning(f"Proposta {proposta.id} - Cliente {proposta.cliente.id} sem razao_social e telefone")
+                    continue
+
+                # Validar dados do usuario
+                if not proposta.usuario.email:
+                    logger.warning(f"Proposta {proposta.id} - Usuario {proposta.usuario.id} sem email")
+                    continue
+
+                propostas_validas.append(proposta)
+                logger.debug(f"Proposta {proposta.id} validada com sucesso")
+
+            except Exception as e:
+                logger.error(f"Erro ao validar proposta {proposta.id}: {str(e)}", exc_info=True)
+                continue
+
+        logger.info(f"Retornando {len(propostas_validas)} propostas válidas de {len(propostas)} totais")
         return propostas_validas
+
     except Exception as e:
         logger.error(f"Erro ao listar propostas para vendedor {current_user.id}: {str(e)}", exc_info=True)
+        import traceback
+        logger.error(f"Traceback completo: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Erro ao listar propostas: {str(e)}")
 
 @router.get("/{proposta_id}/", response_model=schemas_proposta.Proposta, summary="Busca uma proposta específica")

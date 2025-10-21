@@ -17,7 +17,7 @@ class ClienteParaProposta(BaseModel):
 # Schema simples para Usuario
 class UsuarioParaProposta(BaseModel):
     id: int
-    nome: str
+    nome: Optional[str] = "Vendedor"  # Aceita None com valor padrão
     email: str
 
     model_config = ConfigDict(from_attributes=True)
