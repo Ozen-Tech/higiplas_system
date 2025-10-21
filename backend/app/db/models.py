@@ -222,3 +222,34 @@ class OrdemDeCompraItem(Base):
 
     ordem = relationship("OrdemDeCompra", back_populates="itens")
     produto = relationship("Produto")
+
+class Proposta(Base):
+    __tablename__ = "propostas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    status = Column(String, default="RASCUNHO")  # RASCUNHO, ENVIADA, APROVADA, REJEITADA
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    data_validade = Column(Date, nullable=True)
+    observacoes = Column(String, nullable=True)
+
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    usuario = relationship("Usuario")
+
+    cliente_id = Column(Integer, ForeignKey("clientes.id"))
+    cliente = relationship("Cliente")
+
+    # Relação com os itens da proposta
+    itens = relationship("PropostaItem", back_populates="proposta", cascade="all, delete-orphan")
+
+class PropostaItem(Base):
+    __tablename__ = "proposta_itens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    produto_nome = Column(String, nullable=False)  # Nome do produto
+    descricao = Column(String, nullable=True)  # Descrição detalhada
+    valor = Column(Float, nullable=False)  # Valor do produto
+    rendimento_litros = Column(String, nullable=True)  # Rendimento em litros (pode ser texto como "500" ou "PURO")
+    custo_por_litro = Column(Float, nullable=True)  # Custo por litro calculado
+
+    proposta_id = Column(Integer, ForeignKey("propostas.id"))
+    proposta = relationship("Proposta", back_populates="itens")
