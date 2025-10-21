@@ -29,6 +29,7 @@ class Usuario(Base):
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     empresa = relationship("Empresa", back_populates="usuarios")
     movimentacoes = relationship("MovimentacaoEstoque", back_populates="usuario")
+    refresh_tokens = relationship("RefreshToken", back_populates="usuario", cascade="all, delete-orphan")
 
 class Produto(Base):
     __tablename__ = "produtos"
@@ -43,19 +44,19 @@ class Produto(Base):
     estoque_minimo = Column(Integer, default=0)
     data_validade = Column(Date, nullable=True)
     quantidade_em_estoque = Column(Integer, default=0)
-    
+
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa", back_populates="produtos")
     fornecedor_id = Column(Integer, ForeignKey("fornecedores.id"), nullable=True)
     fornecedor = relationship("Fornecedor", back_populates="produtos")
-    
+
     # --- AQUI ESTÁ A ALTERAÇÃO PRINCIPAL ---
     # Adicionamos a opção cascade="all, delete-orphan".
     # Isso diz ao SQLAlchemy: "Quando um Produto for deletado,
     # delete também todas as MovimentacaoEstoque associadas a ele."
     movimentacoes = relationship(
-        "MovimentacaoEstoque", 
-        back_populates="produto", 
+        "MovimentacaoEstoque",
+        back_populates="produto",
         cascade="all, delete-orphan"
     )
 # --- NOVA CLASSE PARA MOVIMENTAÇÕES ---
@@ -67,13 +68,24 @@ class MovimentacaoEstoque(Base):
     quantidade = Column(Float, nullable=False)
     observacao = Column(String, nullable=True)
     data_movimentacao = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
     produto = relationship("Produto", back_populates="movimentacoes")
     usuario = relationship("Usuario", back_populates="movimentacoes")
 
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True, nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked = Column(Boolean, default=False)
+
+    usuario = relationship("Usuario", back_populates="refresh_tokens")
 
 class VendaHistorica(Base):
     __tablename__ = "vendas_historicas"
@@ -93,7 +105,7 @@ class VendaHistorica(Base):
 
 class Cliente(Base):
     __tablename__ = "clientes"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     razao_social = Column(String, nullable=False, index=True)
     cnpj = Column(String, unique=True, index=True, nullable=True)
@@ -103,25 +115,25 @@ class Cliente(Base):
     empresa_vinculada = Column(Enum('HIGIPLAS', 'HIGITEC', name='empresa_vinculada_enum'), nullable=False)
     status_pagamento = Column(Enum('BOM_PAGADOR', 'MAU_PAGADOR', name='status_pagamento_enum'), default='BOM_PAGADOR')
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Novos campos v2
     observacoes = Column(String(500), nullable=True)
     referencia_localizacao = Column(String(200), nullable=True)
     vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     atualizado_em = Column(DateTime(timezone=True), nullable=True)
-    
+
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa")
     vendedor = relationship("Usuario", foreign_keys=[vendedor_id])
-    
+
     # Relacionamentos
     orcamentos = relationship("Orcamento", back_populates="cliente")
     historico_pagamentos = relationship("HistoricoPagamento", back_populates="cliente", cascade="all, delete-orphan")
 
 class HistoricoPagamento(Base):
     __tablename__ = "historico_pagamentos"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     valor = Column(Float, nullable=False)
     data_vencimento = Column(Date, nullable=False)
@@ -130,10 +142,10 @@ class HistoricoPagamento(Base):
     numero_nf = Column(String, nullable=True)
     observacoes = Column(String, nullable=True)
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     cliente_id = Column(Integer, ForeignKey("clientes.id"))
     cliente = relationship("Cliente", back_populates="historico_pagamentos")
-    
+
     orcamento_id = Column(Integer, ForeignKey("orcamentos.id"), nullable=True)
     orcamento = relationship("Orcamento")
 
@@ -148,13 +160,13 @@ class Orcamento(Base):
     preco_minimo = Column(Float, nullable=True)
     preco_maximo = Column(Float, nullable=True)
     numero_nf = Column(String, nullable=True)  # NF para dar baixa no orçamento
-    
+
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     usuario = relationship("Usuario")
-    
+
     cliente_id = Column(Integer, ForeignKey("clientes.id"))
     cliente = relationship("Cliente", back_populates="orcamentos")
-    
+
     # Relação com os itens do orçamento
     itens = relationship("OrcamentoItem", back_populates="orcamento", cascade="all, delete-orphan")
 
@@ -167,7 +179,7 @@ class OrcamentoItem(Base):
 
     orcamento_id = Column(Integer, ForeignKey("orcamentos.id"))
     orcamento = relationship("Orcamento", back_populates="itens")
-    
+
     produto_id = Column(Integer, ForeignKey("produtos.id"))
     produto = relationship("Produto")
 
@@ -185,17 +197,17 @@ class Fornecedor(Base):
 
 class ProdutoMaisVendido(Base):
     __tablename__ = "produtos_mais_vendidos"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     produto_id = Column(Integer, ForeignKey("produtos.id"))
     produto = relationship("Produto")
-    
+
     ano = Column(Integer, nullable=False)
     quantidade_vendida = Column(Integer, default=0)
     valor_total_vendido = Column(Float, default=0.0)
     numero_vendas = Column(Integer, default=0)
     ultima_atualizacao = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa")
 
@@ -207,7 +219,7 @@ class OrdemDeCompra(Base):
     status = Column(String, default="RASCUNHO") # RASCUNHO, ENVIADA, RECEBIDA
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     data_recebimento = Column(DateTime(timezone=True), nullable=True)
-    
+
     fornecedor = relationship("Fornecedor")
     usuario = relationship("Usuario")
     itens = relationship("OrdemDeCompraItem", back_populates="ordem", cascade="all, delete-orphan")

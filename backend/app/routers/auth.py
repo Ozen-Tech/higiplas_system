@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from jose import JWTError, jwt
 from ..db import models
 
 # Importações necessárias e limpas
@@ -11,19 +10,21 @@ from app.db.connection import get_db
 from app.db import models
 from ..schemas import usuario as schemas_usuario
 from ..crud import usuario as crud_usuario
-from app.dependencies import create_access_token, get_current_user
-from app.core.config import settings
+from app.dependencies import (
+    create_access_token,
+    create_refresh_token,
+    verify_refresh_token,
+    revoke_refresh_token,
+    revoke_all_user_tokens,
+    get_current_user
+)
 
 router = APIRouter(
     tags=["Autenticação e Usuários"]
 )
 
 # O esquema de autenticação é definido no router que o utiliza.
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token") 
-
-
-
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
 
 @router.post("/token", response_model=schemas_usuario.Token)
@@ -36,9 +37,73 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             detail="E-mail ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    # Cria access token e refresh token
     access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(db=db, usuario_id=user.id)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+
+@router.post("/refresh", response_model=schemas_usuario.Token)
+def refresh_access_token(
+    refresh_request: schemas_usuario.RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para renovar o access token usando um refresh token válido.
+    """
+    # Verifica o refresh token
+    user = verify_refresh_token(db, refresh_request.refresh_token)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token inválido ou expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Revoga o refresh token antigo (rotação de tokens)
+    revoke_refresh_token(db, refresh_request.refresh_token)
+
+    # Cria novos tokens
+    access_token = create_access_token(data={"sub": user.email})
+    new_refresh_token = create_refresh_token(db=db, usuario_id=user.id)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer"
+    }
+
+
+@router.post("/logout")
+def logout(
+    refresh_request: schemas_usuario.RefreshTokenRequest,
+    current_user: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para fazer logout e revogar o refresh token.
+    """
+    revoke_refresh_token(db, refresh_request.refresh_token)
+    return {"message": "Logout realizado com sucesso"}
+
+
+@router.post("/logout-all")
+def logout_all_devices(
+    current_user: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para fazer logout de todos os dispositivos (revoga todos os refresh tokens do usuário).
+    """
+    count = revoke_all_user_tokens(db, current_user.id)
+    return {"message": f"Logout realizado em {count} dispositivo(s)"}
 
 
 # A rota para criar usuário não precisa estar aqui, pode ir para um router de "empresas"
