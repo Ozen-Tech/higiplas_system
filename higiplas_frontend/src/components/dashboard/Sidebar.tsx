@@ -4,11 +4,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { 
-  CubeIcon, SparklesIcon, ShoppingCartIcon, 
+import {
+  CubeIcon, SparklesIcon, ShoppingCartIcon,
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
-  ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, 
-  ChevronDownIcon, ChevronRightIcon 
+  ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
+  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -30,7 +30,8 @@ const navigation: NavigationItem[] = [
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
-  { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
+  { name: 'Propostas Comerciais', href: '/dashboard/propostas', icon: DocumentTextIcon }, // ✅ Novo módulo
+  { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon },
 ];
 
 export function Sidebar() {
