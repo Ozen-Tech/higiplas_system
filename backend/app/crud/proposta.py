@@ -36,12 +36,14 @@ def create_proposta(db: Session, proposta_in: schemas_proposta.PropostaCreate, v
 def get_propostas_by_vendedor(db: Session, vendedor_id: int) -> List[models.Proposta]:
     """
     Lista todas as propostas criadas por um vendedor específico,
-    carregando os dados relacionados.
+    carregando os dados relacionados e garantindo integridade dos dados.
     """
     return db.query(models.Proposta).options(
         joinedload(models.Proposta.cliente),
         joinedload(models.Proposta.usuario),
         joinedload(models.Proposta.itens)
+    ).join(
+        models.Cliente
     ).filter(
         models.Proposta.usuario_id == vendedor_id,
         models.Proposta.cliente_id.isnot(None)

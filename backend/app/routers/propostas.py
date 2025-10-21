@@ -6,12 +6,16 @@ from sqlalchemy.orm import Session
 from typing import List
 import io
 import os
+import logging
 from fpdf import FPDF
 
 from app.dependencies import get_db, get_current_user
 from app.db import models
 from app.schemas import proposta as schemas_proposta
 from app.crud import proposta as crud_proposta
+
+# Configurar logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/propostas",
@@ -253,7 +257,24 @@ def listar_minhas_propostas(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Lista todas as propostas criadas pelo vendedor logado"""
-    return crud_proposta.get_propostas_by_vendedor(db, current_user.id)
+    try:
+        logger.info(f"Buscando propostas para vendedor {current_user.id}")
+        propostas = crud_proposta.get_propostas_by_vendedor(db, current_user.id)
+        logger.info(f"Encontradas {len(propostas)} propostas para vendedor {current_user.id}")
+
+        # Filtrar propostas com dados válidos
+        propostas_validas = []
+        for proposta in propostas:
+            if proposta.cliente and (proposta.cliente.razao_social or proposta.cliente.telefone):
+                propostas_validas.append(proposta)
+            else:
+                logger.warning(f"Proposta {proposta.id} tem cliente inválido ou sem dados")
+
+        logger.info(f"Retornando {len(propostas_validas)} propostas válidas")
+        return propostas_validas
+    except Exception as e:
+        logger.error(f"Erro ao listar propostas para vendedor {current_user.id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro ao listar propostas: {str(e)}")
 
 @router.get("/{proposta_id}/", response_model=schemas_proposta.Proposta, summary="Busca uma proposta específica")
 def buscar_proposta(
