@@ -275,7 +275,7 @@ export default function NovaPropostaPage() {
     toast.success('Produto adicionado!')
   }
 
-  const atualizarItem = (index: number, campo: keyof ItemPropostaCreate, valor: any) => {
+  const atualizarItem = (index: number, campo: keyof ItemPropostaCreate, valor: string | number) => {
     const novosItens = [...itensProposta]
     novosItens[index] = { ...novosItens[index], [campo]: valor }
 
@@ -374,7 +374,7 @@ export default function NovaPropostaPage() {
         setNovoClienteTelefone('')
         fetchClientes()
       }
-    } catch (error) {
+    } catch {
       toast.error('Erro ao criar cliente')
     }
   }
@@ -433,8 +433,6 @@ export default function NovaPropostaPage() {
       </div>
     )
   }
-
-  return (
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
