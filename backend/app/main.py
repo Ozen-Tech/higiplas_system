@@ -4,7 +4,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
     insights, dashboard_kpis, invoice_processing,
-    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos
+    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, propostas
 )
 from app.create_superuser import create_initial_superuser
 from contextlib import asynccontextmanager
@@ -79,6 +79,7 @@ app.include_router(ordens_compra.router)
 app.include_router(ai_pdf.router, prefix="/ai-pdf", tags=["ai-pdf"])
 app.include_router(minimum_stock.router, tags=["Estoque Mínimo"])
 app.include_router(produtos_mais_vendidos.router, tags=["Produtos Mais Vendidos"])
+app.include_router(propostas.router, tags=["Propostas"])
 
 @app.get("/", tags=["Root"], summary="Verifica a saúde da API")
 async def read_root():
