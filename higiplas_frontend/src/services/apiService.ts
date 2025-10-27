@@ -4,9 +4,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
+  resolve: (value?: ApiRequestResult<unknown>) => void;
   reject: (reason?: unknown) => void;
 }> = [];
+
+type ApiRequestResult<T> = { data: T; headers: Headers } | null;
 
 const processQueue = (error: Error | null = null) => {
   failedQueue.forEach(prom => {
@@ -56,7 +58,7 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function request(endpoint: string, options: RequestInit = {}): Promise<{ data: any; headers: Headers } | null> {
+async function request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiRequestResult<T>> {
   const token = localStorage.getItem("authToken");
   const headers = new Headers(options.headers || {});
 
@@ -74,24 +76,21 @@ async function request(endpoint: string, options: RequestInit = {}): Promise<{ d
     headers,
   });
 
-  // Se receber 401, tenta renovar o token
   if (response.status === 401) {
     if (!isRefreshing) {
       isRefreshing = true;
-
       const newToken = await refreshAccessToken();
       isRefreshing = false;
 
       if (newToken) {
         processQueue();
 
-        // Tenta novamente a requisição original com o novo token
         headers.set('Authorization', `Bearer ${newToken}`);
         const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
           ...options,
           headers,
         });
-
+        
         if (!retryResponse.ok && retryResponse.status !== 204) {
           const errorBody = await retryResponse.json().catch(() => null);
           const errorDetail = errorBody?.detail ? JSON.stringify(errorBody.detail) : retryResponse.statusText;
@@ -102,25 +101,23 @@ async function request(endpoint: string, options: RequestInit = {}): Promise<{ d
           return null;
         }
 
-        const data = await retryResponse.json();
+        const data = (await retryResponse.json()) as T;
         return { data, headers: retryResponse.headers };
-      } else {
-        processQueue(new Error('Token refresh failed'));
-        // Redireciona para login
-        if (typeof window !== 'undefined') {
-          window.location.href = '/';
-        }
-        throw new Error('[401] Sessão expirada. Por favor, faça login novamente.');
       }
-    } else {
-      // Se já está renovando, adiciona à fila
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      }).then(() => {
-        // Tenta novamente após a renovação
-        return request(endpoint, options);
-      });
+
+      processQueue(new Error('Token refresh failed'));
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      throw new Error('[401] Sessão expirada. Por favor, faça login novamente.');
     }
+
+    return new Promise<ApiRequestResult<T>>((resolve, reject) => {
+      failedQueue.push({
+        resolve: (value?: ApiRequestResult<unknown>) => resolve(value as ApiRequestResult<T>),
+        reject,
+      });
+    }).then(() => request<T>(endpoint, options));
   }
 
   if (!response.ok) {
@@ -129,18 +126,19 @@ async function request(endpoint: string, options: RequestInit = {}): Promise<{ d
     throw new Error(`[${response.status}] ${errorDetail}`);
   }
 
+
   if (response.status === 204) {
     return null;
   }
 
   // Retorna a resposta completa para o JSON, para consistência
-  const data = await response.json();
+  const data = (await response.json()) as T;
   return { data, headers: response.headers };
 }
 
 
 // ========== NOVA FUNÇÃO ESPECÍFICA PARA DOWNLOADS ==========
-async function requestBlob(endpoint: string) {
+async function requestBlob(endpoint: string): Promise<Response> {
   const token = localStorage.getItem("authToken");
   const headers = new Headers();
 
@@ -151,6 +149,18 @@ async function requestBlob(endpoint: string) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers,
   });
+
+  // Se retorno OK, já retorna a response para o chamador processar o blob
+  if (response.ok) {
+    return response;
+  }
+
+  // Para outros erros que não sejam 401, tenta extrair detalhes e lança
+  if (response.status !== 401) {
+    const errorBody = await response.json().catch(() => null);
+    const errorDetail = errorBody?.detail ? JSON.stringify(errorBody.detail) : response.statusText;
+    throw new Error(`Download failed: ${errorDetail}`);
+  }
 
   // Se receber 401, tenta renovar o token
   if (response.status === 401) {
@@ -189,14 +199,14 @@ async function requestBlob(endpoint: string) {
   return response;
 }
 
-
-export const apiService = {
-  get: (endpoint: string) => request(endpoint),
-  post: (endpoint: string, body: unknown) => request(endpoint, { method: 'POST', body: JSON.stringify(body) }),
-  put: (endpoint: string, body: unknown) => request(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: (endpoint: string) => request(endpoint, { method: 'DELETE' }),
-  postFormData: (endpoint: string, formData: FormData) => request(endpoint, { method: 'POST', body: formData }),
-
-  // ========== ADICIONAMOS O NOVO MÉTODO AO SERVIÇO ==========
+const apiService = {
+  get: <T = unknown>(endpoint: string) => request<T>(endpoint),
+  post: <T = unknown>(endpoint: string, body: unknown) => request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  put: <T = unknown>(endpoint: string, body: unknown) => request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: <T = unknown>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
+  postFormData: <T = unknown>(endpoint: string, formData: FormData) => request<T>(endpoint, { method: 'POST', body: formData }),
   getBlob: (endpoint: string) => requestBlob(endpoint),
-};
+} as const;
+
+export { apiService };
+export default apiService;
