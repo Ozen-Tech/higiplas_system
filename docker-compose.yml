@@ -1,24 +1,6 @@
+version: "3.9"
 
 services:
-  # Serviço da API FastAPI
-  higiplas_api:
-    build:
-      context: ./backend  # 1. CONTEXTO: Diz ao Docker para "entrar" nesta pasta primeiro.
-      dockerfile: Dockerfile     # 2. DOCKERFILE: O nome do arquivo a ser usado.
-    command: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/code
-      - ./backend/app:/code/app # Mapeia o código para desenvolvimento
-    env_file:
-      - .env
-    depends_on:
-      - higiplas_postgres
-    networks:
-      - higiplas_network
-    
-
   # Serviço do Banco de Dados PostgreSQL
   higiplas_postgres:
     image: postgres:15-alpine
@@ -30,26 +12,63 @@ services:
       POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
+    env_file:
+      - ./.env
     networks:
       - higiplas_network
-    env_file:
-      - ./.env # Carrega as variáveis de ambiente do seu arquivo .env
     restart: unless-stopped
 
+  # Serviço de migração Alembic (executa apenas as migrações)
+  higiplas_migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    env_file:
+      - .env
+    depends_on:
+      - higiplas_postgres
+    networks:
+      - higiplas_network
+    restart: "no"  # Não reinicia, é só um job de migração
+
+  # Serviço da API FastAPI
+  higiplas_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/code
+      - ./backend/app:/code/app
+    env_file:
+      - .env
+    depends_on:
+      - higiplas_postgres
+      - higiplas_migrate
+    networks:
+      - higiplas_network
+    restart: unless-stopped
+
+  # Serviço do Frontend Next.js
   higiplas_frontend:
     build:
       context: ./higiplas_frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
+    volumes:
+      - ./higiplas_frontend:/app
     depends_on:
       - higiplas_api
     networks:
       - higiplas_network
+    restart: unless-stopped
 
 volumes:
   postgres_data: {}
-       
 
 networks:
   higiplas_network:
