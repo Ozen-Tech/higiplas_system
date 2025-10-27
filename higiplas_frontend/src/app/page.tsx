@@ -1,4 +1,4 @@
-// /src/app/page.tsx
+ // /src/app/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -39,7 +39,11 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
+
+      // Armazena ambos os tokens
       localStorage.setItem('authToken', data.access_token);
+      localStorage.setItem('refreshToken', data.refresh_token);
+
       router.push('/dashboard');
     } catch (err) {
       if (err instanceof Error) {
@@ -53,12 +57,12 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="flex items-center justify-between w-full px-4 md:px-8 py-3 border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <Image 
-          src="/HIGIPLAS-LOGO-2048x761.png" 
-          alt="Logo Higiplas" 
-          width={140} 
-          height={48} 
-          priority 
+        <Image
+          src="/HIGIPLAS-LOGO-2048x761.png"
+          alt="Logo Higiplas"
+          width={140}
+          height={48}
+          priority
         />
         <ThemeToggleButton />
       </header>

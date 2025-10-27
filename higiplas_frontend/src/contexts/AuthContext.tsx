@@ -4,7 +4,7 @@ import { createContext, useContext, ReactNode, useState, useEffect, useCallback 
 import { useRouter } from 'next/navigation';
 import { apiService } from '@/services/apiService';
 import { User } from '@/types';
-import toast from 'react-hot-toast'; // <-- 1. Importar o toast
+import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -24,12 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await apiService.get('/users/me');
       setUser(userData?.data || null);
     } catch (error) {
-      // --- 2. ADICIONAR O TOAST DE ERRO AQUI ---
-      console.error("Falha ao buscar usuário, limpando token.", error);
+      console.error("Falha ao buscar usuário, limpando tokens.", error);
       localStorage.removeItem("authToken");
+      localStorage.removeItem("refreshToken");
       setUser(null);
-      toast.error("Sua sessão expirou. Por favor, faça login novamente."); // <-- Notificação para o usuário
-      router.push('/'); // Garante o redirecionamento
+      toast.error("Sua sessão expirou. Por favor, faça login novamente.");
+      router.push('/');
     } finally {
       setLoading(false);
     }
@@ -44,12 +44,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchUser]);
 
-  const logout = () => {
+  const logout = async () => {
     if (confirm("Tem certeza que deseja sair?")) {
-      localStorage.removeItem("authToken");
-      setUser(null);
-      toast.success("Você saiu com sucesso!"); // <-- Feedback positivo no logout
-      router.push('/');
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        // Tenta revogar o refresh token no backend
+        if (refreshToken) {
+          await apiService.post('/users/logout', { refresh_token: refreshToken }).catch(() => {
+            // Ignora erros ao fazer logout no backend
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao fazer logout:", error);
+      } finally {
+        // Sempre limpa os tokens localmente
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
+        setUser(null);
+        toast.success("Você saiu com sucesso!");
+        router.push('/');
+      }
     }
   };
 
