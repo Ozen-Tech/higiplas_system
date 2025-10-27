@@ -47,7 +47,7 @@ async function refreshAccessToken(): Promise<string | null> {
     localStorage.setItem("refreshToken", data.refresh_token);
 
     return data.access_token;
-  } catch (error) {
+  } catch {
     // Se falhar ao renovar, limpa os tokens
     localStorage.removeItem("authToken");
     localStorage.removeItem("refreshToken");
@@ -55,7 +55,8 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
-async function request(endpoint: string, options: RequestInit = {}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function request(endpoint: string, options: RequestInit = {}): Promise<{ data: any; headers: Headers } | null> {
   const token = localStorage.getItem("authToken");
   const headers = new Headers(options.headers || {});
 
