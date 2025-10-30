@@ -40,7 +40,7 @@ function HistoricoGeralContent() {
       try {
         setLoading(true);
         const response = await apiService.get('/movimentacoes/historico-geral');
-        const movimentacoesData = response?.data || [];
+        const movimentacoesData = response?.data?.movimentacoes || [];
         const movimentacoesMapeadas = movimentacoesData.map((mov: Record<string, unknown>) => {
           try {
             return {
@@ -77,7 +77,7 @@ function HistoricoGeralContent() {
         setLoading(false);
       }
     };
-    
+
     fetchHistoricoGeral();
   }, [logout]);
 
@@ -115,7 +115,7 @@ function HistoricoGeralContent() {
   };
 
   const getTipoColor = (tipo: string) => {
-    return tipo === 'ENTRADA' 
+    return tipo === 'ENTRADA'
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
       : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
   };
@@ -126,7 +126,7 @@ function HistoricoGeralContent() {
         <h1 className="text-xl font-bold">Histórico Geral de Movimentações</h1>
         <div className="flex-1"/>
       </Header>
-      
+
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Filtros */}
