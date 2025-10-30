@@ -62,11 +62,13 @@ class Produto(Base):
 class MovimentacaoEstoque(Base):
     __tablename__ = "movimentacoes_estoque"
     id = Column(Integer, primary_key=True, index=True)
-    # Usando Enum para garantir que o tipo seja 'ENTRADA' ou 'SAIDA' no banco
     tipo_movimentacao = Column(Enum('ENTRADA', 'SAIDA', name='tipo_movimentacao_enum'), nullable=False)
     quantidade = Column(Float, nullable=False)
     observacao = Column(String, nullable=True)
     data_movimentacao = Column(DateTime(timezone=True), server_default=func.now())
+    origem = Column(Enum('VENDA', 'DEVOLUCAO', 'CORRECAO_MANUAL', 'COMPRA', 'AJUSTE', 'OUTRO', name='origem_movimentacao_enum'), nullable=True)
+    quantidade_antes = Column(Float, nullable=True)
+    quantidade_depois = Column(Float, nullable=True)
     
     produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)

@@ -15,13 +15,17 @@ interface Movimentacao {
   };
   tipo_movimentacao: 'ENTRADA' | 'SAIDA';
   quantidade: number;
+  quantidade_antes?: number;
+  quantidade_depois?: number;
   data_movimentacao: string;
   usuario?: {
     nome: string;
   };
   observacao?: string;
   nota_fiscal?: string;
+  origem?: string;
 }
+
 
 function HistoricoGeralContent() {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
@@ -36,10 +40,7 @@ function HistoricoGeralContent() {
       try {
         setLoading(true);
         const response = await apiService.get('/movimentacoes/historico-geral');
-        // O backend retorna {movimentacoes: [...], estatisticas: {...}}
-        const movimentacoesData = response?.data?.movimentacoes || [];
-        
-        // Mapear os dados para o formato esperado pelo frontend
+        const movimentacoesData = response?.data || [];
         const movimentacoesMapeadas = movimentacoesData.map((mov: Record<string, unknown>) => {
           try {
             return {
@@ -51,19 +52,22 @@ function HistoricoGeralContent() {
               },
               tipo_movimentacao: mov.tipo_movimentacao || 'ENTRADA',
               quantidade: mov.quantidade || 0,
+              quantidade_antes: mov.quantidade_antes || null,
+              quantidade_depois: mov.quantidade_depois || null,
               data_movimentacao: mov.data_movimentacao || new Date().toISOString(),
               usuario: {
                 nome: mov.usuario_nome || 'N/A'
               },
               observacao: mov.observacao || null,
-              nota_fiscal: mov.nota_fiscal || null
+              nota_fiscal: mov.nota_fiscal || null,
+              origem: mov.origem || null
             };
           } catch (error) {
             console.error('Erro ao mapear movimentação:', error, mov);
             return null;
           }
-        }).filter(Boolean); // Remove itens nulos
-        
+        }).filter(Boolean);
+
         setMovimentacoes(movimentacoesMapeadas);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro desconhecido";
@@ -212,7 +216,7 @@ function HistoricoGeralContent() {
           {/* Tabela de Movimentações */}
           {loading && <p className="text-center py-8">Carregando histórico...</p>}
           {error && <p className="text-red-500 text-center py-8">{error}</p>}
-          
+
           {!loading && !error && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
               <div className="overflow-x-auto">
@@ -230,6 +234,15 @@ function HistoricoGeralContent() {
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Quantidade
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Antes
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Depois
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Origem
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Usuário
@@ -262,6 +275,15 @@ function HistoricoGeralContent() {
                         <td className="px-6 py-4 text-center text-sm text-gray-900 dark:text-gray-100">
                           {mov.quantidade}
                         </td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          {mov.quantidade_antes ?? '-'}
+                        </td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          {mov.quantidade_depois ?? '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {mov.origem || '-'}
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                           <div className="flex items-center">
                             <UserIcon className="h-4 w-4 text-gray-400 mr-2" />
@@ -276,7 +298,7 @@ function HistoricoGeralContent() {
                   </tbody>
                 </table>
               </div>
-              
+
               {movimentacoesFiltradas.length === 0 && (
                 <div className="text-center py-8">
                   <ClockIcon className="mx-auto h-12 w-12 text-gray-400" />

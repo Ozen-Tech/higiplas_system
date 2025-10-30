@@ -1,14 +1,15 @@
-# backend/app/schemas/movimentacao_estoque.py
-
 from pydantic import BaseModel, Field, validator, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 from .usuario import Usuario
+
+OrigemMovimentacao = Literal['VENDA', 'DEVOLUCAO', 'CORRECAO_MANUAL', 'COMPRA', 'AJUSTE', 'OUTRO']
 
 class MovimentacaoEstoqueBase(BaseModel):
     produto_id: int
     quantidade: float = Field(..., gt=0, description="A quantidade deve ser maior que zero.")
     observacao: Optional[str] = None
+    origem: Optional[OrigemMovimentacao] = None
 
 class MovimentacaoEstoqueCreate(MovimentacaoEstoqueBase):
     tipo_movimentacao: str
@@ -25,6 +26,8 @@ class MovimentacaoEstoque(MovimentacaoEstoqueBase):
     tipo_movimentacao: str
     usuario_id: int
     data_movimentacao: datetime
+    quantidade_antes: Optional[float] = None
+    quantidade_depois: Optional[float] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -32,7 +35,9 @@ class MovimentacaoEstoqueResponse(MovimentacaoEstoqueBase):
     id: int
     tipo_movimentacao: str
     data_movimentacao: datetime
-    usuario: Optional[Usuario] = None 
+    usuario: Optional[Usuario] = None
+    quantidade_antes: Optional[float] = None
+    quantidade_depois: Optional[float] = None
 
     class Config:
         from_attributes = True
