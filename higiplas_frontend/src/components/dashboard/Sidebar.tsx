@@ -1,14 +1,14 @@
-// /src/components/dashboard/Sidebar.tsx - VERSÃO CORRIGIDA
+ // /src/components/dashboard/Sidebar.tsx - VERSÃO CORRIGIDA
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { 
-  CubeIcon, SparklesIcon, ShoppingCartIcon, 
+import {
+  CubeIcon, SparklesIcon, ShoppingCartIcon,
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
-  ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon, 
-  ChevronDownIcon, ChevronRightIcon 
+  ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
+  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -28,6 +28,7 @@ const navigation: NavigationItem[] = [
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
+  { name: 'Relatórios', href: '/dashboard/relatorios', icon: DocumentTextIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
   { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
@@ -38,8 +39,8 @@ export function Sidebar() {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (itemName: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemName) 
+    setExpandedItems(prev =>
+      prev.includes(itemName)
         ? prev.filter(name => name !== itemName)
         : [...prev, itemName]
     );
@@ -58,14 +59,14 @@ export function Sidebar() {
             priority
           />
         </div>
-        
+
         <div className="mt-8 flex-1 flex flex-col">
           <nav className="flex-1 px-2 space-y-1">
             {navigation.map((item) => {
               if ('subItems' in item && item.subItems) {
                 const isExpanded = expandedItems.includes(item.name);
                 const hasActiveSubItem = item.subItems.some(subItem => pathname === subItem.href);
-                
+
                 return (
                   <div key={item.name}>
                     <button
@@ -93,7 +94,7 @@ export function Sidebar() {
                         <ChevronRightIcon className="h-4 w-4" />
                       )}
                     </button>
-                    
+
                     {isExpanded && (
                       <div className="ml-6 mt-1 space-y-1">
                         {item.subItems.map((subItem) => {
@@ -125,7 +126,7 @@ export function Sidebar() {
                   </div>
                 );
               }
-              
+
               const isActive = pathname === item.href;
               return (
                 <Link
