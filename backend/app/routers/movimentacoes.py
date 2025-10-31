@@ -662,7 +662,11 @@ async def processar_pdf_movimentacao(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Processa um PDF de nota fiscal e registra as movimentações automaticamente."""
-    
+
+    # Inicializar serviço de similaridade
+    from ..services.product_similarity import product_similarity_service
+    similarity_service = product_similarity_service
+
     # Log para debug
     print(f"DEBUG: Arquivo recebido: {arquivo.filename if arquivo else 'None'}")
     print(f"DEBUG: Tipo movimentação: {tipo_movimentacao}")

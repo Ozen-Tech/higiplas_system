@@ -20,9 +20,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column('movimentacoes_estoque', sa.Column('origem', sa.String(length=100), nullable=True))
-    op.add_column('movimentacoes_estoque', sa.Column('quantidade_antes', sa.Integer(), nullable=True))
-    op.add_column('movimentacoes_estoque', sa.Column('quantidade_depois', sa.Integer(), nullable=True))
+    # Criar o tipo ENUM se não existir
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE origem_movimentacao_enum AS ENUM ('VENDA', 'DEVOLUCAO', 'CORRECAO_MANUAL', 'COMPRA', 'AJUSTE', 'OUTRO');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+
+    # Adicionar colunas
+    op.add_column('movimentacoes_estoque', sa.Column('origem', sa.Enum('VENDA', 'DEVOLUCAO', 'CORRECAO_MANUAL', 'COMPRA', 'AJUSTE', 'OUTRO', name='origem_movimentacao_enum'), nullable=True))
+    op.add_column('movimentacoes_estoque', sa.Column('quantidade_antes', sa.Float(), nullable=True))
+    op.add_column('movimentacoes_estoque', sa.Column('quantidade_depois', sa.Float(), nullable=True))
 
 
 def downgrade() -> None:
@@ -30,3 +40,6 @@ def downgrade() -> None:
     op.drop_column('movimentacoes_estoque', 'quantidade_depois')
     op.drop_column('movimentacoes_estoque', 'quantidade_antes')
     op.drop_column('movimentacoes_estoque', 'origem')
+
+    # Remover o tipo ENUM
+    op.execute("DROP TYPE IF EXISTS origem_movimentacao_enum")
