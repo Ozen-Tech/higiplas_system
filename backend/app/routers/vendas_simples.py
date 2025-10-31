@@ -47,19 +47,25 @@ def registrar_pedido(pedido: PedidoCreate, db: Session = Depends(get_db), curren
 
         if not produto:
             raise HTTPException(status_code=404, detail=f"Produto {item.produto_id} não encontrado")
-        
+
         if produto.quantidade_em_estoque < item.quantidade:
             raise HTTPException(
                 status_code=400,
                 detail=f"Estoque insuficiente para {produto.nome}. Estoque atual: {produto.quantidade_em_estoque}, solicitado: {item.quantidade}"
             )
 
-        # Registrar saída
-        produto.quantidade_em_estoque -= item.quantidade
+        # Registrar saída com quantidade antes, depois e origem
+        quantidade_antes = produto.quantidade_em_estoque
+        quantidade_depois = quantidade_antes - item.quantidade
+        produto.quantidade_em_estoque = quantidade_depois
+
         movimentacao = models.MovimentacaoEstoque(
             produto_id=produto.id,
             tipo_movimentacao="SAIDA",
             quantidade=item.quantidade,
+            quantidade_antes=quantidade_antes,
+            quantidade_depois=quantidade_depois,
+            origem="VENDA",
             observacao="Venda realizada pelo vendedor",
             usuario_id=current_user.id
         )
@@ -70,7 +76,7 @@ def registrar_pedido(pedido: PedidoCreate, db: Session = Depends(get_db), curren
             "quantidade_vendida": item.quantidade,
             "estoque_atual": produto.quantidade_em_estoque
         })
-    
+
     db.commit()
 
     return {

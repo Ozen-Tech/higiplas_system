@@ -196,14 +196,20 @@ def registrar_venda(
         for info in produtos_info:
             produto = info['produto']
             quantidade = info['quantidade']
+            quantidade_antes = produto.quantidade_em_estoque
+            quantidade_depois = produto.quantidade_em_estoque - quantidade
+
             movimentacao = models.MovimentacaoEstoque(
                 produto_id=produto.id,
                 tipo_movimentacao='SAIDA',
                 quantidade=quantidade,
+                quantidade_antes=quantidade_antes,
+                quantidade_depois=quantidade_depois,
+                origem='VENDA',
                 observacao=observacao_base,
                 usuario_id=current_user.id
             )
-            produto.quantidade_em_estoque -= quantidade
+            produto.quantidade_em_estoque = quantidade_depois
             db.add(movimentacao)
             movimentacoes_criadas.append({
                 'produto_nome': produto.nome,

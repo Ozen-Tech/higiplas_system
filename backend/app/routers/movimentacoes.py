@@ -451,6 +451,7 @@ async def confirmar_movimentacoes(
                 continue
             
             # Calcular nova quantidade
+            quantidade_antes = produto.quantidade_em_estoque
             if tipo_movimentacao == 'ENTRADA':
                 nova_quantidade = produto.quantidade_em_estoque + quantidade
             else:  # SAIDA
@@ -460,30 +461,33 @@ async def confirmar_movimentacoes(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {produto.quantidade_em_estoque}, Quantidade solicitada: {quantidade}"
                     )
-            
+
             # Criar movimentação
             movimentacao = models.MovimentacaoEstoque(
                 produto_id=produto.id,
                 tipo_movimentacao=tipo_movimentacao,
                 quantidade=quantidade,
+                quantidade_antes=quantidade_antes,
+                quantidade_depois=nova_quantidade,
+                origem='COMPRA' if tipo_movimentacao == 'ENTRADA' else 'VENDA',
                 observacao=f"Importação automática - NF: {nota_fiscal}",
                 usuario_id=current_user.id
             )
-            
+
             db.add(movimentacao)
-            
+
             # Atualizar estoque do produto
             produto.quantidade_em_estoque = nova_quantidade
-            
+
             movimentacoes_criadas.append({
                 'produto_id': produto.id,
                 'produto_nome': produto.nome,
                 'tipo': tipo_movimentacao,
                 'quantidade': quantidade,
-                'estoque_anterior': produto.quantidade_em_estoque - quantidade if tipo_movimentacao == 'ENTRADA' else produto.quantidade_em_estoque + quantidade,
+                'estoque_anterior': quantidade_antes,
                 'estoque_novo': nova_quantidade
             })
-            
+
             produtos_atualizados.append(produto.nome)
         
         db.commit()
