@@ -8,9 +8,11 @@ import {
   CubeIcon, SparklesIcon, ShoppingCartIcon,
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
   ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
-  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon
+  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 type NavigationItem = {
   name: string;
@@ -23,7 +25,7 @@ type NavigationItem = {
   }[];
 };
 
-const navigation: NavigationItem[] = [
+const baseNavigation: NavigationItem[] = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
@@ -31,12 +33,18 @@ const navigation: NavigationItem[] = [
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: DocumentTextIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
-  { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
+  { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  
+  // Adiciona item de Usuários apenas para ADMIN
+  const navigation = user?.perfil === 'ADMIN'
+    ? [...baseNavigation, { name: 'Usuários', href: '/dashboard/usuarios', icon: UserPlusIcon }]
+    : baseNavigation;
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>
