@@ -44,7 +44,7 @@ def create_user():
         perfil = typer.prompt(
             "Qual o perfil do usuário?", 
             type=click.Choice(list(schemas_usuario.PerfilUsuario)), # Usando a Enum
-            default=schemas_usuario.PerfilUsuario.OPERADOR.value,
+            default=schemas_usuario.PerfilUsuario.VENDEDOR.value,
             show_choices=True
         )
 

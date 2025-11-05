@@ -12,7 +12,7 @@ class UsuarioBase(BaseModel):
 class PerfilUsuario(str, Enum):
     ADMIN = "ADMIN"
     GESTOR = "GESTOR"
-    OPERADOR = "OPERADOR"
+    VENDEDOR = "VENDEDOR"
 
 class UsuarioCreate(UsuarioBase):
     email: EmailStr

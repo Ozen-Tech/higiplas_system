@@ -62,7 +62,7 @@ export interface User {
   id: number;
   nome: string;
   email: string;
-  perfil: 'ADMIN' | 'GESTOR' | 'OPERADOR';
+  perfil: 'ADMIN' | 'GESTOR' | 'VENDEDOR';
   is_active: boolean;
   xp?: number;
   level?: number;
