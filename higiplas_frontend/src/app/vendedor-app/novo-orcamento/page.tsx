@@ -127,7 +127,8 @@ export default function NovoOrcamentoPage() {
   };
 
   const handleShareWhatsApp = () => {
-    if (!clienteSelecionado || !orcamentoFinalizado) return;
+    if (!clienteSelecionado || !orcamentoFinalizado || !clienteSelecionado.telefone) return;
+    if (typeof window === 'undefined') return;
     const mensagem = `Olá, ${clienteSelecionado.nome}! Segue o orçamento #${orcamentoFinalizado} solicitado. Estou à disposição para qualquer dúvida.`;
     const fone = clienteSelecionado.telefone.replace(/\D/g, '');
     const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
