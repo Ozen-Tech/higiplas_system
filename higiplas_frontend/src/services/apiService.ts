@@ -2,8 +2,14 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// Função helper para acessar localStorage de forma segura (apenas no cliente)
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem("authToken");
+}
+
 async function request(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("authToken");
+  const token = getAuthToken();
   const headers = new Headers(options.headers || {});
 
   if (token) {
@@ -38,7 +44,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
 
 // ========== NOVA FUNÇÃO ESPECÍFICA PARA DOWNLOADS ==========
 async function requestBlob(endpoint: string) {
-  const token = localStorage.getItem("authToken");
+  const token = getAuthToken();
   const headers = new Headers();
 
   if (token) {

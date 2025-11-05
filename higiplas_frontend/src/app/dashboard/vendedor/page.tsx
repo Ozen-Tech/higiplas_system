@@ -55,21 +55,23 @@ export default function VendedorHubPage() {
             }
         }
         
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        
-        toast.dismiss(); // Remove o "loading..."
-        toast.success(`PDF #${orcamentoId} baixado!`);
-        
-        // Limpeza
-        setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-            link.remove();
-        }, 100);
+        if (typeof window !== 'undefined') {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            
+            toast.dismiss(); // Remove o "loading..."
+            toast.success(`PDF #${orcamentoId} baixado!`);
+            
+            // Limpeza
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                link.remove();
+            }, 100);
+        }
 
     } catch (downloadError) {
         toast.dismiss();

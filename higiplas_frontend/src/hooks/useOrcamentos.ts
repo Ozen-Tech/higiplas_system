@@ -17,7 +17,9 @@ export function useOrcamentos() {
     const errorMessage = err instanceof Error ? err.message : defaultMessage;
     if (errorMessage.includes("[401]")) {
       toast.error("Sessão expirada. Faça login novamente.");
-      localStorage.removeItem("authToken");
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("authToken");
+      }
       router.push('/');
     } else {
       toast.error(errorMessage);

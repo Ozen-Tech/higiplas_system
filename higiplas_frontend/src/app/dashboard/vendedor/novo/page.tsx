@@ -123,19 +123,21 @@ export default function NovoOrcamentoPage() {
                 }
             }
 
-            // 3. Cria uma URL temporária para o arquivo
-            const url = window.URL.createObjectURL(blob);
-            
-            // 4. Cria um link invisível e simula o clique para baixar
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', filename);
-            document.body.appendChild(link);
-            link.click();
+            // 3. Cria uma URL temporária para o arquivo (apenas no cliente)
+            if (typeof window !== 'undefined') {
+                const url = window.URL.createObjectURL(blob);
+                
+                // 4. Cria um link invisível e simula o clique para baixar
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
 
-            // 5. Limpa a URL e o link
-            link.remove();
-            window.URL.revokeObjectURL(url);
+                // 5. Limpa a URL e o link
+                link.remove();
+                window.URL.revokeObjectURL(url);
+            }
 
             toast.success("PDF gerado! Compartilhe com o cliente.");
 
@@ -148,6 +150,7 @@ export default function NovoOrcamentoPage() {
 
   const handleShareWhatsApp = () => {
       if(!clienteSelecionado) return;
+      if (typeof window === 'undefined') return;
       const mensagem = `Olá, ${clienteSelecionado.nome}! Segue o orçamento solicitado. Estou à disposição para qualquer dúvida.`;
       const fone = clienteSelecionado.telefone.replace(/\D/g, '');
       const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
