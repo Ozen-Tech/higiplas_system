@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/dashboard/Header';
 import { reportsService, StockReport } from '@/services/reportsService';
@@ -27,11 +27,7 @@ function RelatoriosContent() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
 
-  useEffect(() => {
-    loadReport();
-  }, [reportType]);
-
-  const loadReport = async () => {
+  const loadReport = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -68,7 +64,11 @@ function RelatoriosContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reportType, month, year, startDate, endDate, logout]);
+
+  useEffect(() => {
+    loadReport();
+  }, [loadReport]);
 
   const handleDownload = async (format: 'pdf' | 'xlsx') => {
     try {

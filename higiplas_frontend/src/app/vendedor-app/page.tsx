@@ -5,15 +5,13 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { PlusCircle, FileText, LogOut, User } from 'lucide-react';
+import { PlusCircle, FileText, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVendedorOrcamentos } from '@/hooks/useVendedorOrcamentos';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function VendedorAppPage() {
-  const router = useRouter();
   const { user, logout } = useAuth();
   const { orcamentos, loading, listarOrcamentos } = useVendedorOrcamentos();
 
