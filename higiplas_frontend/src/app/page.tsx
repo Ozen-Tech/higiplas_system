@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import { User } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -87,6 +88,21 @@ export default function LoginPage() {
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <Button type="submit" fullWidth>Entrar</Button>
           </form>
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
+              É vendedor?
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              onClick={() => router.push('/vendedor/login')}
+              className="gap-2"
+            >
+              <User size={16} />
+              Acessar como Vendedor
+            </Button>
+          </div>
         </div>
       </main>
     </div>

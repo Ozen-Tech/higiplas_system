@@ -1,0 +1,25 @@
+{
+  "name": "Higiplas - Orçamentos Vendedor",
+  "short_name": "Orçamentos",
+  "description": "Aplicativo para vendedores gerarem orçamentos de forma rápida e profissional",
+  "start_url": "/vendedor/app",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
