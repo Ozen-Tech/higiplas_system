@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useVendedor } from '@/hooks/useVendedor';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
-import { Orcamento } from '@/types/orcamentos';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
