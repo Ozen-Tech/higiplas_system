@@ -11,7 +11,7 @@ from app.db.connection import get_db
 from app.db import models
 from ..schemas import usuario as schemas_usuario
 from ..crud import usuario as crud_usuario
-from app.dependencies import create_access_token, get_current_user
+from app.dependencies import create_access_token, get_current_user, get_admin_user
 from app.core.config import settings
 
 router = APIRouter(
@@ -60,3 +60,25 @@ def create_new_user(user: schemas_usuario.UsuarioCreate, db: Session = Depends(g
 def read_users_me(current_user: models.Usuario = Depends(get_current_user)):
     """Retorna os dados do usuário atualmente logado."""
     return current_user
+
+
+@router.post("/admin/create", response_model=schemas_usuario.Usuario, status_code=status.HTTP_201_CREATED)
+def create_user_admin(
+    user: schemas_usuario.UsuarioCreate,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_admin_user)
+):
+    """
+    Cria um novo usuário no sistema.
+    Apenas o administrador (enzo.alverde@gmail.com) pode acessar esta rota.
+    """
+    # Verifica se o email já existe
+    db_user = crud_usuario.get_user_by_email(db=db, email=user.email)
+    if db_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="E-mail já registrado."
+        )
+    
+    # Cria o usuário
+    return crud_usuario.create_user(db=db, user_in=user, empresa_id=user.empresa_id)

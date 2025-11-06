@@ -8,9 +8,10 @@ import {
   CubeIcon, SparklesIcon, ShoppingCartIcon,
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
   ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
-  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon
+  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 type NavigationItem = {
   name: string;
@@ -34,9 +35,17 @@ const navigation: NavigationItem[] = [
   { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
 ];
 
+const adminNavigation: NavigationItem[] = [
+  { name: 'Criar Usuário', href: '/admin/criar-usuario', icon: UserPlusIcon },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { user } = useAuth();
+  
+  // Verificar se o usuário é admin
+  const isAdmin = user?.email?.toLowerCase() === 'enzo.alverde@gmail.com';
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>
@@ -150,6 +159,41 @@ export function Sidebar() {
                 </Link>
               );
             })}
+            
+            {/* Seção Admin - apenas para enzo.alverde@gmail.com */}
+            {isAdmin && (
+              <>
+                <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                  <p className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    Administração
+                  </p>
+                </div>
+                {adminNavigation.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href!}
+                      className={`
+                        group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150
+                        ${
+                          isActive
+                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }
+                      `}
+                    >
+                      <item.icon
+                        className={`mr-3 h-6 w-6 flex-shrink-0
+                          ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'}
+                        `}
+                      />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
         </div>
       </div>
