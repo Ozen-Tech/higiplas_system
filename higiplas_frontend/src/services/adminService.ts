@@ -18,6 +18,13 @@ export interface Usuario {
   is_active: boolean;
 }
 
+export interface Empresa {
+  id: number;
+  nome: string;
+  cnpj?: string;
+  data_criacao?: string;
+}
+
 export const adminService = {
   // Criar novo usuário
   criarUsuario: async (payload: UsuarioCreatePayload): Promise<Usuario | null> => {
@@ -31,10 +38,10 @@ export const adminService = {
   },
 
   // Listar empresas
-  listarEmpresas: async (): Promise<any[]> => {
+  listarEmpresas: async (): Promise<Empresa[]> => {
     try {
       const response = await apiService.get('/empresas/');
-      return response?.data || [];
+      return (response?.data || []) as Empresa[];
     } catch (error) {
       console.error('Erro ao listar empresas:', error);
       return [];

@@ -1,7 +1,7 @@
 // Hook para gerenciar operações administrativas
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { adminService, UsuarioCreatePayload, Usuario } from '@/services/adminService';
+import { adminService, UsuarioCreatePayload, Usuario, Empresa } from '@/services/adminService';
 import { vendedorService, Usuario as UsuarioType } from '@/services/vendedorService';
 import toast from 'react-hot-toast';
 
@@ -10,7 +10,7 @@ export function useAdmin() {
   const [usuario, setUsuario] = useState<UsuarioType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [empresas, setEmpresas] = useState<any[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
   const carregarUsuario = useCallback(async () => {
     setLoading(true);
