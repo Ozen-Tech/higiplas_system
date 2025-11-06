@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import { apiService } from '@/services/apiService';
 import { vendedorService } from '@/services/vendedorService';
 import toast from 'react-hot-toast';
 

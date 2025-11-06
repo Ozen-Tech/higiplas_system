@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useVendedor } from '@/hooks/useVendedor';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
 import { Orcamento } from '@/types/orcamentos';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,7 +24,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 
 export default function HistoricoPage() {
   const router = useRouter();
-  const { usuario, loading: userLoading, isVendedor } = useVendedor();
+  const { loading: userLoading, isVendedor } = useVendedor();
   const { orcamentos, loading: orcamentosLoading, listarOrcamentosVendedor } = useOrcamentos();
   const [termoBusca, setTermoBusca] = useState('');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -34,11 +34,6 @@ export default function HistoricoPage() {
       listarOrcamentosVendedor();
     }
   }, [isVendedor, listarOrcamentosVendedor]);
-
-  const calcularTotal = (orcamento: Orcamento) => {
-    if (!orcamento.itens) return 0;
-    return orcamento.itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario_congelado), 0);
-  };
 
   const handleDownloadPDF = async (orcamentoId: number) => {
     setDownloadingId(orcamentoId);
