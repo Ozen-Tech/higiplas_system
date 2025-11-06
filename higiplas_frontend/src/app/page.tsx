@@ -94,7 +94,7 @@ export default function LoginPage() {
             </p>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               fullWidth
               onClick={() => router.push('/vendedor/login')}
               className="gap-2"
