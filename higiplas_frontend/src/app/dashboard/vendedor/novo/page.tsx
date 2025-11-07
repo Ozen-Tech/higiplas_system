@@ -42,7 +42,6 @@ export default function NovoOrcamentoPage() {
   const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
   const [novoClienteCnpj, setNovoClienteCnpj] = useState('');
   const [novoClienteEmail, setNovoClienteEmail] = useState('');
-  const [novoClienteEndereco, setNovoClienteEndereco] = useState('');
   const [novoClienteBairro, setNovoClienteBairro] = useState('');
   const [novoClienteCidade, setNovoClienteCidade] = useState('');
   const [termoBuscaCliente, setTermoBuscaCliente] = useState('');
@@ -166,7 +165,6 @@ export default function NovoOrcamentoPage() {
       novoClienteTelefone,
       novoClienteCnpj,
       novoClienteEmail,
-      novoClienteEndereco,
       novoClienteBairro,
       novoClienteCidade
     );
@@ -187,7 +185,6 @@ export default function NovoOrcamentoPage() {
         setNovoClienteTelefone('');
         setNovoClienteCnpj('');
         setNovoClienteEmail('');
-        setNovoClienteEndereco('');
         setNovoClienteBairro('');
         setNovoClienteCidade('');
         buscarClientes();
@@ -360,15 +357,6 @@ export default function NovoOrcamentoPage() {
                                   onChange={(e) => setNovoClienteEmail(e.target.value)}
                               />
                           </div>
-                      </div>
-
-                      <div>
-                          <label className="text-sm font-medium">Endereço</label>
-                          <Input
-                              placeholder="Rua, número, complemento"
-                              value={novoClienteEndereco}
-                              onChange={(e) => setNovoClienteEndereco(e.target.value)}
-                          />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
