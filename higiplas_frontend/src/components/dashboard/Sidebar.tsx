@@ -57,15 +57,16 @@ export function Sidebar() {
 
   // Resto do componente permanece o mesmo...
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-      <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-5 pb-4 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
-        <div className="flex items-center flex-shrink-0 px-4">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40">
+      <div className="flex flex-col flex-grow bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl pt-5 pb-4 overflow-y-auto border-r border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+        <div className="flex items-center flex-shrink-0 px-4 mb-2 animate-fadeIn">
           <Image
             src="/HIGIPLAS-LOGO-2048x761.png"
             alt="Higiplas Logo"
             width={140}
             height={48}
             priority
+            className="transition-opacity duration-300 hover:opacity-80"
           />
         </div>
 
@@ -81,11 +82,11 @@ export function Sidebar() {
                     <button
                       onClick={() => toggleExpanded(item.name)}
                       className={`
-                        w-full group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150
+                        w-full group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 hover-lift
                         ${
                           hasActiveSubItem
-                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/80'
                         }
                       `}
                     >
@@ -113,11 +114,11 @@ export function Sidebar() {
                               key={subItem.name}
                               href={subItem.href}
                               className={`
-                                group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150
+                                group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ml-2
                                 ${
                                   isActive
-                                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200'
-                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 hover:translate-x-1'
                                 }
                               `}
                             >
@@ -142,11 +143,11 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href!}
                   className={`
-                    group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150
+                    group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 hover-lift
                     ${
                       isActive
-                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/80'
                     }
                   `}
                 >
@@ -163,7 +164,7 @@ export function Sidebar() {
             {/* Seção Admin - apenas para enzo.alverde@gmail.com */}
             {isAdmin && (
               <>
-                <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="pt-4 mt-4 border-t border-gray-200/50 dark:border-gray-700/50">
                   <p className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                     Administração
                   </p>
@@ -175,11 +176,11 @@ export function Sidebar() {
                       key={item.name}
                       href={item.href!}
                       className={`
-                        group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150
+                        group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 hover-lift
                         ${
                           isActive
-                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/80'
                         }
                       `}
                     >
