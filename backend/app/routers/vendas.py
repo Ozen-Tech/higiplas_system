@@ -116,27 +116,40 @@ def busca_rapida_clientes(
 
 def calcular_estatisticas_preco(produto_id: int, empresa_id: int, db: Session) -> dict:
     """Calcula estatísticas de preços de um produto baseado no histórico de vendas"""
-    historico = db.query(models.HistoricoPrecoProduto).filter(
-        models.HistoricoPrecoProduto.produto_id == produto_id,
-        models.HistoricoPrecoProduto.empresa_id == empresa_id
-    ).all()
-    
-    if not historico:
+    try:
+        # Verificar se a tabela existe (pode não existir ainda se a migration não foi executada)
+        historico = db.query(models.HistoricoPrecoProduto).filter(
+            models.HistoricoPrecoProduto.produto_id == produto_id,
+            models.HistoricoPrecoProduto.empresa_id == empresa_id
+        ).all()
+        
+        if not historico:
+            return {
+                'preco_maior': None,
+                'preco_medio': None,
+                'preco_menor': None,
+                'total_vendas': 0
+            }
+        
+        precos = [h.preco_unitario for h in historico]
+        
+        return {
+            'preco_maior': max(precos),
+            'preco_medio': sum(precos) / len(precos),
+            'preco_menor': min(precos),
+            'total_vendas': len(historico)
+        }
+    except Exception as e:
+        # Se a tabela não existir ou houver qualquer erro, retornar valores vazios
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Erro ao calcular estatísticas de preço (tabela pode não existir): {str(e)}")
         return {
             'preco_maior': None,
             'preco_medio': None,
             'preco_menor': None,
             'total_vendas': 0
         }
-    
-    precos = [h.preco_unitario for h in historico]
-    
-    return {
-        'preco_maior': max(precos),
-        'preco_medio': sum(precos) / len(precos),
-        'preco_menor': min(precos),
-        'total_vendas': len(historico)
-    }
 
 @router.get("/produtos/disponiveis", response_model=List[schemas.ProdutoVenda])
 def listar_produtos_venda(
@@ -167,22 +180,41 @@ def listar_produtos_venda(
     
     resultado = []
     for p in produtos:
-        # Calcular estatísticas de preço
-        estatisticas_dict = calcular_estatisticas_preco(p.id, current_user.empresa_id, db)
-        estatisticas = schemas.EstatisticasPreco(**estatisticas_dict)
-        
-        produto_venda = schemas.ProdutoVenda(
-            id=p.id,
-            nome=p.nome,
-            codigo=p.codigo,
-            preco=p.preco_venda,
-            estoque_disponivel=p.quantidade_em_estoque,
-            categoria=p.categoria,
-            unidade_medida=p.unidade_medida,
-            estatisticas_preco=estatisticas
-        )
-        
-        resultado.append(produto_venda)
+        try:
+            # Calcular estatísticas de preço
+            estatisticas_dict = calcular_estatisticas_preco(p.id, current_user.empresa_id, db)
+            estatisticas = schemas.EstatisticasPreco(**estatisticas_dict) if estatisticas_dict.get('total_vendas', 0) > 0 else None
+            
+            produto_venda = schemas.ProdutoVenda(
+                id=p.id,
+                nome=p.nome,
+                codigo=p.codigo,
+                preco=p.preco_venda,
+                estoque_disponivel=p.quantidade_em_estoque,
+                categoria=p.categoria,
+                unidade_medida=p.unidade_medida,
+                estatisticas_preco=estatisticas
+            )
+            
+            resultado.append(produto_venda)
+        except Exception as e:
+            # Se houver erro ao calcular estatísticas, retornar produto sem estatísticas
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Erro ao calcular estatísticas para produto {p.id}: {str(e)}")
+            
+            produto_venda = schemas.ProdutoVenda(
+                id=p.id,
+                nome=p.nome,
+                codigo=p.codigo,
+                preco=p.preco_venda,
+                estoque_disponivel=p.quantidade_em_estoque,
+                categoria=p.categoria,
+                unidade_medida=p.unidade_medida,
+                estatisticas_preco=None
+            )
+            
+            resultado.append(produto_venda)
     
     return resultado
     
