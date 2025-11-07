@@ -94,7 +94,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
     
     print("DEBUG: Padrão CIRCUS não encontrado. Tentando padrão GIRASSOL...")
     
-    # Indicadores específicos para GIRASSOL
+    # Indicadores específicos para GIRASSOL (usados apenas para otimização, não para limitar)
     indicadores_produtos = [
         'DADOS DOS PRODUTOS / SERVIÇOS',
         'DADOS DOS PRODUTOS',
@@ -104,51 +104,22 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         'DESCRIÇÃO DO PRODUTO/SERVIÇO'
     ]
     
-    # Indicadores de fim específicos para GIRASSOL
-    indicadores_fim = [
-        'DADOS ADICIONAIS',
-        'Dados Adicionais',
-        'Informações Complementares',
-        'INFORMAÇÕES COMPLEMENTARES',
-        'Observações',
-        'Total da Nota',
-        'Valor Total'
-    ]
-    
-    inicio_produtos = False
-    fim_secao = False
-    linha_inicio = -1
-    linha_fim = -1
-    
-    # Primeira passada: encontrar seção de produtos
+    # Encontrar a primeira linha onde produtos começam (para otimização)
+    linha_inicio = 0
     for i, linha in enumerate(linhas):
-        # Verificar se chegamos ao início da seção de produtos
-        if not inicio_produtos:
-            for indicador in indicadores_produtos:
-                if indicador in linha:
-                    inicio_produtos = True
-                    linha_inicio = i
-                    print(f"DEBUG: Seção de produtos iniciada na linha {i}: {indicador}")
-                    break
-            continue
-        
-        # Verificar se chegamos ao fim da seção de produtos
-        for indicador in indicadores_fim:
+        for indicador in indicadores_produtos:
             if indicador in linha:
-                fim_secao = True
-                linha_fim = i
-                print(f"DEBUG: Seção de produtos finalizada na linha {i}: {indicador}")
+                linha_inicio = i
+                print(f"DEBUG: Seção de produtos iniciada na linha {i}: {indicador}")
                 break
-        
-        if fim_secao:
+        if linha_inicio > 0:
             break
     
-    if not inicio_produtos:
-        print("DEBUG: Seção de produtos não encontrada. Tentando buscar em todo o texto...")
-        linha_inicio = 0
-        linha_fim = len(linhas)
+    # IMPORTANTE: Processar TODAS as linhas do texto, não apenas até um indicador de fim
+    # Isso garante que produtos em múltiplas páginas sejam processados
+    linha_fim = len(linhas)
     
-    print(f"DEBUG: Processando linhas {linha_inicio} a {linha_fim}")
+    print(f"DEBUG: Processando linhas {linha_inicio} a {linha_fim} (todas as linhas do PDF)")
     
     # Padrão GIRASSOL onde o código do produto vem colado à descrição (sem espaço)
     # Exemplo de linha real:
@@ -165,8 +136,9 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         r'([\d\.]+,[\d]{2})'                           # Valor total
     )
     
-    # Segunda passada: extrair produtos
-    for i in range(linha_inicio, linha_fim if linha_fim > 0 else len(linhas)):
+    # Segunda passada: extrair produtos de TODAS as linhas do PDF
+    # Processa todas as linhas para garantir que produtos em múltiplas páginas sejam capturados
+    for i in range(linha_inicio, linha_fim):
         if i >= len(linhas):
             break
             
