@@ -15,6 +15,7 @@ from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from app.dependencies import get_current_user
 from sqlalchemy import func, case
+from ..services.purchase_suggestion_service import PurchaseSuggestionService
 
 # Define o prefixo e as tags para todas as rotas neste arquivo
 router = APIRouter(
@@ -41,13 +42,41 @@ def read_low_stock_produtos(
 ):
     """
     Retorna uma lista de produtos onde a quantidade em estoque é menor ou igual ao estoque mínimo.
+    Usa cálculo baseado em demanda real quando há histórico suficiente.
     Trata casos onde o estoque mínimo é nulo.
     """
-    produtos = db.query(models.Produto).filter(
+    # Busca produtos com estoque baixo usando estoque mínimo atual
+    produtos_baixo_estoque = db.query(models.Produto).filter(
         models.Produto.empresa_id == current_user.empresa_id,
         models.Produto.quantidade_em_estoque <= models.Produto.estoque_minimo
     ).all()
-    return produtos
+    
+    # Para produtos com histórico suficiente, verifica também estoque mínimo calculado
+    service = PurchaseSuggestionService(db)
+    suggestions = service.get_purchase_suggestions(
+        empresa_id=current_user.empresa_id,
+        days_analysis=90,
+        min_sales_threshold=2
+    )
+    
+    # Cria set de IDs de produtos que precisam de compra
+    produtos_que_precisam_compra = {s['produto_id'] for s in suggestions}
+    
+    # Adiciona produtos que estão abaixo do estoque mínimo calculado mas não do atual
+    produtos_ids_baixo_estoque = {p.id for p in produtos_baixo_estoque}
+    
+    # Busca produtos adicionais que estão abaixo do mínimo calculado
+    for suggestion in suggestions:
+        produto_id = suggestion['produto_id']
+        if produto_id not in produtos_ids_baixo_estoque:
+            produto = db.query(models.Produto).filter(
+                models.Produto.id == produto_id,
+                models.Produto.empresa_id == current_user.empresa_id
+            ).first()
+            if produto:
+                produtos_baixo_estoque.append(produto)
+    
+    return produtos_baixo_estoque
 
 @router.get("/download/excel", response_description="Retorna um arquivo Excel com todos os produtos", summary="Exportar produtos para Excel")
 def download_produtos_excel(

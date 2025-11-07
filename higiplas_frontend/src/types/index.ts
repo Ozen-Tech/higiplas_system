@@ -93,6 +93,72 @@ export interface OrdemDeCompra {
 }
 
 
+// ======================== SUGESTÕES DE COMPRA ========================
+
+export interface PurchaseSuggestion {
+  produto_id: number;
+  produto_nome: string;
+  codigo?: string | null;
+  categoria?: string | null;
+  estoque_atual: number;
+  estoque_minimo_atual: number;
+  estoque_minimo_calculado: number;
+  demanda_media_diaria: number;
+  demanda_maxima_diaria: number;
+  total_vendido_periodo: number;
+  numero_vendas: number;
+  dias_com_vendas: number;
+  dias_cobertura_atual: number;
+  quantidade_sugerida: number;
+  status: 'CRÍTICO' | 'BAIXO' | 'ADEQUADO';
+  tem_historico_suficiente: boolean;
+  fornecedor_id?: number | null;
+  fornecedor_nome?: string | null;
+  preco_custo?: number | null;
+  preco_venda?: number | null;
+  valor_estimado_compra: number;
+  periodo_analise_dias: number;
+  lead_time_dias: number;
+  coverage_days: number;
+}
+
+export interface PurchaseSuggestionResponse {
+  total_sugestoes: number;
+  sugestoes_criticas: number;
+  sugestoes_baixas: number;
+  sugestoes: PurchaseSuggestion[];
+  data_analise: string;
+}
+
+export interface ProductAnalysisResponse {
+  produto_id: number;
+  produto_nome: string;
+  codigo?: string | null;
+  categoria?: string | null;
+  estoque_atual: number;
+  estoque_minimo_atual: number;
+  estoque_minimo_calculado: number;
+  demanda_media_diaria: number;
+  demanda_maxima_diaria: number;
+  total_vendido_periodo: number;
+  numero_vendas: number;
+  dias_com_vendas: number;
+  dias_cobertura_atual: number | string;
+  quantidade_sugerida: number;
+  precisa_compra: boolean;
+  status: 'CRÍTICO' | 'BAIXO' | 'ADEQUADO' | 'SEM_HISTORICO';
+  tem_historico_suficiente: boolean;
+  fornecedor_id?: number | null;
+  fornecedor_nome?: string | null;
+  preco_custo?: number | null;
+  preco_venda?: number | null;
+  valor_estimado_compra: number;
+  periodo_analise_dias: number;
+  lead_time_dias: number;
+  coverage_days: number;
+}
+
+
 // ======================== CLIENTES (NOVO MODELO V2) ========================
 
 export interface ClienteV2 {

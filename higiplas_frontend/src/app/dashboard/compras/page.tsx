@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-// Importe os novos tipos de OrdemDeCompra junto com o Product
-import { Product, OrdemDeCompra } from '@/types';
+import { OrdemDeCompra, PurchaseSuggestion, PurchaseSuggestionResponse } from '@/types';
 import { apiService } from '@/services/apiService';
 import { Header } from '@/components/dashboard/Header';
 import { CustomTable, Column } from '@/components/dashboard/CustomTable';
+import { PurchaseSuggestionCard } from '@/components/compras/PurchaseSuggestionCard';
 import Button from '@/components/Button';
 
 export default function ComprasPage() {
-  const [activeTab, setActiveTab] = useState<'baixoEstoque' | 'historico'>('baixoEstoque');
-  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
-  // Use o novo tipo importado para o estado das ordens de compra
+  const [activeTab, setActiveTab] = useState<'sugestoes' | 'historico'>('sugestoes');
+  const [suggestions, setSuggestions] = useState<PurchaseSuggestion[]>([]);
+  const [suggestionsData, setSuggestionsData] = useState<PurchaseSuggestionResponse | null>(null);
   const [orders, setOrders] = useState<OrdemDeCompra[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
@@ -22,11 +22,21 @@ export default function ComprasPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [lowStockData, ordersData] = await Promise.all([
-          apiService.get('/produtos/baixo-estoque/'),
+        const [suggestionsResponse, ordersData] = await Promise.all([
+          apiService.get('/compras/sugestoes'),
           apiService.get('/ordens-compra/'),
         ]);
-        setLowStockProducts(lowStockData?.data || []);
+        
+        const suggestionsData: PurchaseSuggestionResponse = suggestionsResponse?.data || {
+          total_sugestoes: 0,
+          sugestoes_criticas: 0,
+          sugestoes_baixas: 0,
+          sugestoes: [],
+          data_analise: new Date().toISOString()
+        };
+        
+        setSuggestionsData(suggestionsData);
+        setSuggestions(suggestionsData.sugestoes || []);
         setOrders(ordersData?.data || []);
       } catch (error) {
         console.error("Erro ao buscar dados de compras:", error);
@@ -57,14 +67,6 @@ export default function ComprasPage() {
     const ids = Array.from(selectedProducts).join(',');
     router.push(`/dashboard/compras/nova-oc?productIds=${ids}`);
   };
-
-  const lowStockColumns: Column<Product>[] = useMemo(() => [
-    { header: '', accessor: 'actions', render: (p: Product) => <input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => handleSelectProduct(p.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /> },
-    { header: 'Produto', accessor: 'nome', render: (p) => <span className="font-medium text-gray-900 dark:text-gray-100">{p.nome}</span> },
-    { header: 'Código', accessor: 'codigo' },
-    { header: 'Estoque Atual', accessor: 'quantidade_em_estoque', render: (p) => <span className="font-bold text-red-600 dark:text-red-400">{p.quantidade_em_estoque}</span> },
-    { header: 'Estoque Mínimo', accessor: 'estoque_minimo' },
-  ], [selectedProducts]);
   
   const orderColumns: Column<OrdemDeCompra>[] = useMemo(() => [
     { header: 'ID da OC', accessor: 'id', render: (o) => <span className="font-mono text-xs text-gray-500">#{o.id}</span> },
@@ -91,26 +93,75 @@ export default function ComprasPage() {
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-              <button onClick={() => setActiveTab('baixoEstoque')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'baixoEstoque' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-                Ponto de Pedido ({lowStockProducts.length})
+              <button 
+                onClick={() => setActiveTab('sugestoes')} 
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'sugestoes' 
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Sugestões de Compra ({suggestionsData?.total_sugestoes || 0})
+                {suggestionsData && suggestionsData.sugestoes_criticas > 0 && (
+                  <span className="ml-2 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    {suggestionsData.sugestoes_criticas} críticos
+                  </span>
+                )}
               </button>
-              <button onClick={() => setActiveTab('historico')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'historico' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-                Histórico de Ordens
+              <button 
+                onClick={() => setActiveTab('historico')} 
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'historico' 
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Histórico de Ordens ({orders.length})
               </button>
             </nav>
           </div>
 
-          {loading ? <div className="text-center p-8">Carregando dados...</div> : (
+          {loading ? (
+            <div className="text-center p-8">Carregando dados...</div>
+          ) : (
             <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md border dark:border-gray-700">
-              {activeTab === 'baixoEstoque' && (
+              {activeTab === 'sugestoes' && (
                 <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Produtos Precisando de Reposição</h3>
-                    <Button onClick={handleCreateOrder} disabled={selectedProducts.size === 0}>
-                      Criar Ordem de Compra ({selectedProducts.size})
-                    </Button>
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Sugestões de Compra Baseadas em Demanda Real</h3>
+                      {suggestions.length > 0 && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Análise baseada em {suggestions[0]?.periodo_analise_dias || 90} dias de histórico de vendas
+                        </p>
+                      )}
+                    </div>
+                    {selectedProducts.size > 0 && (
+                      <Button onClick={handleCreateOrder}>
+                        Criar Ordem de Compra ({selectedProducts.size})
+                      </Button>
+                    )}
                   </div>
-                  <CustomTable columns={lowStockColumns} data={lowStockProducts} />
+
+                  {suggestions.length === 0 ? (
+                    <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                      <p className="text-lg mb-2">Nenhuma sugestão de compra no momento</p>
+                      <p className="text-sm">
+                        Produtos com estoque adequado ou sem histórico suficiente de vendas não aparecem aqui.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {suggestions.map((suggestion) => (
+                        <PurchaseSuggestionCard
+                          key={suggestion.produto_id}
+                          suggestion={suggestion}
+                          onSelect={handleSelectProduct}
+                          isSelected={selectedProducts.has(suggestion.produto_id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               {activeTab === 'historico' && (
