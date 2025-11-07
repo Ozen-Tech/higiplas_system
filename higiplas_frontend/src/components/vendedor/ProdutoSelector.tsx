@@ -70,27 +70,33 @@ export function ProdutoSelector({
                         R$ {produto.preco.toFixed(2)}
                       </span>
                     </div>
-                    {produto.estatisticas_preco && produto.estatisticas_preco.total_vendas > 0 && (
+                    {produto.estatisticas_preco && (
+                      produto.estatisticas_preco.preco_maior !== null || 
+                      produto.estatisticas_preco.preco_medio !== null || 
+                      produto.estatisticas_preco.preco_menor !== null
+                    ) && (
                       <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex gap-3 text-xs">
-                          {produto.estatisticas_preco.preco_maior && (
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          {produto.estatisticas_preco.preco_maior !== null && produto.estatisticas_preco.preco_maior !== undefined && (
                             <span className="text-red-600 dark:text-red-400">
                               <span className="font-semibold">Maior:</span> R$ {produto.estatisticas_preco.preco_maior.toFixed(2)}
                             </span>
                           )}
-                          {produto.estatisticas_preco.preco_medio && (
+                          {produto.estatisticas_preco.preco_medio !== null && produto.estatisticas_preco.preco_medio !== undefined && (
                             <span className="text-blue-600 dark:text-blue-400">
                               <span className="font-semibold">Médio:</span> R$ {produto.estatisticas_preco.preco_medio.toFixed(2)}
                             </span>
                           )}
-                          {produto.estatisticas_preco.preco_menor && (
+                          {produto.estatisticas_preco.preco_menor !== null && produto.estatisticas_preco.preco_menor !== undefined && (
                             <span className="text-green-600 dark:text-green-400">
                               <span className="font-semibold">Menor:</span> R$ {produto.estatisticas_preco.preco_menor.toFixed(2)}
                             </span>
                           )}
-                          <span className="text-gray-500 dark:text-gray-400">
-                            ({produto.estatisticas_preco.total_vendas} vendas)
-                          </span>
+                          {produto.estatisticas_preco.total_vendas > 0 && (
+                            <span className="text-gray-500 dark:text-gray-400">
+                              ({produto.estatisticas_preco.total_vendas} vendas)
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}

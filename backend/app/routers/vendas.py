@@ -183,7 +183,8 @@ def listar_produtos_venda(
         try:
             # Calcular estatísticas de preço
             estatisticas_dict = calcular_estatisticas_preco(p.id, current_user.empresa_id, db)
-            estatisticas = schemas.EstatisticasPreco(**estatisticas_dict) if estatisticas_dict.get('total_vendas', 0) > 0 else None
+            # Sempre criar o objeto de estatísticas, mesmo que os valores sejam None
+            estatisticas = schemas.EstatisticasPreco(**estatisticas_dict)
             
             produto_venda = schemas.ProdutoVenda(
                 id=p.id,
@@ -198,10 +199,18 @@ def listar_produtos_venda(
             
             resultado.append(produto_venda)
         except Exception as e:
-            # Se houver erro ao calcular estatísticas, retornar produto sem estatísticas
+            # Se houver erro ao calcular estatísticas, retornar produto com estatísticas vazias
             import logging
             logger = logging.getLogger(__name__)
             logger.warning(f"Erro ao calcular estatísticas para produto {p.id}: {str(e)}")
+            
+            # Criar estatísticas vazias em caso de erro
+            estatisticas_vazias = schemas.EstatisticasPreco(
+                preco_maior=None,
+                preco_medio=None,
+                preco_menor=None,
+                total_vendas=0
+            )
             
             produto_venda = schemas.ProdutoVenda(
                 id=p.id,
@@ -211,7 +220,7 @@ def listar_produtos_venda(
                 estoque_disponivel=p.quantidade_em_estoque,
                 categoria=p.categoria,
                 unidade_medida=p.unidade_medida,
-                estatisticas_preco=None
+                estatisticas_preco=estatisticas_vazias
             )
             
             resultado.append(produto_venda)

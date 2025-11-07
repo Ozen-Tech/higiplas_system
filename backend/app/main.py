@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
     insights, dashboard_kpis, invoice_processing,
-    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, reports
+    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, reports, compras
 )
 
 from app.create_superuser import create_initial_superuser
@@ -83,6 +83,7 @@ app.include_router(ai_pdf.router, prefix="/ai-pdf", tags=["ai-pdf"])
 app.include_router(minimum_stock.router, tags=["Estoque Mínimo"])
 app.include_router(produtos_mais_vendidos.router, tags=["Produtos Mais Vendidos"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Relatórios"])
+app.include_router(compras.router, tags=["Compras"])
 
 @app.get("/", tags=["Root"], summary="Verifica a saúde da API")
 async def read_root():
