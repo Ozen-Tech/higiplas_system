@@ -1,7 +1,7 @@
 // Hook para gerenciar operações administrativas
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { adminService, UsuarioCreatePayload, Usuario, Empresa } from '@/services/adminService';
+import { adminService, UsuarioCreatePayload, Usuario } from '@/services/adminService';
 import { vendedorService, Usuario as UsuarioType } from '@/services/vendedorService';
 import toast from 'react-hot-toast';
 
@@ -10,7 +10,6 @@ export function useAdmin() {
   const [usuario, setUsuario] = useState<UsuarioType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
   const carregarUsuario = useCallback(async () => {
     setLoading(true);
@@ -42,15 +41,6 @@ export function useAdmin() {
     }
   }, [router]);
 
-  const carregarEmpresas = useCallback(async () => {
-    try {
-      const empresasList = await adminService.listarEmpresas();
-      setEmpresas(empresasList);
-    } catch (err) {
-      console.error('Erro ao carregar empresas:', err);
-    }
-  }, []);
-
   useEffect(() => {
     // Verificar se há token
     const token = localStorage.getItem('authToken');
@@ -60,8 +50,7 @@ export function useAdmin() {
     }
     
     carregarUsuario();
-    carregarEmpresas();
-  }, [carregarUsuario, carregarEmpresas, router]);
+  }, [carregarUsuario, router]);
 
   const criarUsuario = useCallback(async (payload: UsuarioCreatePayload): Promise<Usuario | null> => {
     setLoading(true);
@@ -92,9 +81,7 @@ export function useAdmin() {
     loading,
     error,
     isAdmin: usuario ? adminService.isAdmin(usuario.email) : false,
-    empresas,
     criarUsuario,
-    carregarEmpresas,
     logout,
   };
 }
