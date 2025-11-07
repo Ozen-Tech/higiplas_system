@@ -197,9 +197,30 @@ class ProdutoMaisVendido(Base):
     valor_total_vendido = Column(Float, default=0.0)
     numero_vendas = Column(Integer, default=0)
     ultima_atualizacao = Column(DateTime(timezone=True), server_default=func.now())
+
+class HistoricoPrecoProduto(Base):
+    """Armazena histórico de preços de produtos baseado em vendas (NFs de saída)"""
+    __tablename__ = "historico_preco_produto"
     
-    empresa_id = Column(Integer, ForeignKey("empresas.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False, index=True)
+    produto = relationship("Produto")
+    
+    preco_unitario = Column(Float, nullable=False)  # Preço unitário vendido
+    quantidade = Column(Float, nullable=False)  # Quantidade vendida
+    valor_total = Column(Float, nullable=False)  # Valor total da venda
+    
+    nota_fiscal = Column(String, nullable=True, index=True)  # Número da NF
+    data_venda = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False, index=True)
     empresa = relationship("Empresa")
+    
+    # Campos opcionais para contexto
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
+    cliente = relationship("Cliente")
+    
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
 
 class OrdemDeCompra(Base):
     __tablename__ = "ordens_compra"

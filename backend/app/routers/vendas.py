@@ -114,6 +114,30 @@ def busca_rapida_clientes(
 
 # ============= PRODUTOS DISPONÍVEIS =============
 
+def calcular_estatisticas_preco(produto_id: int, empresa_id: int, db: Session) -> dict:
+    """Calcula estatísticas de preços de um produto baseado no histórico de vendas"""
+    historico = db.query(models.HistoricoPrecoProduto).filter(
+        models.HistoricoPrecoProduto.produto_id == produto_id,
+        models.HistoricoPrecoProduto.empresa_id == empresa_id
+    ).all()
+    
+    if not historico:
+        return {
+            'preco_maior': None,
+            'preco_medio': None,
+            'preco_menor': None,
+            'total_vendas': 0
+        }
+    
+    precos = [h.preco_unitario for h in historico]
+    
+    return {
+        'preco_maior': max(precos),
+        'preco_medio': sum(precos) / len(precos),
+        'preco_menor': min(precos),
+        'total_vendas': len(historico)
+    }
+
 @router.get("/produtos/disponiveis", response_model=List[schemas.ProdutoVenda])
 def listar_produtos_venda(
     busca: Optional[str] = None,
@@ -141,17 +165,26 @@ def listar_produtos_venda(
     
     produtos = query.order_by(models.Produto.nome).all()
     
-    return [
-        schemas.ProdutoVenda(
+    resultado = []
+    for p in produtos:
+        # Calcular estatísticas de preço
+        estatisticas_dict = calcular_estatisticas_preco(p.id, current_user.empresa_id, db)
+        estatisticas = schemas.EstatisticasPreco(**estatisticas_dict)
+        
+        produto_venda = schemas.ProdutoVenda(
             id=p.id,
             nome=p.nome,
             codigo=p.codigo,
             preco=p.preco_venda,
             estoque_disponivel=p.quantidade_em_estoque,
             categoria=p.categoria,
-            unidade_medida=p.unidade_medida
-        ) for p in produtos
-    ]
+            unidade_medida=p.unidade_medida,
+            estatisticas_preco=estatisticas
+        )
+        
+        resultado.append(produto_venda)
+    
+    return resultado
     
 # ============= REGISTRAR VENDA =============
 

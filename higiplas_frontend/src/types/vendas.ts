@@ -17,6 +17,13 @@ export interface Dashboard {
     ultima_compra: string | null;
   }
   
+  export interface EstatisticasPreco {
+    preco_maior: number | null;
+    preco_medio: number | null;
+    preco_menor: number | null;
+    total_vendas: number;
+  }
+
   export interface Produto {
     id: number;
     nome: string;
@@ -25,6 +32,7 @@ export interface Dashboard {
     estoque_disponivel: number;
     categoria: string;
     unidade_medida: string;
+    estatisticas_preco?: EstatisticasPreco | null;
   }
   
   export interface ItemCarrinho {
