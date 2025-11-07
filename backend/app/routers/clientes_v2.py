@@ -65,12 +65,22 @@ def create_cliente(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Criar cliente com todos os dados"""
-    db_cliente = crud.create_cliente(
-        db=db,
-        cliente=cliente,
-        vendedor_id=current_user.id,
-        empresa_id=current_user.empresa_id
-    )
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Tentando criar cliente: nome={cliente.nome}, telefone={cliente.telefone}, tipo_pessoa={cliente.tipo_pessoa}")
+        db_cliente = crud.create_cliente(
+            db=db,
+            cliente=cliente,
+            vendedor_id=current_user.id,
+            empresa_id=current_user.empresa_id
+        )
+    except Exception as e:
+        logger.error(f"Erro ao criar cliente: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
     
     # Mapear para resposta
     response = schemas.ClienteResponse(
