@@ -12,7 +12,7 @@ interface ClienteSelectorProps {
   clientes: Cliente[];
   clienteSelecionado: Cliente | null;
   onSelectCliente: (cliente: Cliente | null) => void;
-  onCriarCliente: (nome: string, telefone: string, cnpj?: string, email?: string, endereco?: string, bairro?: string, cidade?: string) => Promise<ClienteV2 | null>;
+  onCriarCliente: (nome: string, telefone: string, cnpj?: string, email?: string, bairro?: string, cidade?: string) => Promise<ClienteV2 | null>;
   loading?: boolean;
 }
 
@@ -29,7 +29,6 @@ export function ClienteSelector({
   const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
   const [novoClienteCnpj, setNovoClienteCnpj] = useState('');
   const [novoClienteEmail, setNovoClienteEmail] = useState('');
-  const [novoClienteEndereco, setNovoClienteEndereco] = useState('');
   const [novoClienteBairro, setNovoClienteBairro] = useState('');
   const [novoClienteCidade, setNovoClienteCidade] = useState('');
 
@@ -45,7 +44,6 @@ export function ClienteSelector({
       novoClienteTelefone,
       novoClienteCnpj,
       novoClienteEmail,
-      novoClienteEndereco,
       novoClienteBairro,
       novoClienteCidade
     );
@@ -61,13 +59,12 @@ export function ClienteSelector({
       };
       onSelectCliente(clienteFormatado);
       setModalAberto(false);
-      setNovoClienteNome('');
-      setNovoClienteTelefone('');
-      setNovoClienteCnpj('');
-      setNovoClienteEmail('');
-      setNovoClienteEndereco('');
-      setNovoClienteBairro('');
-      setNovoClienteCidade('');
+        setNovoClienteNome('');
+        setNovoClienteTelefone('');
+        setNovoClienteCnpj('');
+        setNovoClienteEmail('');
+        setNovoClienteBairro('');
+        setNovoClienteCidade('');
     }
   };
 
@@ -197,14 +194,6 @@ export function ClienteSelector({
                     onChange={(e) => setNovoClienteEmail(e.target.value)}
                   />
                 </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Endereço</label>
-                <Input
-                  placeholder="Rua, número, complemento"
-                  value={novoClienteEndereco}
-                  onChange={(e) => setNovoClienteEndereco(e.target.value)}
-                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

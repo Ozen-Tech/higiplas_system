@@ -101,23 +101,32 @@ export function useVendas() {
     telefone: string,
     cnpj?: string,
     email?: string,
-    endereco?: string,
     bairro?: string,
     cidade?: string
   ): Promise<ClienteV2 | null> => {
     setLoading(true);
     try {
       // Chama o endpoint POST /clientes para criar cliente completo
-      const payload = {
+      // O schema espera: nome, telefone, tipo_pessoa, e campos opcionais
+      const payload: {
+        nome: string;
+        telefone: string;
+        tipo_pessoa: string;
+        cpf_cnpj?: string;
+        email?: string;
+        bairro?: string;
+        cidade?: string;
+      } = {
         nome,
         telefone,
-        cpf_cnpj: cnpj,
-        email,
-        endereco,
-        bairro,
-        cidade,
         tipo_pessoa: cnpj ? "JURIDICA" : "FISICA"
       };
+      
+      // Adicionar campos opcionais apenas se fornecidos
+      if (cnpj && cnpj.trim()) payload.cpf_cnpj = cnpj.trim();
+      if (email && email.trim()) payload.email = email.trim();
+      if (bairro && bairro.trim()) payload.bairro = bairro.trim();
+      if (cidade && cidade.trim()) payload.cidade = cidade.trim();
       const response = await apiService.post('/clientes', payload);
       toast.success('Cliente criado com sucesso!');
       return response?.data || null;
