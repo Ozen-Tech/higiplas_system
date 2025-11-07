@@ -75,3 +75,19 @@ def get_current_vendedor(
             detail="Acesso negado. Apenas vendedores podem acessar este recurso.",
         )
     return current_user
+
+
+def get_admin_user(
+    current_user: models.Usuario = Depends(get_current_user)
+) -> models.Usuario:
+    """
+    Valida se o usuário autenticado é o administrador (enzo.alverde@gmail.com).
+    Retorna HTTP 403 se o usuário não for o administrador.
+    """
+    ADMIN_EMAIL = "enzo.alverde@gmail.com"
+    if current_user.email.lower() != ADMIN_EMAIL.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado. Apenas o administrador pode acessar este recurso.",
+        )
+    return current_user
