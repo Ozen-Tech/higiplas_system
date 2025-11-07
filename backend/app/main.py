@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
     insights, dashboard_kpis, invoice_processing,
@@ -123,11 +125,38 @@ async def options_handler(request: Request):
         }
     )
 
+# Exception handler para erros de validação
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Erro de validação na requisição {request.method} {request.url}")
+    logger.error(f"Erros: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()}
+    )
+
 # Middleware para logar requisições e adicionar headers CORS manualmente
 @app.middleware("http")
 async def add_cors_and_log(request: Request, call_next):
     logger.info(f"Requisição: {request.method} {request.url}")
     logger.info(f"Headers: {dict(request.headers)}")
+    
+    # Capturar body para logging apenas em POST/PUT/PATCH
+    if request.method in ["POST", "PUT", "PATCH"]:
+        body = await request.body()
+        if body:
+            try:
+                import json
+                body_json = json.loads(body)
+                logger.info(f"Body: {body_json}")
+            except:
+                logger.info(f"Body (raw): {body[:500]}")  # Primeiros 500 chars
+        
+        # Recriar request com body para que possa ser lido novamente
+        async def receive():
+            return {"type": "http.request", "body": body}
+        
+        request._receive = receive
 
     # Processar a requisição
     try:
