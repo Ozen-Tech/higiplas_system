@@ -792,6 +792,34 @@ async def processar_pdf_movimentacao(
                     empresa_id=current_user.empresa_id
                 )
                 
+                # Se for SAÍDA (venda), salvar preço no histórico
+                if tipo_movimentacao == 'SAIDA' and produto_data.get('valor_unitario'):
+                    valor_unitario = produto_data.get('valor_unitario')
+                    valor_total = produto_data.get('valor_total', valor_unitario * quantidade)
+                    
+                    # Buscar cliente se houver CNPJ na NF
+                    cliente_id = None
+                    if dados_extraidos.get('cnpj_cliente'):
+                        cliente = db.query(models.Cliente).filter(
+                            models.Cliente.cnpj == dados_extraidos.get('cnpj_cliente'),
+                            models.Cliente.empresa_id == current_user.empresa_id
+                        ).first()
+                        if cliente:
+                            cliente_id = cliente.id
+                    
+                    # Criar registro de histórico de preço
+                    historico_preco = models.HistoricoPrecoProduto(
+                        produto_id=produto.id,
+                        preco_unitario=valor_unitario,
+                        quantidade=quantidade,
+                        valor_total=valor_total,
+                        nota_fiscal=dados_extraidos.get('nota_fiscal'),
+                        empresa_id=current_user.empresa_id,
+                        cliente_id=cliente_id
+                    )
+                    db.add(historico_preco)
+                    db.commit()
+                
                 movimentacoes_criadas.append({
                     'produto_id': produto.id,
                     'codigo': codigo,

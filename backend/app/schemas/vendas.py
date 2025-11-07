@@ -33,6 +33,13 @@ class ClienteRapido(BaseModel):
 
 # ============= PRODUTOS =============
 
+class EstatisticasPreco(BaseModel):
+    """Estatísticas de preços históricos de um produto"""
+    preco_maior: Optional[float] = None
+    preco_medio: Optional[float] = None
+    preco_menor: Optional[float] = None
+    total_vendas: int = 0
+
 class ProdutoVenda(BaseModel):
     """Produto disponível para venda"""
     id: int
@@ -42,6 +49,7 @@ class ProdutoVenda(BaseModel):
     estoque_disponivel: int
     categoria: str
     unidade_medida: str
+    estatisticas_preco: Optional[EstatisticasPreco] = None
     
     class Config:
         from_attributes = True
