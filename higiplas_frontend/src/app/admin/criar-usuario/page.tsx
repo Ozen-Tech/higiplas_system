@@ -21,13 +21,12 @@ const PERFIS = [
 
 export default function CriarUsuarioPage() {
   const router = useRouter();
-  const { usuario, loading, error, isAdmin, empresas, criarUsuario } = useAdmin();
+  const { usuario, loading, error, isAdmin, criarUsuario } = useAdmin();
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     password: '',
     confirmPassword: '',
-    empresa_id: '',
     perfil: 'OPERADOR',
   });
   const [usuarioCriado, setUsuarioCriado] = useState(false);
@@ -36,7 +35,7 @@ export default function CriarUsuarioPage() {
     e.preventDefault();
 
     // Validações
-    if (!formData.nome || !formData.email || !formData.password || !formData.empresa_id) {
+    if (!formData.nome || !formData.email || !formData.password) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -51,11 +50,14 @@ export default function CriarUsuarioPage() {
       return;
     }
 
+    // Usa a empresa do usuário logado (admin) ou empresa_id = 1 como padrão
+    const empresa_id = usuario?.empresa_id || 1;
+
     const payload = {
       nome: formData.nome,
       email: formData.email,
       password: formData.password,
-      empresa_id: parseInt(formData.empresa_id),
+      empresa_id: empresa_id,
       perfil: formData.perfil,
     };
 
@@ -69,7 +71,6 @@ export default function CriarUsuarioPage() {
         email: '',
         password: '',
         confirmPassword: '',
-        empresa_id: '',
         perfil: 'OPERADOR',
       });
     }
@@ -214,26 +215,6 @@ export default function CriarUsuarioPage() {
                       required
                       minLength={6}
                     />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="empresa_id">Empresa *</Label>
-                    <Select
-                      value={formData.empresa_id}
-                      onValueChange={(value) => setFormData({ ...formData, empresa_id: value })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {empresas.map((empresa) => (
-                          <SelectItem key={empresa.id} value={empresa.id.toString()}>
-                            {empresa.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div>
