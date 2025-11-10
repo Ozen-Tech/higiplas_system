@@ -310,20 +310,6 @@ export default function MovimentacoesPage() {
     }
   };
 
-  const handleSearchTermChange = (produtoIndex: number, termo: string) => {
-    setSearchTerms(prev => ({
-      ...prev,
-      [produtoIndex]: termo
-    }));
-
-    // Debounce: buscar após 500ms sem digitação
-    const timeoutId = setTimeout(() => {
-      handleBuscarProdutosSimilares(produtoIndex, termo);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  };
-
   const handleAssociarProdutoSimilar = async (produtoIndex: number, produtoId: number) => {
     if (!previewData?.produtos_nao_encontrados[produtoIndex]) return;
 
@@ -1019,7 +1005,7 @@ export default function MovimentacoesPage() {
                                    (!searchResults[index] || searchResults[index].length === 0) && 
                                    !isSearching[index] && (
                                     <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                                      Nenhum produto encontrado no estoque para "{searchTerms[index]}". Tente outro termo de busca.
+                                      Nenhum produto encontrado no estoque para &quot;{searchTerms[index]}&quot;. Tente outro termo de busca.
                                     </div>
                                   )}
                                 </div>
