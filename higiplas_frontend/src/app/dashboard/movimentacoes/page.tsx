@@ -63,6 +63,9 @@ export default function MovimentacoesPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [selectedSimilarProducts, setSelectedSimilarProducts] = useState<{[key: number]: number}>({});
+  const [searchTerms, setSearchTerms] = useState<{[key: number]: string}>({});
+  const [searchResults, setSearchResults] = useState<{[key: number]: ProdutoSimilar[]}>({});
+  const [isSearching, setIsSearching] = useState<{[key: number]: boolean}>({});
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const searchParams = useSearchParams();
@@ -106,6 +109,8 @@ export default function MovimentacoesPage() {
         setPreviewData(response.data);
         setSelectedProducts([]);
         setSelectedSimilarProducts({});
+        setSearchTerms({});
+        setSearchResults({});
         setShowModal(true);
       } else {
         setError(response?.data?.mensagem || 'Erro ao processar o arquivo PDF.');
@@ -272,6 +277,53 @@ export default function MovimentacoesPage() {
     }));
   };
 
+  const handleBuscarProdutosSimilares = async (produtoIndex: number, termo: string) => {
+    if (!termo || termo.trim().length < 2) {
+      setSearchResults(prev => {
+        const newResults = { ...prev };
+        delete newResults[produtoIndex];
+        return newResults;
+      });
+      return;
+    }
+
+    setIsSearching(prev => ({ ...prev, [produtoIndex]: true }));
+
+    try {
+      const response = await apiService.get(`/movimentacoes/buscar-produtos-similares?termo=${encodeURIComponent(termo.trim())}&limit=20`);
+      
+      if (response && response.data) {
+        setSearchResults(prev => ({
+          ...prev,
+          [produtoIndex]: response.data
+        }));
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao buscar produtos similares:', error);
+      setSearchResults(prev => {
+        const newResults = { ...prev };
+        delete newResults[produtoIndex];
+        return newResults;
+      });
+    } finally {
+      setIsSearching(prev => ({ ...prev, [produtoIndex]: false }));
+    }
+  };
+
+  const handleSearchTermChange = (produtoIndex: number, termo: string) => {
+    setSearchTerms(prev => ({
+      ...prev,
+      [produtoIndex]: termo
+    }));
+
+    // Debounce: buscar após 500ms sem digitação
+    const timeoutId = setTimeout(() => {
+      handleBuscarProdutosSimilares(produtoIndex, termo);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  };
+
   const handleAssociarProdutoSimilar = async (produtoIndex: number, produtoId: number) => {
     if (!previewData?.produtos_nao_encontrados[produtoIndex]) return;
 
@@ -306,10 +358,18 @@ export default function MovimentacoesPage() {
           produtos_nao_encontrados: novosProdutosNaoEncontrados
         });
 
-        // Limpar seleção de produto similar
+        // Limpar seleção de produto similar e busca
         const novosSelectedSimilar = { ...selectedSimilarProducts };
         delete novosSelectedSimilar[produtoIndex];
         setSelectedSimilarProducts(novosSelectedSimilar);
+        
+        const novosSearchTerms = { ...searchTerms };
+        delete novosSearchTerms[produtoIndex];
+        setSearchTerms(novosSearchTerms);
+        
+        const novosSearchResults = { ...searchResults };
+        delete novosSearchResults[produtoIndex];
+        setSearchResults(novosSearchResults);
       } else {
         setError(response?.data?.mensagem || 'Erro ao associar produto similar.');
       }
@@ -807,68 +867,174 @@ export default function MovimentacoesPage() {
                               </div>
                               
                               {/* Produtos Similares */}
-                              {produto.produtos_similares && produto.produtos_similares.length > 0 && (
-                                <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-700">
-                                  <div className="flex items-center mb-3">
-                                    <div className="p-2 bg-yellow-100 dark:bg-yellow-800 rounded-lg mr-3">
-                                      <EyeIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                                    </div>
-                                    <h5 className="font-bold text-yellow-800 dark:text-yellow-200">
-                                      Produtos Similares Encontrados
-                                    </h5>
+                              <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-700">
+                                <div className="flex items-center mb-3">
+                                  <div className="p-2 bg-yellow-100 dark:bg-yellow-800 rounded-lg mr-3">
+                                    <EyeIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                                   </div>
-                                  <div className="space-y-3">
-                                    {produto.produtos_similares.map((similar, similarIndex) => (
-                                      <div key={similarIndex} className="group p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-yellow-300 dark:hover:border-yellow-500 transition-all">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center space-x-3">
-                                            <input
-                                              type="radio"
-                                              name={`similar-${index}`}
-                                              value={similar.produto_id}
-                                              checked={selectedSimilarProducts[index] === similar.produto_id}
-                                              onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
-                                              className="h-4 w-4 text-yellow-600 border-2 border-gray-300 focus:ring-yellow-500"
-                                            />
-                                            <div className="flex-1">
-                                              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                                                {similar.nome}
-                                              </div>
-                                              <div className="flex items-center space-x-3 mt-1 text-xs">
-                                                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">
-                                                  {similar.codigo}
-                                                </span>
-                                                <span className="text-gray-600 dark:text-gray-400">
-                                                  Estoque: {similar.estoque_atual}
-                                                </span>
-                                                <span className={`px-2 py-1 rounded font-bold ${
-                                                  similar.score_similaridade >= 80 
-                                                    ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300'
-                                                    : similar.score_similaridade >= 60
-                                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-300'
-                                                    : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300'
-                                                }`}>
-                                                  {Math.round(similar.score_similaridade)}%
-                                                </span>
+                                  <h5 className="font-bold text-yellow-800 dark:text-yellow-200">
+                                    Produtos Similares
+                                  </h5>
+                                </div>
+                                
+                                {/* Campo de Busca */}
+                                <div className="mb-4">
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      placeholder="Buscar produto no seu estoque por nome ou código..."
+                                      value={searchTerms[index] || ''}
+                                      onChange={(e) => {
+                                        const termo = e.target.value;
+                                        setSearchTerms(prev => ({ ...prev, [index]: termo }));
+                                        if (termo.length >= 2) {
+                                          const timeoutId = setTimeout(() => {
+                                            handleBuscarProdutosSimilares(index, termo);
+                                          }, 500);
+                                          return () => clearTimeout(timeoutId);
+                                        } else {
+                                          setSearchResults(prev => {
+                                            const newResults = { ...prev };
+                                            delete newResults[index];
+                                            return newResults;
+                                          });
+                                        }
+                                      }}
+                                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                    />
+                                    {isSearching[index] && (
+                                      <div className="absolute right-3 top-2.5">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600"></div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Lista de Produtos Similares */}
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                  {/* Produtos encontrados automaticamente */}
+                                  {produto.produtos_similares && produto.produtos_similares.length > 0 && (
+                                    <>
+                                      {produto.produtos_similares.map((similar, similarIndex) => (
+                                        <div key={`auto-${similarIndex}`} className="group p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-yellow-300 dark:hover:border-yellow-500 transition-all">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-3">
+                                              <input
+                                                type="radio"
+                                                name={`similar-${index}`}
+                                                value={similar.produto_id}
+                                                checked={selectedSimilarProducts[index] === similar.produto_id}
+                                                onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
+                                                className="h-4 w-4 text-yellow-600 border-2 border-gray-300 focus:ring-yellow-500"
+                                              />
+                                              <div className="flex-1">
+                                                <div className="font-semibold text-gray-900 dark:text-gray-100">
+                                                  {similar.nome}
+                                                </div>
+                                                <div className="flex items-center space-x-3 mt-1 text-xs">
+                                                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">
+                                                    {similar.codigo}
+                                                  </span>
+                                                  <span className="text-gray-600 dark:text-gray-400">
+                                                    Estoque: {similar.estoque_atual}
+                                                  </span>
+                                                  <span className={`px-2 py-1 rounded font-bold ${
+                                                    similar.score_similaridade >= 80 
+                                                      ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300'
+                                                      : similar.score_similaridade >= 60
+                                                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-300'
+                                                      : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300'
+                                                  }`}>
+                                                    {Math.round(similar.score_similaridade)}%
+                                                  </span>
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
                                         </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  {selectedSimilarProducts[index] && (
-                                    <div className="mt-4 flex justify-end">
-                                      <Button
-                                        onClick={() => handleAssociarProdutoSimilar(index, selectedSimilarProducts[index])}
-                                        className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-md transition-all"
-                                      >
-                                        ✓ Associar Produto Selecionado
-                                      </Button>
+                                      ))}
+                                    </>
+                                  )}
+                                  
+                                  {/* Resultados da busca */}
+                                  {searchResults[index] && searchResults[index].length > 0 && (
+                                    <>
+                                      {searchResults[index].map((similar, similarIndex) => {
+                                        // Verificar se já está na lista automática
+                                        const jaExiste = produto.produtos_similares?.some(p => p.produto_id === similar.produto_id);
+                                        if (jaExiste) return null;
+                                        
+                                        return (
+                                          <div key={`search-${similarIndex}`} className="group p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-500 transition-all">
+                                            <div className="flex items-center justify-between">
+                                              <div className="flex items-center space-x-3">
+                                                <input
+                                                  type="radio"
+                                                  name={`similar-${index}`}
+                                                  value={similar.produto_id}
+                                                  checked={selectedSimilarProducts[index] === similar.produto_id}
+                                                  onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
+                                                  className="h-4 w-4 text-blue-600 border-2 border-gray-300 focus:ring-blue-500"
+                                                />
+                                                <div className="flex-1">
+                                                  <div className="font-semibold text-gray-900 dark:text-gray-100">
+                                                    {similar.nome}
+                                                  </div>
+                                                  <div className="flex items-center space-x-3 mt-1 text-xs">
+                                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">
+                                                      {similar.codigo}
+                                                    </span>
+                                                    <span className="text-gray-600 dark:text-gray-400">
+                                                      Estoque: {similar.estoque_atual}
+                                                    </span>
+                                                    <span className={`px-2 py-1 rounded font-bold ${
+                                                      similar.score_similaridade >= 80 
+                                                        ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300'
+                                                        : similar.score_similaridade >= 60
+                                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-300'
+                                                        : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300'
+                                                    }`}>
+                                                      {Math.round(similar.score_similaridade)}%
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </>
+                                  )}
+                                  
+                                  {/* Mensagem quando não há resultados */}
+                                  {(!produto.produtos_similares || produto.produtos_similares.length === 0) && 
+                                   (!searchResults[index] || searchResults[index].length === 0) && 
+                                   (!searchTerms[index] || searchTerms[index].length < 2) && (
+                                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                                      Nenhum produto similar encontrado automaticamente. Use o campo de busca acima para pesquisar no seu estoque.
+                                    </div>
+                                  )}
+                                  
+                                  {searchTerms[index] && searchTerms[index].length >= 2 && 
+                                   (!searchResults[index] || searchResults[index].length === 0) && 
+                                   !isSearching[index] && (
+                                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                                      Nenhum produto encontrado no estoque para "{searchTerms[index]}". Tente outro termo de busca.
                                     </div>
                                   )}
                                 </div>
-                              )}
+                                
+                                {selectedSimilarProducts[index] && (
+                                  <div className="mt-4 flex justify-end">
+                                    <Button
+                                      onClick={() => handleAssociarProdutoSimilar(index, selectedSimilarProducts[index])}
+                                      className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-md transition-all"
+                                    >
+                                      ✓ Associar Produto Selecionado
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
