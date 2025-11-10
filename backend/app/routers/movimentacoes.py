@@ -169,6 +169,62 @@ def read_movimentacoes_por_produto(
         empresa_id=current_user.empresa_id
     )
 
+@router.get(
+    "/buscar-produtos-similares",
+    response_model=List[Dict[str, Any]],
+    summary="Busca produtos similares por termo de pesquisa",
+    description="Busca produtos similares no sistema baseado em um termo de pesquisa. Útil para associar produtos da NF com produtos do sistema."
+)
+async def buscar_produtos_similares(
+    termo: str,
+    empresa_id: int = None,
+    limit: int = 20,
+    min_similarity: int = 30,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Busca produtos similares por termo de pesquisa"""
+    
+    if not termo or len(termo.strip()) < 2:
+        return []
+    
+    # Usar empresa_id do usuário se não fornecido
+    if empresa_id is None:
+        empresa_id = current_user.empresa_id
+    
+    # Inicializar serviço de similaridade
+    from ..services.product_similarity import product_similarity_service
+    similarity_service = product_similarity_service
+    
+    # Buscar produtos similares
+    produtos_similares = similarity_service.find_similar_products(
+        search_name=termo.strip(),
+        db=db,
+        empresa_id=empresa_id,
+        limit=limit,
+        min_similarity=min_similarity
+    )
+    
+    # Mapear incluindo estoque_atual
+    similares_mapeados = []
+    for p in produtos_similares:
+        prod_db = db.query(models.Produto).filter(
+            models.Produto.id == p['id'],
+            models.Produto.empresa_id == empresa_id
+        ).first()
+        similares_mapeados.append({
+            'produto_id': p['id'],
+            'nome': p['nome'],
+            'codigo': p['codigo'],
+            'estoque_atual': getattr(prod_db, 'quantidade_em_estoque', 0) if prod_db else 0,
+            'score_similaridade': p['similarity_score'],
+            'categoria': p.get('categoria', ''),
+            'unidade_medida': p.get('unidade_medida', ''),
+            'preco_venda': p.get('preco_venda', 0)
+        })
+    
+    return similares_mapeados
+
 @router.post(
     "/preview-pdf",
     response_model=Dict[str, Any],
