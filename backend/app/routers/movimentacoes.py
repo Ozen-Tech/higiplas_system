@@ -179,7 +179,7 @@ async def buscar_produtos_similares(
     termo: str,
     empresa_id: int = None,
     limit: int = 20,
-    min_similarity: int = 30,
+    min_similarity: int = 20,  # Reduzido de 30 para 20 para encontrar mais resultados
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
@@ -196,7 +196,7 @@ async def buscar_produtos_similares(
     from ..services.product_similarity import product_similarity_service
     similarity_service = product_similarity_service
     
-    # Buscar produtos similares
+    # Buscar produtos similares com threshold mais baixo para buscas manuais
     produtos_similares = similarity_service.find_similar_products(
         search_name=termo.strip(),
         db=db,

@@ -14,9 +14,13 @@ class ProductSimilarityService:
     
     def _load_products(self, db: Session, empresa_id: int) -> List[Dict[str, Any]]:
         """Carrega todos os produtos do banco de dados para uma empresa específica"""
-        if self.products_cache is None:
+        # Cache por empresa_id para evitar problemas com múltiplas empresas
+        if not hasattr(self, '_cache_by_empresa'):
+            self._cache_by_empresa = {}
+        
+        if empresa_id not in self._cache_by_empresa:
             produtos = get_produtos(db, empresa_id)
-            self.products_cache = [
+            self._cache_by_empresa[empresa_id] = [
                 {
                     'id': p.id,
                     'nome': p.nome,
@@ -28,9 +32,8 @@ class ProductSimilarityService:
                 }
                 for p in produtos
             ]
-            self.product_names_cache = {p['nome']: p for p in self.products_cache}
         
-        return self.products_cache
+        return self._cache_by_empresa[empresa_id]
     
     def _normalize_text(self, text: str) -> str:
         """Normaliza texto para comparação"""
@@ -74,11 +77,38 @@ class ProductSimilarityService:
         normalized_search = self._normalize_text(search_name)
         search_keywords = self._extract_keywords(search_name)
         
+        # Se não há palavras-chave, retornar vazio
+        if not search_keywords:
+            return []
+        
         # Lista para armazenar resultados com scores
         results = []
         
+        # Também buscar por código se o termo de busca for numérico
+        search_by_code = search_name.strip().isdigit()
+        
         for product in products:
             product_name = product['nome']
+            product_code = str(product.get('codigo', ''))
+            
+            # Busca exata por código tem prioridade
+            if search_by_code and product_code == search_name.strip():
+                results.append({
+                    **product,
+                    'similarity_score': 100.0,
+                    'match_details': {'exact_code_match': True}
+                })
+                continue
+            
+            # Busca parcial por código
+            if search_by_code and search_name.strip() in product_code:
+                results.append({
+                    **product,
+                    'similarity_score': 95.0,
+                    'match_details': {'partial_code_match': True}
+                })
+                continue
+            
             normalized_product = self._normalize_text(product_name)
             
             # Calcula diferentes tipos de similaridade
