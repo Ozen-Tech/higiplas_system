@@ -136,6 +136,20 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         r'([\d\.]+,[\d]{2})'                           # Valor total
     )
     
+    # Palavras-chave que indicam que a linha NÃO é um produto
+    palavras_excluir = [
+        'TOTAL', 'TOTAIS', 'SUBTOTAL', 'SUBTOTAIS',
+        'ICMS', 'IPI', 'PIS', 'COFINS', 'IMPOSTO', 'IMPOSTOS',
+        'DESCONTO', 'DESCONTOS', 'ACRESCIMO', 'ACRESCIMOS',
+        'FRETE', 'SEGURO', 'OUTRAS DESPESAS',
+        'BASE DE CALCULO', 'VALOR DO ICMS', 'VALOR DO IPI',
+        'DADOS ADICIONAIS', 'INFORMACOES COMPLEMENTARES',
+        'OBSERVACOES', 'OBSERVACAO'
+    ]
+    
+    # Códigos já processados para evitar duplicatas
+    codigos_processados = set()
+    
     # Segunda passada: extrair produtos de TODAS as linhas do PDF
     # Processa todas as linhas para garantir que produtos em múltiplas páginas sejam capturados
     for i in range(linha_inicio, linha_fim):
@@ -147,6 +161,15 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         
         # Pular linhas vazias ou muito curtas
         if not linha_limpa or len(linha_limpa) < 5:
+            continue
+        
+        # Filtrar linhas que claramente não são produtos
+        linha_upper = linha_limpa.upper()
+        if any(palavra in linha_upper for palavra in palavras_excluir):
+            continue
+        
+        # Pular linhas que começam com palavras que indicam totais/impostos
+        if any(linha_upper.startswith(palavra) for palavra in ['TOTAL', 'SUBTOTAL', 'ICMS', 'IPI', 'PIS', 'COFINS']):
             continue
         
         # Log de linhas com potencial de serem produtos
@@ -167,6 +190,21 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                 valor_unitario = _ptbr_to_float(mg.group(8))
                 valor_total = _ptbr_to_float(mg.group(9))
                 
+                # Validar se não é duplicata e se os valores fazem sentido
+                if codigo in codigos_processados:
+                    print(f"DEBUG: Código {codigo} já processado, pulando duplicata")
+                    continue
+                
+                # Validar valores razoáveis (quantidade > 0, valores > 0)
+                if quantidade <= 0 or valor_unitario <= 0 or valor_total <= 0:
+                    print(f"DEBUG: Valores inválidos para produto {codigo}, pulando")
+                    continue
+                
+                # Validar descrição não vazia e com tamanho razoável
+                if not descricao or len(descricao.strip()) < 3:
+                    print(f"DEBUG: Descrição inválida para produto {codigo}, pulando")
+                    continue
+                
                 produto = {
                     'item': len(produtos) + 1,
                     'codigo': codigo,
@@ -176,6 +214,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                     'valor_unitario': valor_unitario,
                     'valor_total': valor_total
                 }
+                codigos_processados.add(codigo)
                 produtos.append(produto)
                 print(f"DEBUG: Produto GIRASSOL extraído: {produto}")
                 continue  # Próxima linha
@@ -227,6 +266,27 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                             valor_unitario = float(grupos[3].replace(',', '.'))
                             valor_total = quantidade * valor_unitario
                         
+                        # Validar se não é duplicata
+                        if codigo in codigos_processados:
+                            print(f"DEBUG: Código {codigo} já processado, pulando duplicata")
+                            produto_encontrado = True  # Marcar como encontrado para não tentar outros padrões
+                            break
+                        
+                        # Validar valores razoáveis (quantidade > 0, valores > 0)
+                        if quantidade <= 0 or valor_unitario <= 0 or valor_total <= 0:
+                            print(f"DEBUG: Valores inválidos para produto {codigo}, pulando")
+                            continue
+                        
+                        # Validar descrição não vazia e com tamanho razoável
+                        if not descricao or len(descricao.strip()) < 3:
+                            print(f"DEBUG: Descrição inválida para produto {codigo}, pulando")
+                            continue
+                        
+                        # Validar que a descrição não é apenas números (pode ser total/imposto)
+                        if descricao.strip().replace('.', '').replace(',', '').isdigit():
+                            print(f"DEBUG: Descrição parece ser número/total para {codigo}, pulando")
+                            continue
+                        
                         produto = {
                             'item': len(produtos) + 1,
                             'codigo': codigo,
@@ -236,6 +296,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                             'valor_total': valor_total
                         }
                         
+                        codigos_processados.add(codigo)
                         produtos.append(produto)
                         produto_encontrado = True
                         
