@@ -48,10 +48,11 @@ export const adminService = {
     }
   },
 
-  // Verificar se o usuário é admin
-  isAdmin: (email: string | undefined): boolean => {
-    if (!email) return false;
-    return email.toLowerCase() === 'enzo.alverde@gmail.com';
+  // Verificar se o usuário é admin ou gestor
+  isAdmin: (perfil: string | undefined): boolean => {
+    if (!perfil) return false;
+    const perfilUpper = perfil.toUpperCase();
+    return perfilUpper === 'ADMIN' || perfilUpper === 'GESTOR';
   },
 };
 

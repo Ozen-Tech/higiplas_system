@@ -20,9 +20,9 @@ export function useAdmin() {
         throw new Error('Usuário não encontrado');
       }
       
-      // Verificar se é admin
-      if (!adminService.isAdmin(data.email)) {
-        throw new Error('Acesso negado. Apenas o administrador pode acessar esta área.');
+      // Verificar se é admin ou gestor
+      if (!adminService.isAdmin(data.perfil)) {
+        throw new Error('Acesso negado. Apenas administradores ou gestores podem acessar esta área.');
       }
       
       setUsuario(data);
@@ -80,7 +80,7 @@ export function useAdmin() {
     usuario,
     loading,
     error,
-    isAdmin: usuario ? adminService.isAdmin(usuario.email) : false,
+    isAdmin: usuario ? adminService.isAdmin(usuario.perfil) : false,
     criarUsuario,
     logout,
   };

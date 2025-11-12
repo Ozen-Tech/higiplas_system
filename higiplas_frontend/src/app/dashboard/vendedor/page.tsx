@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mapeamento de status para cores do Badge
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -25,13 +26,39 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 };
 
 export default function VendedorHubPage() {
+  const { user } = useAuth();
   const { orcamentos, loading, error, listarOrcamentosVendedor } = useOrcamentos();
   const [activeTab, setActiveTab] = useState<'historico' | 'novo'>('historico');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
+  // Verificar se o usuário é vendedor ou admin/gestor
+  const perfilUpper = user?.perfil?.toUpperCase() || '';
+  const isVendedor = perfilUpper.includes('VENDEDOR');
+  const isAdminOrGestor = perfilUpper === 'ADMIN' || perfilUpper === 'GESTOR';
+  const podeAcessar = isVendedor || isAdminOrGestor;
+
   useEffect(() => {
-    listarOrcamentosVendedor();
-  }, [listarOrcamentosVendedor]);
+    if (podeAcessar) {
+      listarOrcamentosVendedor();
+    }
+  }, [podeAcessar, listarOrcamentosVendedor]);
+
+  if (!podeAcessar) {
+    return (
+      <>
+        <Header>
+          <h1 className="text-xl font-bold">Acesso Negado</h1>
+        </Header>
+        <main className="flex-1 p-6">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <p className="text-red-600">Apenas vendedores, administradores ou gestores podem acessar esta página.</p>
+            </CardContent>
+          </Card>
+        </main>
+      </>
+    );
+  }
 
   const calcularTotal = (orcamento: Orcamento) => {
     if (!orcamento.itens) return 0;

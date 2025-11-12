@@ -44,9 +44,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { user } = useAuth();
-  
-  // Verificar se o usuário é admin
-  const isAdmin = user?.email?.toLowerCase() === 'enzo.alverde@gmail.com';
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>
@@ -162,40 +159,36 @@ export function Sidebar() {
               );
             })}
             
-            {/* Seção Admin - apenas para enzo.alverde@gmail.com */}
-            {isAdmin && (
-              <>
-                <div className="pt-4 mt-4 border-t border-gray-200/50 dark:border-gray-700/50">
-                  <p className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Administração
-                  </p>
-                </div>
-                {adminNavigation.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href!}
-                      className={`
-                        group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 hover-lift
-                        ${
-                          isActive
-                            ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/80'
-                        }
-                      `}
-                    >
-                      <item.icon
-                        className={`mr-3 h-6 w-6 flex-shrink-0
-                          ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'}
-                        `}
-                      />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </>
-            )}
+            {/* Seção Admin - disponível para todos os usuários */}
+            <div className="pt-4 mt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+              <p className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                Administração
+              </p>
+            </div>
+            {adminNavigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href!}
+                  className={`
+                    group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 hover-lift
+                    ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/80'
+                    }
+                  `}
+                >
+                  <item.icon
+                    className={`mr-3 h-6 w-6 flex-shrink-0
+                      ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'}
+                    `}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
