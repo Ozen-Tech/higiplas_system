@@ -372,10 +372,10 @@ def buscar_orcamento(
     if not orcamento:
         raise HTTPException(status_code=404, detail="Orçamento não encontrado")
     
-    # Verificar se o usuário tem permissão (vendedor que criou ou admin)
-    is_admin = current_user.email.lower() == 'enzo.alverde@gmail.com'
+    # ✅ Corrigido: valida se o usuário é admin ou gestor
+    is_admin = current_user.perfil.upper() in ["ADMIN", "GESTOR"]
     is_vendedor_owner = orcamento.usuario_id == current_user.id
-    
+
     if not (is_admin or is_vendedor_owner):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
