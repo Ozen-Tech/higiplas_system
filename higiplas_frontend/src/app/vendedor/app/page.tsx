@@ -48,19 +48,20 @@ export default function VendedorAppPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
             Novo Orçamento
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
             Bem-vindo, {usuario?.nome}
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() => router.push('/vendedor/app/historico')}
+          className="w-full sm:w-auto min-h-[44px]"
         >
           Ver Histórico
         </Button>

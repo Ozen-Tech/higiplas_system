@@ -59,3 +59,19 @@ class Orcamento(OrcamentoBase):
     itens: List[OrcamentoItem]
 
     model_config = ConfigDict(from_attributes=True)
+
+# Schemas para atualização (admin)
+class OrcamentoItemUpdate(BaseModel):
+    id: Optional[int] = None  # Se None, é um novo item
+    produto_id: int
+    quantidade: int
+    preco_unitario: float
+
+class OrcamentoUpdate(BaseModel):
+    cliente_id: Optional[int] = None
+    condicao_pagamento: Optional[str] = None
+    status: Optional[str] = None
+    itens: Optional[List[OrcamentoItemUpdate]] = None
+
+class OrcamentoStatusUpdate(BaseModel):
+    status: str

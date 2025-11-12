@@ -80,22 +80,23 @@ export function OrcamentoReview({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle size={20} className="text-green-600" /> Revisão do Orçamento
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CheckCircle size={20} className="text-green-600 dark:text-green-400" /> 
+            Revisão do Orçamento
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6">
           {/* Cliente */}
           <div>
-            <h3 className="font-semibold mb-2">Cliente</h3>
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="font-medium">{cliente.nome}</p>
+            <h3 className="font-semibold mb-2 text-sm sm:text-base">Cliente</h3>
+            <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="font-medium text-sm sm:text-base">{cliente.nome}</p>
               {cliente.telefone && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {cliente.telefone}
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  📞 {cliente.telefone}
                 </p>
               )}
             </div>
@@ -103,20 +104,20 @@ export function OrcamentoReview({
 
           {/* Itens */}
           <div>
-            <h3 className="font-semibold mb-2">Itens do Orçamento</h3>
+            <h3 className="font-semibold mb-2 text-sm sm:text-base">Itens do Orçamento</h3>
             <div className="space-y-2">
               {carrinho.map((item) => (
                 <div
                   key={item.produto_id}
-                  className="p-3 border rounded-lg flex justify-between items-center"
+                  className="p-3 sm:p-4 border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4"
                 >
-                  <div className="flex-1">
-                    <p className="font-medium">{item.nome}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm sm:text-base">{item.nome}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {item.quantidade} x R$ {item.preco_unitario_editavel.toFixed(2)}
                     </p>
                   </div>
-                  <p className="font-semibold">
+                  <p className="font-semibold text-base sm:text-lg text-green-600 dark:text-green-400 text-right sm:text-left">
                     R$ {(item.quantidade * item.preco_unitario_editavel).toFixed(2)}
                   </p>
                 </div>
@@ -126,17 +127,19 @@ export function OrcamentoReview({
 
           {/* Condições */}
           <div>
-            <h3 className="font-semibold mb-2">Condições</h3>
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p>Pagamento: {condicaoPagamento}</p>
+            <h3 className="font-semibold mb-2 text-sm sm:text-base">Condições</h3>
+            <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-sm sm:text-base">
+                <span className="font-medium">Pagamento:</span> {condicaoPagamento}
+              </p>
             </div>
           </div>
 
           {/* Total */}
           <div className="border-t pt-4">
             <div className="flex justify-between items-center">
-              <span className="text-xl font-semibold">Total:</span>
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <span className="text-lg sm:text-xl font-semibold">Total:</span>
+              <span className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
                 R$ {total.toFixed(2)}
               </span>
             </div>
@@ -144,30 +147,32 @@ export function OrcamentoReview({
         </CardContent>
       </Card>
 
-      {/* Ações */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Ações - Otimizadas para mobile */}
+      <div className="flex flex-col gap-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-2 sm:pb-0 sm:relative sm:bg-transparent">
         <Button
           variant="outline"
           onClick={onVoltar}
-          className="flex-1"
+          className="w-full min-h-[44px] sm:min-h-0"
         >
-          Voltar e Editar
+          ← Voltar e Editar
         </Button>
         {orcamentoId && (
           <>
             <Button
               variant="outline"
               onClick={handleDownloadPDF}
-              className="flex-1 gap-2"
+              className="w-full min-h-[44px] sm:min-h-0 gap-2"
             >
-              <Download size={16} /> Baixar PDF
+              <Download size={18} className="sm:w-4 sm:h-4" /> 
+              Baixar PDF
             </Button>
             <Button
               onClick={handleShareWhatsApp}
-              className="flex-1 gap-2"
+              className="w-full min-h-[44px] sm:min-h-0 gap-2"
               style={{ backgroundColor: '#25D366', color: 'white' }}
             >
-              <Share2 size={16} /> WhatsApp
+              <Share2 size={18} className="sm:w-4 sm:h-4" /> 
+              Compartilhar no WhatsApp
             </Button>
           </>
         )}
@@ -175,9 +180,16 @@ export function OrcamentoReview({
           <Button
             onClick={onFinalizar}
             disabled={loading}
-            className="flex-1 gap-2"
+            className="w-full min-h-[44px] sm:min-h-0 gap-2 bg-green-600 hover:bg-green-700"
           >
-            {loading ? 'Salvando...' : 'Finalizar Orçamento'}
+            {loading ? (
+              <>⏳ Salvando...</>
+            ) : (
+              <>
+                <CheckCircle size={18} className="sm:w-4 sm:h-4" /> 
+                Finalizar Orçamento
+              </>
+            )}
           </Button>
         )}
       </div>

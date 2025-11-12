@@ -39,31 +39,31 @@ export function ProdutoSelector({
           <Package size={20} /> Produtos Disponíveis
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
             placeholder="Buscar por nome ou código..."
             value={termoBusca}
             onChange={(e) => setTermoBusca(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
           />
         </div>
-        <div className="max-h-96 overflow-y-auto space-y-2">
+        <div className="max-h-96 overflow-y-auto space-y-2 sm:space-y-3">
           {produtosFiltrados.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">Nenhum produto encontrado</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">Nenhum produto encontrado</p>
           ) : (
             produtosFiltrados.map((produto) => (
               <div
                 key={produto.id}
-                className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="p-3 sm:p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:bg-gray-100 dark:active:bg-gray-700"
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="font-medium">{produto.nome}</p>
-                    <div className="flex gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm sm:text-base">{produto.nome}</p>
+                    <div className="flex flex-wrap gap-2 sm:gap-4 mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                       {produto.codigo && (
-                        <span>Cód: {produto.codigo}</span>
+                        <span className="font-mono">Cód: {produto.codigo}</span>
                       )}
                       <span>Estoque: {produto.estoque_disponivel}</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">
@@ -105,13 +105,14 @@ export function ProdutoSelector({
                     size="sm"
                     onClick={() => onAdicionarProduto(produto)}
                     disabled={produtoNoCarrinho(produto.id) || loading}
-                    className="gap-2"
+                    className="gap-2 min-h-[44px] sm:min-h-0 w-full sm:w-auto"
                   >
                     {produtoNoCarrinho(produto.id) ? (
-                      'Adicionado'
+                      <span className="text-xs sm:text-sm">✓ Adicionado</span>
                     ) : (
                       <>
-                        <Plus size={14} /> Adicionar
+                        <Plus size={16} className="sm:w-3.5 sm:h-3.5" /> 
+                        <span className="text-sm sm:text-xs">Adicionar</span>
                       </>
                     )}
                   </Button>

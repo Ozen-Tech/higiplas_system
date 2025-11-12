@@ -8,7 +8,8 @@ import {
   CubeIcon, SparklesIcon, ShoppingCartIcon,
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
   ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
-  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon
+  ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,11 +33,11 @@ const navigation: NavigationItem[] = [
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: DocumentTextIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
-  { name: 'Vendedor', href: '/dashboard/vendedor', icon: ShoppingCartIcon }, // ✅ Novo módulo
 ];
 
 const adminNavigation: NavigationItem[] = [
   { name: 'Criar Usuário', href: '/admin/criar-usuario', icon: UserPlusIcon },
+  { name: 'Gerenciar Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
 ];
 
 export function Sidebar() {
