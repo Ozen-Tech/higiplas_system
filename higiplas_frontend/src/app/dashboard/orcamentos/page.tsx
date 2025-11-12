@@ -38,7 +38,7 @@ export default function OrcamentosAdminPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  const isAdmin = user?.email?.toLowerCase() === 'enzo.alverde@gmail.com';
+  const isAdmin = user?.perfil?.toUpperCase() === 'ADMIN' || user?.perfil?.toUpperCase() === 'GESTOR';
 
   useEffect(() => {
     if (isAdmin) {
@@ -55,7 +55,7 @@ export default function OrcamentosAdminPage() {
         <main className="flex-1 p-6">
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-red-600">Apenas administradores podem acessar esta página.</p>
+              <p className="text-red-600">Apenas administradores ou gestores podem acessar esta página.</p>
             </CardContent>
           </Card>
         </main>

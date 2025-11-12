@@ -51,12 +51,25 @@ export function OrcamentoEditModal({
     p.codigo?.toLowerCase().includes(buscaProduto.toLowerCase())
   );
 
+  // Reinicializar itens quando o orcamento mudar ou quando o modal abrir
   useEffect(() => {
     if (open) {
+      setClienteId(orcamento.cliente.id);
+      setCondicaoPagamento(orcamento.condicao_pagamento);
+      setStatus(orcamento.status);
+      setItens(
+        orcamento.itens.map(item => ({
+          id: item.id,
+          produto_id: item.produto.id,
+          quantidade: item.quantidade,
+          preco_unitario: item.preco_unitario_congelado,
+        }))
+      );
       buscarClientes();
       buscarProdutos();
     }
-  }, [open, buscarClientes, buscarProdutos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, orcamento.id]);
 
   const handleSalvar = async () => {
     const update: OrcamentoUpdate = {
@@ -90,12 +103,14 @@ export function OrcamentoEditModal({
   };
 
   const handleAtualizarItem = (index: number, campo: 'produto_id' | 'quantidade' | 'preco_unitario', valor: number) => {
-    const novosItens = [...itens];
-    novosItens[index] = {
-      ...novosItens[index],
-      [campo]: valor,
-    };
-    setItens(novosItens);
+    setItens(prevItens => {
+      const novosItens = [...prevItens];
+      novosItens[index] = {
+        ...novosItens[index],
+        [campo]: valor,
+      };
+      return novosItens;
+    });
   };
 
   const calcularTotal = () => {
@@ -196,12 +211,15 @@ export function OrcamentoEditModal({
             </div>
             <div className="space-y-3">
               {itens.map((item, index) => {
+                const itemKey = item.id ? `item-${item.id}` : `item-${item.produto_id}-${index}`;
+                
                 return (
-                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                  <div key={itemKey} className="border rounded-lg p-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div className="md:col-span-2">
                         <Label>Produto</Label>
                         <Select
+                          key={`select-${itemKey}-${item.produto_id}`}
                           value={item.produto_id.toString()}
                           onValueChange={(v) => {
                             const produtoSelecionado = produtos.find(p => p.id === parseInt(v));
@@ -212,7 +230,7 @@ export function OrcamentoEditModal({
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Selecione um produto" />
                           </SelectTrigger>
                           <SelectContent>
                             {produtosFiltrados.map(prod => (
