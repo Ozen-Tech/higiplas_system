@@ -10,12 +10,15 @@ from app.routers import (
 )
 
 from app.create_superuser import create_initial_superuser
+from app.core.error_handler import register_exception_handlers
+from app.core.logger import app_logger
 from contextlib import asynccontextmanager
 import logging
 import os
-# Configurar logging
+
+# Configurar logging básico
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = app_logger
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -126,15 +129,9 @@ async def options_handler(request: Request):
         }
     )
 
-# Exception handler para erros de validação
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.error(f"Erro de validação na requisição {request.method} {request.url}")
-    logger.error(f"Erros: {exc.errors()}")
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()}
-    )
+# Exception handlers são registrados via register_exception_handlers()
+# Isso substitui os handlers antigos por versões mais robustas
+register_exception_handlers(app)
 
 # Middleware para logar requisições e adicionar headers CORS manualmente
 @app.middleware("http")
