@@ -428,3 +428,18 @@ def confirmar_orcamento(
         usuario_id=admin_user.id,
         empresa_id=admin_user.empresa_id
     )
+
+@router.delete("/{orcamento_id}", summary="Exclui um orçamento (apenas admin)")
+def excluir_orcamento(
+    orcamento_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.Usuario = Depends(get_admin_user)
+):
+    """
+    Exclui um orçamento e seus itens.
+    Apenas para administradores ou gestores.
+    """
+    resultado = crud_orcamento.delete_orcamento(db=db, orcamento_id=orcamento_id)
+    if resultado:
+        return {"message": f"Orçamento #{orcamento_id} excluído com sucesso"}
+    raise HTTPException(status_code=404, detail="Orçamento não encontrado")

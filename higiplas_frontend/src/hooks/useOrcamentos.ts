@@ -133,6 +133,21 @@ export function useOrcamentos() {
     }
   }, [handleApiError]);
 
+  // Excluir orçamento (admin)
+  const excluirOrcamento = useCallback(async (orcamentoId: number): Promise<boolean> => {
+    setLoading(true);
+    try {
+      await apiService.delete(`/orcamentos/${orcamentoId}`);
+      toast.success('Orçamento excluído com sucesso!');
+      return true;
+    } catch (err) {
+      handleApiError(err, 'Erro ao excluir orçamento.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
   return {
     orcamentos,
     loading,
@@ -145,5 +160,6 @@ export function useOrcamentos() {
     editarOrcamento,
     atualizarStatus,
     confirmarOrcamento,
+    excluirOrcamento,
   };
 }
