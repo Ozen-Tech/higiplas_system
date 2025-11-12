@@ -9,7 +9,7 @@ from datetime import datetime
 import os
 
 from app.db.connection import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_admin_user
 from app.db import models
 from app.schemas import orcamento as schemas_orcamento
 from app.crud import orcamento as crud_orcamento
@@ -348,4 +348,83 @@ def gerar_orcamento_pdf(
         BytesIO(pdf_bytes),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.id:05d}.pdf"}
+    )
+
+# ============= ROTAS ADMIN =============
+
+@router.get("/admin/todos", response_model=List[schemas_orcamento.Orcamento], summary="Lista todos os orçamentos (apenas admin)")
+def listar_todos_orcamentos(
+    db: Session = Depends(get_db),
+    admin_user: models.Usuario = Depends(get_admin_user)
+):
+    """Lista todos os orçamentos do sistema. Apenas para administradores."""
+    return crud_orcamento.get_all_orcamentos(db=db, empresa_id=admin_user.empresa_id)
+
+@router.get("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Busca um orçamento específico")
+def buscar_orcamento(
+    orcamento_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Busca um orçamento específico por ID."""
+    orcamento = crud_orcamento.get_orcamento_by_id(db=db, orcamento_id=orcamento_id)
+    
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    # Verificar se o usuário tem permissão (vendedor que criou ou admin)
+    is_admin = current_user.email.lower() == 'enzo.alverde@gmail.com'
+    is_vendedor_owner = orcamento.usuario_id == current_user.id
+    
+    if not (is_admin or is_vendedor_owner):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para acessar este orçamento"
+        )
+    
+    return orcamento
+
+@router.put("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Edita um orçamento (apenas admin)")
+def editar_orcamento(
+    orcamento_id: int,
+    orcamento_update: schemas_orcamento.OrcamentoUpdate,
+    db: Session = Depends(get_db),
+    admin_user: models.Usuario = Depends(get_admin_user)
+):
+    """Edita um orçamento existente. Apenas para administradores."""
+    return crud_orcamento.update_orcamento(
+        db=db,
+        orcamento_id=orcamento_id,
+        orcamento_update=orcamento_update
+    )
+
+@router.patch("/{orcamento_id}/status", response_model=schemas_orcamento.Orcamento, summary="Atualiza o status de um orçamento")
+def atualizar_status_orcamento(
+    orcamento_id: int,
+    status_update: schemas_orcamento.OrcamentoStatusUpdate,
+    db: Session = Depends(get_db),
+    admin_user: models.Usuario = Depends(get_admin_user)
+):
+    """Atualiza o status de um orçamento. Apenas para administradores."""
+    return crud_orcamento.update_orcamento_status(
+        db=db,
+        orcamento_id=orcamento_id,
+        novo_status=status_update.status
+    )
+
+@router.post("/{orcamento_id}/confirmar", response_model=schemas_orcamento.Orcamento, summary="Confirma orçamento e dá baixa no estoque")
+def confirmar_orcamento(
+    orcamento_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.Usuario = Depends(get_admin_user)
+):
+    """
+    Confirma um orçamento e processa a baixa de estoque dos produtos.
+    Apenas para administradores.
+    """
+    return crud_orcamento.confirmar_orcamento(
+        db=db,
+        orcamento_id=orcamento_id,
+        usuario_id=admin_user.id,
+        empresa_id=admin_user.empresa_id
     )

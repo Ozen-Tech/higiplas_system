@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { apiService } from '@/services/apiService';
-import { Orcamento, OrcamentoCreatePayload } from '@/types/orcamentos';
+import { Orcamento, OrcamentoCreatePayload, OrcamentoUpdate } from '@/types/orcamentos';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -53,11 +53,97 @@ export function useOrcamentos() {
     }
   }, [handleApiError]);
 
+  // Funções admin - listar todos os orçamentos
+  const listarTodosOrcamentos = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await apiService.get('/orcamentos/admin/todos');
+      setOrcamentos(response?.data || []);
+      return response?.data || [];
+    } catch (err) {
+      handleApiError(err, 'Erro ao buscar orçamentos.');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
+  // Buscar orçamento específico por ID
+  const buscarOrcamento = useCallback(async (orcamentoId: number): Promise<Orcamento | null> => {
+    setLoading(true);
+    try {
+      const response = await apiService.get(`/orcamentos/${orcamentoId}`);
+      return response?.data || null;
+    } catch (err) {
+      handleApiError(err, 'Erro ao buscar orçamento.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
+  // Editar orçamento (admin)
+  const editarOrcamento = useCallback(async (
+    orcamentoId: number,
+    update: OrcamentoUpdate
+  ): Promise<Orcamento | null> => {
+    setLoading(true);
+    try {
+      const response = await apiService.put(`/orcamentos/${orcamentoId}`, update);
+      toast.success('Orçamento atualizado com sucesso!');
+      return response?.data || null;
+    } catch (err) {
+      handleApiError(err, 'Erro ao atualizar orçamento.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
+  // Atualizar status do orçamento (admin)
+  const atualizarStatus = useCallback(async (
+    orcamentoId: number,
+    status: string
+  ): Promise<Orcamento | null> => {
+    setLoading(true);
+    try {
+      const response = await apiService.patch(`/orcamentos/${orcamentoId}/status`, { status });
+      toast.success('Status atualizado com sucesso!');
+      return response?.data || null;
+    } catch (err) {
+      handleApiError(err, 'Erro ao atualizar status do orçamento.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
+  // Confirmar orçamento e dar baixa no estoque (admin)
+  const confirmarOrcamento = useCallback(async (orcamentoId: number): Promise<Orcamento | null> => {
+    setLoading(true);
+    try {
+      const response = await apiService.post(`/orcamentos/${orcamentoId}/confirmar`, {});
+      toast.success('Orçamento confirmado e baixa de estoque realizada com sucesso!');
+      return response?.data || null;
+    } catch (err) {
+      handleApiError(err, 'Erro ao confirmar orçamento.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
   return {
     orcamentos,
     loading,
     error,
     listarOrcamentosVendedor,
     criarOrcamento,
+    // Funções admin
+    listarTodosOrcamentos,
+    buscarOrcamento,
+    editarOrcamento,
+    atualizarStatus,
+    confirmarOrcamento,
   };
 }

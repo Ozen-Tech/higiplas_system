@@ -152,19 +152,22 @@ export function OrcamentoBuilder() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Indicador de Etapas */}
-      <div className="flex items-center justify-center gap-2 mb-6">
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${etapa === 'cliente' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-800'}`}>
-          <span className="font-semibold">1. Cliente</span>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Indicador de Etapas - Otimizado para mobile */}
+      <div className="flex items-center justify-between sm:justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 px-2">
+        <div className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm flex-1 sm:flex-initial min-h-[44px] ${etapa === 'cliente' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+          <span className="hidden sm:inline">1. </span>
+          <span>Cliente</span>
         </div>
-        <div className="w-8 h-0.5 bg-gray-300"></div>
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${etapa === 'produtos' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-800'}`}>
-          <span className="font-semibold">2. Produtos</span>
+        <div className="w-2 sm:w-8 h-0.5 sm:h-1 bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+        <div className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm flex-1 sm:flex-initial min-h-[44px] ${etapa === 'produtos' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+          <span className="hidden sm:inline">2. </span>
+          <span>Produtos</span>
         </div>
-        <div className="w-8 h-0.5 bg-gray-300"></div>
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${etapa === 'revisao' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-800'}`}>
-          <span className="font-semibold">3. Revisão</span>
+        <div className="w-2 sm:w-8 h-0.5 sm:h-1 bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+        <div className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm flex-1 sm:flex-initial min-h-[44px] ${etapa === 'revisao' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+          <span className="hidden sm:inline">3. </span>
+          <span>Revisão</span>
         </div>
       </div>
 
@@ -179,10 +182,10 @@ export function OrcamentoBuilder() {
         />
       )}
 
-      {/* Etapa: Produtos */}
+      {/* Etapa: Produtos - Otimizado para mobile */}
       {etapa === 'produtos' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <ProdutoSelector
               produtos={produtos}
               carrinho={carrinho}
@@ -190,55 +193,63 @@ export function OrcamentoBuilder() {
               loading={vendasLoading}
             />
           </div>
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart size={20} /> Carrinho
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            <Card className="sticky top-20 lg:top-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <ShoppingCart size={18} className="sm:w-5 sm:h-5" /> 
+                  <span>Carrinho ({carrinho.length})</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto">
+              <CardContent className="space-y-3 sm:space-y-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
                 {carrinho.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">Carrinho vazio</p>
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">Carrinho vazio</p>
                 ) : (
                   carrinho.map((item) => (
-                    <div key={item.produto_id} className="p-3 border rounded-lg space-y-2">
-                      <div className="flex justify-between items-start">
-                        <p className="font-medium text-sm">{item.nome}</p>
+                    <div key={item.produto_id} className="p-3 sm:p-4 border rounded-lg space-y-2 sm:space-y-3 bg-white dark:bg-gray-800">
+                      <div className="flex justify-between items-start gap-2">
+                        <p className="font-medium text-sm sm:text-base flex-1 line-clamp-2">{item.nome}</p>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => removerItem(item.produto_id)}
-                          className="h-6 w-6"
+                          className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+                          title="Remover"
                         >
-                          <Trash2 size={14} className="text-red-500" />
+                          <Trash2 size={16} className="text-red-500" />
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
                         <div>
-                          <label className="text-xs text-gray-600 dark:text-gray-400">Qtd</label>
+                          <label className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 block">Qtd</label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             value={item.quantidade}
                             onChange={(e) => atualizarItem(item.produto_id, 'quantidade', parseInt(e.target.value) || 0)}
-                            className="h-8 text-sm"
+                            className="h-10 sm:h-9 text-sm sm:text-base"
+                            min="1"
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600 dark:text-gray-400">Preço</label>
+                          <label className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 block">Preço</label>
                           <Input
                             type="number"
+                            inputMode="decimal"
                             step="0.01"
                             value={item.preco_unitario_editavel}
                             onChange={(e) => atualizarItem(item.produto_id, 'preco', parseFloat(e.target.value) || 0)}
-                            className="h-8 text-sm"
+                            className="h-10 sm:h-9 text-sm sm:text-base"
+                            min="0"
                           />
                         </div>
                       </div>
                       {item.quantidade > item.estoque_disponivel && (
-                        <p className="text-xs text-orange-500">Estoque insuficiente!</p>
+                        <p className="text-xs sm:text-sm text-orange-500 dark:text-orange-400 font-medium">
+                          ⚠️ Estoque insuficiente! (Disponível: {item.estoque_disponivel})
+                        </p>
                       )}
-                      <p className="text-sm font-semibold text-right">
+                      <p className="text-sm sm:text-base font-semibold text-right text-green-600 dark:text-green-400">
                         R$ {(item.quantidade * item.preco_unitario_editavel).toFixed(2)}
                       </p>
                     </div>
@@ -246,23 +257,23 @@ export function OrcamentoBuilder() {
                 )}
               </CardContent>
               {carrinho.length > 0 && (
-                <div className="p-4 border-t">
+                <div className="p-3 sm:p-4 border-t bg-gray-50 dark:bg-gray-900">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                    <span className="font-semibold text-sm sm:text-base">Total:</span>
+                    <span className="text-lg sm:text-xl font-bold text-green-600 dark:text-green-400">
                       R$ {total.toFixed(2)}
                     </span>
                   </div>
                 </div>
               )}
             </Card>
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>Condição de Pagamento</CardTitle>
+            <Card className="mt-3 sm:mt-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Condição de Pagamento</CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={condicaoPagamento} onValueChange={setCondicaoPagamento}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 sm:h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -291,21 +302,25 @@ export function OrcamentoBuilder() {
         />
       )}
 
-      {/* Navegação */}
-      <div className="flex justify-between items-center pt-4 border-t">
+      {/* Navegação - Otimizada para mobile */}
+      <div className="flex justify-between items-center gap-3 pt-4 border-t sticky bottom-0 bg-white dark:bg-gray-900 pb-2 sm:pb-0 sm:relative sm:bg-transparent">
         <Button
           variant="outline"
           onClick={handleVoltarEtapa}
           disabled={etapa === 'cliente'}
+          className="min-h-[44px] flex-1 sm:flex-initial"
         >
-          <ArrowLeft size={16} className="mr-2" /> Voltar
+          <ArrowLeft size={18} className="mr-2" /> 
+          <span className="hidden sm:inline">Voltar</span>
+          <span className="sm:hidden">Voltar</span>
         </Button>
         {etapa !== 'revisao' && (
           <Button
             onClick={handleAvancarEtapa}
             disabled={(etapa === 'cliente' && !clienteSelecionado) || (etapa === 'produtos' && carrinho.length === 0)}
+            className="min-h-[44px] flex-1 sm:flex-initial"
           >
-            Avançar
+            Avançar →
           </Button>
         )}
       </div>

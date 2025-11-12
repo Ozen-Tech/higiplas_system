@@ -107,39 +107,40 @@ export function ClienteSelector({
             <Search size={20} /> Selecionar Cliente
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
+        <CardContent className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <Input
                 placeholder="Buscar cliente..."
                 value={termoBusca}
                 onChange={(e) => setTermoBusca(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
               />
             </div>
             <Button
               onClick={() => setModalAberto(true)}
-              className="gap-2"
+              className="gap-2 min-h-[44px] sm:min-h-0 w-full sm:w-auto"
               disabled={loading}
             >
-              <UserPlus size={16} /> Novo
+              <UserPlus size={18} className="sm:w-4 sm:h-4" /> 
+              <span>Novo Cliente</span>
             </Button>
           </div>
-          <div className="max-h-64 overflow-y-auto space-y-2">
+          <div className="max-h-64 sm:max-h-80 overflow-y-auto space-y-2">
             {clientesFiltrados.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">Nenhum cliente encontrado</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">Nenhum cliente encontrado</p>
             ) : (
               clientesFiltrados.map((cliente) => (
                 <div
                   key={cliente.id}
                   onClick={() => onSelectCliente(cliente)}
-                  className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                  className="p-3 sm:p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors active:bg-gray-100 dark:active:bg-gray-700 min-h-[60px] sm:min-h-0"
                 >
-                  <p className="font-medium">{cliente.nome}</p>
+                  <p className="font-medium text-sm sm:text-base">{cliente.nome}</p>
                   {cliente.telefone && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {cliente.telefone}
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      📞 {cliente.telefone}
                     </p>
                   )}
                 </div>
@@ -157,14 +158,15 @@ export function ClienteSelector({
                 <UserPlus size={20} /> Cadastrar Novo Cliente
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Nome/Razão Social *</label>
                   <Input
                     placeholder="Nome completo ou razão social"
                     value={novoClienteNome}
                     onChange={(e) => setNovoClienteNome(e.target.value)}
+                    className="h-11 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
                 <div>
@@ -173,16 +175,20 @@ export function ClienteSelector({
                     placeholder="Ex: 98912345678"
                     value={novoClienteTelefone}
                     onChange={(e) => setNovoClienteTelefone(e.target.value)}
+                    inputMode="tel"
+                    className="h-11 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">CNPJ/CPF</label>
                   <Input
                     placeholder="CNPJ ou CPF"
                     value={novoClienteCnpj}
                     onChange={(e) => setNovoClienteCnpj(e.target.value)}
+                    inputMode="numeric"
+                    className="h-11 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
                 <div>
@@ -192,16 +198,19 @@ export function ClienteSelector({
                     placeholder="cliente@exemplo.com"
                     value={novoClienteEmail}
                     onChange={(e) => setNovoClienteEmail(e.target.value)}
+                    inputMode="email"
+                    className="h-11 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Bairro</label>
                   <Input
                     placeholder="Bairro"
                     value={novoClienteBairro}
                     onChange={(e) => setNovoClienteBairro(e.target.value)}
+                    className="h-11 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
                 <div>
@@ -210,20 +219,23 @@ export function ClienteSelector({
                     placeholder="Cidade"
                     value={novoClienteCidade}
                     onChange={(e) => setNovoClienteCidade(e.target.value)}
+                    className="h-11 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
               </div>
             </CardContent>
-            <div className="flex justify-end gap-4 p-6 pt-0">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 p-4 sm:p-6 pt-0">
               <Button
                 variant="ghost"
                 onClick={() => setModalAberto(false)}
+                className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleCriarCliente}
                 disabled={loading || !novoClienteNome || !novoClienteTelefone}
+                className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
               >
                 {loading ? 'Salvando...' : 'Salvar Cliente'}
               </Button>

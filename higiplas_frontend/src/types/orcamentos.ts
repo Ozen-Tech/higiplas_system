@@ -50,3 +50,22 @@ export interface ItemCarrinhoOrcamento {
       };
     }[];
   }
+
+  // Tipos para atualização (admin)
+  export interface OrcamentoItemUpdate {
+    id?: number;
+    produto_id: number;
+    quantidade: number;
+    preco_unitario: number;
+  }
+
+  export interface OrcamentoUpdate {
+    cliente_id?: number;
+    condicao_pagamento?: string;
+    status?: string;
+    itens?: OrcamentoItemUpdate[];
+  }
+
+  export interface OrcamentoStatusUpdate {
+    status: string;
+  }
