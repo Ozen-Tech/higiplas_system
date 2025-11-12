@@ -12,7 +12,6 @@ import {
   ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { useAuth } from '@/contexts/AuthContext';
 
 type NavigationItem = {
   name: string;
@@ -43,7 +42,6 @@ const adminNavigation: NavigationItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const { user } = useAuth();
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>
