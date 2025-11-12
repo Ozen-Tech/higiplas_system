@@ -11,6 +11,7 @@ from ..crud import produto as crud_produto
 from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from app.dependencies import get_current_user
+from app.core.logger import api_logger as logger
 
 router = APIRouter()
 
@@ -37,26 +38,19 @@ async def upload_excel_file(
     if not required_cols.issubset(df.columns):
         raise HTTPException(status_code=400, detail=f"O Excel deve conter as colunas: {', '.join(required_cols)}")
 
-    # --- INÍCIO DA SEÇÃO DE DEPURAÇÃO ---
-    print("--- INICIANDO PROCESSAMENTO DE UPLOAD ---")
-    print(f"Arquivo recebido: {file.filename}")
-    print(f"Total de linhas encontradas no Excel: {len(df)}")
-    # --- FIM DA SEÇÃO DE DEPURAÇÃO ---
+    # Log inicial do processamento
+    logger.info(f"Iniciando processamento de upload - Arquivo: {file.filename}, Linhas: {len(df)}")
 
     erros = []
     processados = 0
 
     for index, row in df.iterrows():
-        # --- DEPURAÇÃO DENTRO DO LOOP ---
-        print("\n" + "="*50)
-        print(f"[DEBUG] Processando linha do Excel nº: {index + 2}")
-        print(f"[DEBUG] DADOS DA LINHA BRUTA:\n{row.to_dict()}")
-        # --- FIM DA DEPURAÇÃO DENTRO DO LOOP ---
+        logger.debug(f"Processando linha do Excel nº: {index + 2}, dados: {row.to_dict()}")
 
         try:
             # Validação para pular linhas completamente vazias
             if row.isnull().all():
-                print("[DEBUG] Linha vazia detectada. Pulando...")
+                logger.debug("Linha vazia detectada. Pulando...")
                 continue
 
             # Validação para garantir que os campos obrigatórios não são nulos na linha atual
@@ -79,29 +73,22 @@ async def upload_excel_file(
                 data_validade=pd.to_datetime(row.get("data_validade")).date() if pd.notna(row.get("data_validade")) else None,
             )
             
-            print(f"[DEBUG] Objeto Pydantic criado com sucesso. Enviando para o CRUD...")
+            logger.debug(f"Objeto Pydantic criado com sucesso. Enviando para o CRUD...")
             
             # Chama a função "upsert"
             crud_produto.create_or_update_produto(db=db, produto_data=produto_data, empresa_id=current_user.empresa_id)
             processados += 1
-            print(f"[DEBUG] Linha {index + 2} processada com SUCESSO. (Total processados: {processados})")
+            logger.debug(f"Linha {index + 2} processada com sucesso. (Total processados: {processados})")
 
         except Exception as e:
             error_message = f"Erro na linha {index + 2} (Produto código: '{row.get('codigo', 'N/A')}'): {str(e)}"
-            print(f"[ERRO] {error_message}")
+            logger.error(error_message, exc_info=True)
             erros.append(error_message)
 
-    # --- DEPURAÇÃO FINAL ---
-    print("\n" + "="*50)
-    print("--- FIM DO PROCESSAMENTO DO ARQUIVO ---")
-    print(f"Total de produtos processados com sucesso: {processados}")
-    print(f"Total de erros encontrados: {len(erros)}")
+    # Log final do processamento
+    logger.info(f"Fim do processamento do arquivo - Processados: {processados}, Erros: {len(erros)}")
     if erros:
-        print("Resumo dos erros:")
-        for err in erros:
-            print(f"  - {err}")
-    print("="*50)
-    # --- FIM DA DEPURAÇÃO FINAL ---
+        logger.warning(f"Resumo dos erros: {erros}")
 
     if erros:
         return {"message": f"{processados} produtos processados com erros. Verifique o log do servidor para detalhes.", "processados": processados, "erros": erros}

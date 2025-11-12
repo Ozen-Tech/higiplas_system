@@ -3,6 +3,7 @@
 import google.generativeai as genai
 from typing import List, Dict, Any
 from app.core.config import settings
+from app.core.logger import app_logger as logger
 import json
 import os
 from pathlib import Path
@@ -25,10 +26,10 @@ try:
     ]
     
     model = genai.GenerativeModel('gemini-2.0-flash')
-    print("✅ Modelo de IA Gemini inicializado com sucesso.")
+    logger.info("Modelo de IA Gemini inicializado com sucesso.")
 
 except Exception as e:
-    print(f"❌ Erro ao configurar a API do Gemini: {e}")
+    logger.error(f"Erro ao configurar a API do Gemini: {e}", exc_info=True)
 
 def load_historical_sales_data() -> str:
     """
@@ -81,7 +82,7 @@ def load_historical_sales_data() -> str:
         return formatted_data
         
     except Exception as e:
-        print(f"Erro ao carregar dados históricos: {e}")
+        logger.error(f"Erro ao carregar dados históricos: {e}", exc_info=True)
         return "Erro ao carregar dados históricos de vendas."
 
 def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: str = None) -> str:
@@ -155,19 +156,19 @@ def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: 
     """
      
     try:
-        print("[AI Service] Gerando conteúdo com a API do Gemini...")
+        logger.debug("Gerando conteúdo com a API do Gemini...")
         response = model.generate_content(prompt_template)
         
         # Bloco de tratamento de erro para respostas bloqueadas
         try:
-            print("[AI Service] Resposta da IA recebida.")
+            logger.debug("Resposta da IA recebida.")
             return response.text
         except ValueError:
-            print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
+            logger.warning(f"Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
             return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
 
     except Exception as e:
-        print(f"❌ Erro na comunicação com a API do Gemini: {e}")
+        logger.error(f"Erro na comunicação com a API do Gemini: {e}", exc_info=True)
         return f"Ocorreu um erro ao comunicar com a IA: {e}"
 
 def extract_products_from_invoice_image(image_bytes: bytes) -> str:
@@ -192,5 +193,5 @@ def extract_products_from_invoice_image(image_bytes: bytes) -> str:
         response = model.generate_content([prompt, image_part])
         return response.text
     except Exception as e:
-        print(f"Erro na API Gemini Vision: {e}")
+        logger.error(f"Erro na API Gemini Vision: {e}", exc_info=True)
         raise

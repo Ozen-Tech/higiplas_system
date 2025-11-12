@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, CheckCircle, XCircle, Eye, Download, Search, Filter } from 'lucide-react';
+import { Edit, CheckCircle, XCircle, Eye, Download, Search, Filter, Trash2 } from 'lucide-react';
 import { OrcamentoEditModal } from '@/components/orcamentos/OrcamentoEditModal';
 import { OrcamentoConfirmModal } from '@/components/orcamentos/OrcamentoConfirmModal';
 import { OrcamentoViewModal } from '@/components/orcamentos/OrcamentoViewModal';
@@ -28,7 +28,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 
 export default function OrcamentosAdminPage() {
   const { user } = useAuth();
-  const { orcamentos, loading, listarTodosOrcamentos, atualizarStatus, confirmarOrcamento } = useOrcamentos();
+  const { orcamentos, loading, listarTodosOrcamentos, atualizarStatus, confirmarOrcamento, excluirOrcamento } = useOrcamentos();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('TODOS');
@@ -37,6 +37,7 @@ export default function OrcamentosAdminPage() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const isAdmin = user?.email?.toLowerCase() === 'enzo.alverde@gmail.com';
 
@@ -126,6 +127,25 @@ export default function OrcamentosAdminPage() {
     const resultado = await confirmarOrcamento(orcamento.id);
     if (resultado) {
       setConfirmModalOpen(false);
+      listarTodosOrcamentos();
+    }
+  };
+
+  const handleExcluir = async (orcamento: Orcamento) => {
+    if (!confirm(`Tem certeza que deseja excluir o orçamento #${orcamento.id}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    
+    if (orcamento.status === 'FINALIZADO') {
+      toast.error('Não é possível excluir orçamentos finalizados.');
+      return;
+    }
+
+    setDeletingId(orcamento.id);
+    const sucesso = await excluirOrcamento(orcamento.id);
+    setDeletingId(null);
+    
+    if (sucesso) {
       listarTodosOrcamentos();
     }
   };
@@ -296,6 +316,18 @@ export default function OrcamentosAdminPage() {
                                     title="Confirmar e dar baixa"
                                   >
                                     Confirmar
+                                  </Button>
+                                )}
+                                {orc.status !== 'FINALIZADO' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleExcluir(orc)}
+                                    disabled={deletingId === orc.id}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    title="Excluir orçamento"
+                                  >
+                                    {deletingId === orc.id ? '...' : <Trash2 size={16} />}
                                   </Button>
                                 )}
                               </div>

@@ -26,7 +26,7 @@ type NavigationItem = {
 };
 
 const navigation: NavigationItem[] = [
-  { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
+  { name: 'Dashboard', href: '/dashboard', icon: CubeIcon },
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },

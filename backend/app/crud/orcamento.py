@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.db import models
 from app.schemas import orcamento as schemas_orcamento
 from app.core.validators import OrcamentoValidator, StockValidator
-from app.core.exceptions import BusinessRuleException
+from app.core.exceptions import BusinessRuleException, NotFoundError
 from app.core.constants import OrcamentoStatus, OrigemMovimentacao, TipoMovimentacao
 from app.core.logger import orcamento_logger
 
@@ -463,3 +463,69 @@ def confirmar_orcamento(
             exc_info=True
         )
         raise BusinessRuleException(f"Erro inesperado ao confirmar orçamento: {str(e)}")
+
+def delete_orcamento(
+    db: Session,
+    orcamento_id: int
+) -> bool:
+    """
+    Exclui um orçamento e seus itens.
+    Apenas para administradores.
+    
+    Args:
+        db: Sessão do banco de dados
+        orcamento_id: ID do orçamento a ser excluído
+        
+    Returns:
+        True se excluído com sucesso
+        
+    Raises:
+        NotFoundError: Se orçamento não existir
+        BusinessRuleException: Se houver erro ao excluir
+    """
+    orcamento_logger.info(
+        f"Iniciando exclusão do orçamento #{orcamento_id}",
+        extra={"orcamento_id": orcamento_id}
+    )
+    
+    try:
+        # Validar que orçamento existe
+        orcamento = OrcamentoValidator.validar_orcamento_existe(db, orcamento_id)
+        
+        # Verificar se pode ser excluído (não pode excluir FINALIZADO que já deu baixa)
+        if orcamento.status == OrcamentoStatus.FINALIZADO.value:
+            raise BusinessRuleException(
+                f"Não é possível excluir orçamento #{orcamento_id} com status FINALIZADO. "
+                "Orçamentos finalizados já processaram baixa de estoque."
+            )
+        
+        # Excluir orçamento (os itens serão excluídos automaticamente por cascade)
+        db.delete(orcamento)
+        db.commit()
+        
+        orcamento_logger.info(
+            f"Orçamento #{orcamento_id} excluído com sucesso",
+            extra={"orcamento_id": orcamento_id}
+        )
+        
+        return True
+        
+    except (NotFoundError, BusinessRuleException):
+        # Re-raise exceções de negócio
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        orcamento_logger.error(
+            f"Erro de banco de dados ao excluir orçamento #{orcamento_id}: {str(e)}",
+            extra={"orcamento_id": orcamento_id},
+            exc_info=True
+        )
+        raise BusinessRuleException(f"Erro ao excluir orçamento: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        orcamento_logger.error(
+            f"Erro inesperado ao excluir orçamento #{orcamento_id}: {str(e)}",
+            extra={"orcamento_id": orcamento_id},
+            exc_info=True
+        )
+        raise BusinessRuleException(f"Erro inesperado ao excluir orçamento: {str(e)}")

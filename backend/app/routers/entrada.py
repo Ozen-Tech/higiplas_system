@@ -15,6 +15,7 @@ from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..schemas import produto as schemas_produto
 from ..db.connection import get_db
 from app.dependencies import get_current_user
+from app.core.logger import api_logger as logger
 
 router = APIRouter(
     prefix="/entrada",
@@ -31,8 +32,7 @@ async def processar_pdf_entrada(
     """Processa um PDF de nota fiscal de ENTRADA e registra as movimentações automaticamente."""
     
     # Log para debug
-    print(f"DEBUG: Arquivo de entrada recebido: {arquivo.filename if arquivo else 'None'}")
-    print(f"DEBUG: Content type: {arquivo.content_type if arquivo else 'None'}")
+    logger.debug(f"Arquivo de entrada recebido: {arquivo.filename if arquivo else 'None'}, content_type: {arquivo.content_type if arquivo else 'None'}")
     
     # Validar se o arquivo foi enviado
     if not arquivo or not arquivo.filename:
@@ -48,7 +48,7 @@ async def processar_pdf_entrada(
         )
     
     try:
-        print(f"DEBUG: Iniciando processamento do arquivo de entrada {arquivo.filename}")
+        logger.info(f"Iniciando processamento do arquivo de entrada {arquivo.filename}")
         
         # Salvar arquivo temporariamente
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
@@ -56,11 +56,11 @@ async def processar_pdf_entrada(
             temp_file.write(content)
             temp_file_path = temp_file.name
         
-        print(f"DEBUG: Arquivo salvo temporariamente em: {temp_file_path}")
+        logger.debug(f"Arquivo salvo temporariamente em: {temp_file_path}")
         
         # Extrair dados do PDF (delegando para versão antiga e funcional)
         dados_pdf = extrair_dados_pdf_entrada(temp_file_path)
-        print(f"DEBUG: Dados extraídos do PDF: {dados_pdf}")
+        logger.debug(f"Dados extraídos do PDF: {len(dados_pdf.get('produtos', []))} produtos encontrados")
         
         # Limpar arquivo temporário
         os.unlink(temp_file_path)
@@ -86,7 +86,7 @@ async def processar_pdf_entrada(
         
         # Processar cada produto encontrado no PDF
         for produto_pdf in dados_pdf['produtos']:
-            print(f"DEBUG: Processando produto: {produto_pdf}")
+            logger.debug(f"Processando produto: {produto_pdf}")
             
             codigo = produto_pdf.get('codigo')
             descricao = produto_pdf.get('descricao', '')
@@ -97,7 +97,7 @@ async def processar_pdf_entrada(
             )
             
             if produto_sistema and metodo_busca == 'nome':
-                print(f"DEBUG: Produto encontrado por nome: {descricao} → {produto_sistema.nome} (score: {score:.2f})")
+                logger.debug(f"Produto encontrado por nome: {descricao} → {produto_sistema.nome} (score: {score:.2f})")
             
             if produto_sistema:
                 try:
@@ -125,10 +125,10 @@ async def processar_pdf_entrada(
                     })
                     
                     movimentacoes_criadas += 1
-                    print(f"DEBUG: Movimentação criada para produto {produto_sistema.nome}")
+                    logger.debug(f"Movimentação criada para produto {produto_sistema.nome}")
                     
                 except Exception as e:
-                    print(f"DEBUG: Erro ao criar movimentação para produto {produto_sistema.nome}: {e}")
+                    logger.error(f"Erro ao criar movimentação para produto {produto_sistema.nome}: {e}", exc_info=True)
                     produtos_nao_encontrados.append({
                         "codigo": produto_pdf.get('codigo'),
                         "descricao": produto_pdf.get('descricao', 'N/A'),
@@ -136,7 +136,7 @@ async def processar_pdf_entrada(
                         "erro": f"Erro ao processar: {str(e)}"
                     })
             else:
-                print(f"DEBUG: Produto não encontrado no sistema: {produto_pdf.get('codigo')}")
+                logger.warning(f"Produto não encontrado no sistema: {produto_pdf.get('codigo')}")
                 produtos_nao_encontrados.append({
                     "codigo": produto_pdf.get('codigo'),
                     "descricao": produto_pdf.get('descricao', 'N/A'),
@@ -159,7 +159,7 @@ async def processar_pdf_entrada(
         }
         
     except Exception as e:
-        print(f"DEBUG: Erro geral no processamento: {e}")
+        logger.error(f"Erro geral no processamento: {e}", exc_info=True)
         # Limpar arquivo temporário em caso de erro
         if 'temp_file_path' in locals():
             try:
@@ -179,7 +179,7 @@ def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
         from app.routers.movimentacoes import extrair_dados_pdf_entrada as extrair_dados_pdf_entrada_mov
         return extrair_dados_pdf_entrada_mov(caminho_pdf)
     except Exception as e:
-        print(f"DEBUG: Erro ao delegar extração de ENTRADA: {e}")
+        logger.error(f"Erro ao delegar extração de ENTRADA: {e}", exc_info=True)
         return {
             'produtos': [],
             'nota_fiscal': None,

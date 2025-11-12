@@ -127,11 +127,8 @@ def download_produtos_excel(
         )
 
     except Exception as e:
-        print("\n--- ERRO INTERNO AO GERAR EXCEL ---")
-        print(f"Tipo de Erro: {type(e).__name__}")
-        print(f"Mensagem de Erro: {e}")
-        traceback.print_exc()
-        print("---------------------------------\n")
+        from app.core.logger import api_logger as logger
+        logger.error(f"Erro interno ao gerar Excel: {type(e).__name__} - {str(e)}", exc_info=True)
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

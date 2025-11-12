@@ -9,6 +9,7 @@ from app.db import models
 from app.dependencies import get_current_user
 from app.services import ai_service
 from app.utils.product_matcher import find_product_by_code_or_name
+from app.core.logger import api_logger as logger
 
 router = APIRouter(prefix="/invoices", tags=["Processamento de Notas Fiscais"])
 
@@ -20,7 +21,7 @@ def fuzzy_match_product(db: Session, description: str, empresa_id: int, codigo: 
     )
     
     if produto and metodo_busca == 'nome':
-        print(f"DEBUG: Produto encontrado por nome na NF-e: {description} → {produto.nome} (score: {score:.2f})")
+        logger.debug(f"Produto encontrado por nome na NF-e: {description} → {produto.nome} (score: {score:.2f})")
     
     return produto
 

@@ -9,6 +9,7 @@ from psycopg2.pool import SimpleConnectionPool
 from psycopg2.extensions import connection as PgConnection
 
 from app.core.config import settings
+from app.core.logger import app_logger as logger
 
 
 connection_pool: SimpleConnectionPool | None = None
@@ -21,17 +22,17 @@ def init_connection_pool():
         DB_PASSWORD = os.getenv("DB_PASSWORD")
         DB_HOST = "localhost"
         DB_PORT = "5432"
-        print("Inicializando o pool de conexões psycopg2...")
+        logger.info("Inicializando o pool de conexões psycopg2...")
         connection_pool = SimpleConnectionPool(minconn=1, maxconn=20, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
-        print("Pool psycopg2 inicializado.")
+        logger.info("Pool psycopg2 inicializado.")
 
 def close_connection_pool():
     global connection_pool
     if connection_pool:
-        print("Fechando o pool de conexões psycopg2...")
+        logger.info("Fechando o pool de conexões psycopg2...")
         connection_pool.closeall()
         connection_pool = None
-        print("Pool psycopg2 fechado.")
+        logger.info("Pool psycopg2 fechado.")
 
 # --- CONFIGURAÇÃO DO SQLALCHEMY ---
 # A URL de conexão agora vem diretamente do objeto de configurações (settings),
@@ -39,10 +40,8 @@ def close_connection_pool():
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 # ===================================================================
-# <<< Câmera de Debug para a URL de Conexão >>>
-print("--- [DEBUG] URL DE CONEXÃO VINDA DAS CONFIGURAÇÕES ---")
-print(f"--- [DEBUG] URL: {SQLALCHEMY_DATABASE_URL}")
-print("----------------------------------------------------")
+# Log da URL de conexão (apenas em modo debug)
+logger.debug(f"URL de conexão do banco de dados: {SQLALCHEMY_DATABASE_URL[:50]}...")  # Mostra apenas primeiros 50 caracteres por segurança
 # ===================================================================
 
 # O 'engine' do SQLAlchemy usa a URL acima para se conectar.

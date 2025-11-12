@@ -19,6 +19,7 @@ from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from ..db.connection import get_db
 from app.dependencies import get_current_user
+from app.core.logger import api_logger as logger
 # Serviço de similaridade importado dinamicamente quando necessário
 
 router = APIRouter(
@@ -239,9 +240,7 @@ async def preview_pdf_movimentacao(
 ):
     """Extrai dados do PDF para visualização antes do processamento."""
     
-    print(f"DEBUG: Arquivo recebido: {arquivo.filename}")
-    print(f"DEBUG: Tipo de movimentação: {tipo_movimentacao}")
-    print(f"DEBUG: Content type: {arquivo.content_type}")
+    logger.debug(f"Arquivo recebido: {arquivo.filename}, tipo: {tipo_movimentacao}, content_type: {arquivo.content_type}")
     
     if not arquivo or not arquivo.filename:
         raise HTTPException(
@@ -262,7 +261,7 @@ async def preview_pdf_movimentacao(
         )
     
     try:
-        print(f"DEBUG: Iniciando preview do arquivo {arquivo.filename}")
+        logger.info(f"Iniciando preview do arquivo {arquivo.filename}")
         
         # Salvar arquivo temporariamente
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
@@ -270,15 +269,15 @@ async def preview_pdf_movimentacao(
             temp_file.write(content)
             temp_file_path = temp_file.name
         
-        print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
+        logger.debug(f"Arquivo salvo temporariamente em {temp_file_path}")
         
         # Extrair dados do PDF baseado no tipo de movimentação
-        print(f"DEBUG: Iniciando extração de dados do PDF")
+        logger.debug("Iniciando extração de dados do PDF")
         if tipo_movimentacao == 'ENTRADA':
             dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
         else:
             dados_extraidos = extrair_dados_pdf(temp_file_path)
-        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
+        logger.debug(f"Dados extraídos: {len(dados_extraidos.get('produtos', []))} produtos encontrados")
         
         # Limpar arquivo temporário
         os.unlink(temp_file_path)
@@ -372,12 +371,10 @@ async def preview_pdf_movimentacao(
         }
         
     except HTTPException as he:
-        print(f"DEBUG: HTTPException capturada: {he.status_code} - {he.detail}")
+        logger.warning(f"HTTPException capturada: {he.status_code} - {he.detail}")
         raise
     except Exception as e:
-        print(f"DEBUG: Exception geral capturada: {type(e).__name__} - {str(e)}")
-        import traceback
-        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        logger.error(f"Exception geral capturada: {type(e).__name__} - {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF: {str(e)}"
@@ -457,7 +454,7 @@ async def associar_produto_similar(
     except HTTPException as he:
         raise
     except Exception as e:
-        print(f"DEBUG: Erro ao associar produto similar: {str(e)}")
+        logger.error(f"Erro ao associar produto similar: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao associar produto: {str(e)}"
@@ -580,8 +577,7 @@ async def processar_pdf_entrada(
     """Processa um PDF de nota fiscal de ENTRADA e registra as movimentações automaticamente."""
     
     # Log para debug
-    print(f"DEBUG: Arquivo de entrada recebido: {arquivo.filename if arquivo else 'None'}")
-    print(f"DEBUG: Content type: {arquivo.content_type if arquivo else 'None'}")
+    logger.debug(f"Arquivo de entrada recebido: {arquivo.filename if arquivo else 'None'}, content_type: {arquivo.content_type if arquivo else 'None'}")
     
     # Validar se o arquivo foi enviado
     if not arquivo or not arquivo.filename:
@@ -597,7 +593,7 @@ async def processar_pdf_entrada(
         )
     
     try:
-        print(f"DEBUG: Iniciando processamento do arquivo de entrada {arquivo.filename}")
+        logger.info(f"Iniciando processamento do arquivo de entrada {arquivo.filename}")
         
         # Salvar arquivo temporariamente
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
@@ -605,12 +601,12 @@ async def processar_pdf_entrada(
             temp_file.write(content)
             temp_file_path = temp_file.name
         
-        print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
+        logger.debug(f"Arquivo salvo temporariamente em {temp_file_path}")
         
         # Extrair dados do PDF de entrada
-        print(f"DEBUG: Iniciando extração de dados do PDF de entrada")
+        logger.debug("Iniciando extração de dados do PDF de entrada")
         dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
-        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
+        logger.debug(f"Dados extraídos: {len(dados_extraidos.get('produtos', []))} produtos encontrados")
         
         # Limpar arquivo temporário
         os.unlink(temp_file_path)
@@ -698,12 +694,10 @@ async def processar_pdf_entrada(
         }
         
     except HTTPException as he:
-        print(f"DEBUG: HTTPException capturada: {he.status_code} - {he.detail}")
+        logger.warning(f"HTTPException capturada: {he.status_code} - {he.detail}")
         raise
     except Exception as e:
-        print(f"DEBUG: Exception geral capturada: {type(e).__name__} - {str(e)}")
-        import traceback
-        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        logger.error(f"Erro ao processar preview de PDF: {type(e).__name__} - {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF de entrada: {str(e)}"
@@ -728,9 +722,7 @@ async def processar_pdf_movimentacao(
     similarity_service = product_similarity_service
 
     # Log para debug
-    print(f"DEBUG: Arquivo recebido: {arquivo.filename if arquivo else 'None'}")
-    print(f"DEBUG: Tipo movimentação: {tipo_movimentacao}")
-    print(f"DEBUG: Content type: {arquivo.content_type if arquivo else 'None'}")
+    logger.debug(f"Arquivo recebido: {arquivo.filename if arquivo else 'None'}, tipo: {tipo_movimentacao}, content_type: {arquivo.content_type if arquivo else 'None'}")
     
     # Validar se o arquivo foi enviado
     if not arquivo or not arquivo.filename:
@@ -752,7 +744,7 @@ async def processar_pdf_movimentacao(
         )
     
     try:
-        print(f"DEBUG: Iniciando processamento do arquivo {arquivo.filename}")
+        logger.info(f"Iniciando processamento do arquivo {arquivo.filename}, tipo: {tipo_movimentacao}")
         
         # Salvar arquivo temporariamente
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
@@ -760,15 +752,15 @@ async def processar_pdf_movimentacao(
             temp_file.write(content)
             temp_file_path = temp_file.name
         
-        print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
+        logger.debug(f"Arquivo salvo temporariamente em {temp_file_path}")
         
         # Extrair dados do PDF
-        print(f"DEBUG: Iniciando extração de dados do PDF")
+        logger.debug("Iniciando extração de dados do PDF")
         if tipo_movimentacao == 'ENTRADA':
             dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
         else:
             dados_extraidos = extrair_dados_pdf(temp_file_path)
-        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
+        logger.debug(f"Dados extraídos: {len(dados_extraidos.get('produtos', []))} produtos encontrados")
         
         # Limpar arquivo temporário
         os.unlink(temp_file_path)
@@ -909,12 +901,10 @@ async def processar_pdf_movimentacao(
         }
         
     except HTTPException as he:
-        print(f"DEBUG: HTTPException capturada: {he.status_code} - {he.detail}")
+        logger.warning(f"HTTPException capturada: {he.status_code} - {he.detail}")
         raise
     except Exception as e:
-        print(f"DEBUG: Exception geral capturada: {type(e).__name__} - {str(e)}")
-        import traceback
-        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        logger.error(f"Exception geral capturada: {type(e).__name__} - {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF: {str(e)}"
@@ -923,7 +913,7 @@ async def processar_pdf_movimentacao(
 def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
     """Extrai dados estruturados de um PDF de nota fiscal de ENTRADA."""
     
-    print(f"DEBUG: Iniciando extração de dados de ENTRADA do arquivo: {caminho_pdf}")
+    logger.debug(f"Iniciando extração de dados de ENTRADA do arquivo: {caminho_pdf}")
     
     dados = {
         'nota_fiscal': None,
@@ -940,7 +930,7 @@ def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
             for page in pdf.pages:
                 texto_completo += page.extract_text() or ""
         
-        print(f"DEBUG: Texto extraído ({len(texto_completo)} caracteres)")
+        logger.debug(f"Texto extraído ({len(texto_completo)} caracteres)")
         
         # Salvar amostra do texto para debug
         try:
@@ -954,22 +944,22 @@ def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
                 linhas = texto_completo.split('\n')
                 for i, linha in enumerate(linhas[:100]):  # Primeiras 100 linhas
                     f.write(f"{i+1:3d}: {linha}\n")
-            print("DEBUG: Texto de entrada salvo em /tmp/debug_texto_pdf_entrada.txt")
+            logger.debug("Texto de entrada salvo em /tmp/debug_texto_pdf_entrada.txt")
         except Exception as e:
-            print(f"DEBUG: Erro ao salvar texto de entrada: {e}")
+            logger.warning(f"Erro ao salvar texto de entrada: {e}")
         
         # Extração inteligente e abrangente de dados
         dados = extrair_dados_inteligente_entrada(texto_completo, dados)
         
     except Exception as e:
-        print(f"DEBUG: Erro ao processar PDF de entrada: {e}")
+        logger.error(f"Erro ao processar PDF de entrada: {e}", exc_info=True)
     
     return dados
 
 def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]) -> Dict[str, Any]:
     """Extração inteligente de dados para PDFs de entrada - Formato GIRASSOL."""
     
-    print(f"DEBUG: Iniciando extração inteligente para entrada - Formato GIRASSOL")
+    logger.debug("Iniciando extração inteligente para entrada - Formato GIRASSOL")
     
     # Padrões específicos para GIRASSOL - Número da nota fiscal
     padroes_nf = [
@@ -985,7 +975,7 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
         nf_match = re.search(padrao, texto_completo, re.IGNORECASE)
         if nf_match:
             dados['nota_fiscal'] = nf_match.group(1)
-            print(f"DEBUG: Nota fiscal encontrada: {dados['nota_fiscal']}")
+            logger.debug(f"Nota fiscal encontrada: {dados['nota_fiscal']}")
             break
     
     # Padrões específicos para GIRASSOL - Data de emissão
@@ -1001,7 +991,7 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
         data_match = re.search(padrao, texto_completo, re.IGNORECASE)
         if data_match:
             dados['data_emissao'] = data_match.group(1)
-            print(f"DEBUG: Data de emissão encontrada: {dados['data_emissao']}")
+            logger.debug(f"Data de emissão encontrada: {dados['data_emissao']}")
             break
     
     # Padrões específicos para GIRASSOL - Fornecedor/remetente
@@ -1017,7 +1007,7 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
         fornecedor_match = re.search(padrao, texto_completo, re.IGNORECASE)
         if fornecedor_match:
             dados['fornecedor'] = fornecedor_match.group(1).strip()
-            print(f"DEBUG: Fornecedor encontrado: {dados['fornecedor']}")
+            logger.debug(f"Fornecedor encontrado: {dados['fornecedor']}")
             break
     
     # Extração de CNPJ - buscar todos e identificar o do remetente
@@ -1025,7 +1015,7 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
     if cnpj_matches:
         # Para entrada, o primeiro CNPJ geralmente é do remetente/fornecedor
         dados['cnpj_fornecedor'] = cnpj_matches[0]
-        print(f"DEBUG: CNPJ fornecedor encontrado: {dados['cnpj_fornecedor']}")
+        logger.debug(f"CNPJ fornecedor encontrado: {dados['cnpj_fornecedor']}")
     
     # Padrões específicos para GIRASSOL - Valor total
     padroes_valor = [
@@ -1042,7 +1032,7 @@ def extrair_dados_inteligente_entrada(texto_completo: str, dados: Dict[str, Any]
             valor_str = valor_match.group(1).replace('.', '').replace(',', '.')
             try:
                 dados['valor_total'] = float(valor_str)
-                print(f"DEBUG: Valor total encontrado: {dados['valor_total']}")
+                logger.debug(f"Valor total encontrado: {dados['valor_total']}")
                 break
             except ValueError:
                 continue
@@ -1059,7 +1049,7 @@ def extrair_produtos_inteligente_entrada(texto_completo: str) -> List[Dict[str, 
 def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
     """Extrai dados estruturados de um PDF de nota fiscal de SAÍDA."""
     
-    print(f"DEBUG: Iniciando extração de dados de SAÍDA do arquivo: {caminho_pdf}")
+    logger.debug(f"Iniciando extração de dados de SAÍDA do arquivo: {caminho_pdf}")
     
     dados = {
         'nota_fiscal': None,
@@ -1076,7 +1066,7 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
             for page in pdf.pages:
                 texto_completo += page.extract_text() or ""
         
-        print(f"DEBUG: Texto extraído ({len(texto_completo)} caracteres)")
+        logger.debug(f"Texto extraído ({len(texto_completo)} caracteres)")
         
         # Salvar amostra do texto para debug
         try:
@@ -1090,41 +1080,41 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
                 linhas = texto_completo.split('\n')
                 for i, linha in enumerate(linhas[:100]):  # Primeiras 100 linhas
                     f.write(f"{i+1:3d}: {linha}\n")
-            print("DEBUG: Texto salvo em /tmp/debug_texto_pdf.txt")
+            logger.debug("Texto salvo em /tmp/debug_texto_pdf.txt")
         except Exception as e:
-            print(f"DEBUG: Erro ao salvar texto: {e}")
+            logger.warning(f"Erro ao salvar texto: {e}")
         
         # Extrair número da nota fiscal - padrão: NFe Nº 0000004538
         nf_match = re.search(r'NFe\s+Nº\s+(\d+)', texto_completo, re.IGNORECASE)
         if nf_match:
             dados['nota_fiscal'] = nf_match.group(1)
-            print(f"DEBUG: Nota fiscal encontrada: {dados['nota_fiscal']}")
+            logger.debug(f"Nota fiscal encontrada: {dados['nota_fiscal']}")
         
         # Extrair data de emissão - padrão: Data de Emissão 19/08/2025
         data_match = re.search(r'Data de Emissão\s+(\d{2}/\d{2}/\d{4})', texto_completo, re.IGNORECASE)
         if data_match:
             dados['data_emissao'] = data_match.group(1)
-            print(f"DEBUG: Data de emissão encontrada: {dados['data_emissao']}")
+            logger.debug(f"Data de emissão encontrada: {dados['data_emissao']}")
         
         # Extrair cliente - padrão: Nome/Razão Social J S GONDIM LINHARES FILHO
         cliente_match = re.search(r'Nome/Razão Social\s+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}', texto_completo, re.IGNORECASE)
         if cliente_match:
             dados['cliente'] = cliente_match.group(1).strip()
-            print(f"DEBUG: Cliente encontrado: {dados['cliente']}")
+            logger.debug(f"Cliente encontrado: {dados['cliente']}")
         
         # Extrair CNPJ - buscar todos os CNPJs e pegar o do destinatário
         cnpj_matches = re.findall(r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})', texto_completo)
         if cnpj_matches:
             # O segundo CNPJ geralmente é do destinatário
             dados['cnpj_cliente'] = cnpj_matches[1] if len(cnpj_matches) > 1 else cnpj_matches[0]
-            print(f"DEBUG: CNPJ cliente encontrado: {dados['cnpj_cliente']}")
+            logger.debug(f"CNPJ cliente encontrado: {dados['cnpj_cliente']}")
         
         # Extrair valor total - padrão: Valor Total da Nota Fiscal 1.571,12
         valor_match = re.search(r'Valor Total da Nota\s+Fiscal\s+([\d.,]+)', texto_completo, re.IGNORECASE)
         if valor_match:
             valor_str = valor_match.group(1).replace('.', '').replace(',', '.')
             dados['valor_total'] = float(valor_str)
-            print(f"DEBUG: Valor total encontrado: {dados['valor_total']}")
+            logger.debug(f"Valor total encontrado: {dados['valor_total']}")
         
         # Extrair produtos - padrão da tabela de produtos
         linhas = texto_completo.split('\n')
@@ -1167,19 +1157,17 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
                         }
                         
                         produtos.append(produto)
-                        print(f"DEBUG: Produto encontrado: {codigo} - {descricao} - Qtd: {quantidade}")
+                        logger.debug(f"Produto encontrado: {codigo} - {descricao} - Qtd: {quantidade}")
                         
                     except (ValueError, IndexError) as e:
-                        print(f"DEBUG: Erro ao processar linha de produto: {linha} - Erro: {e}")
+                        logger.warning(f"Erro ao processar linha de produto: {linha} - Erro: {e}")
                         continue
         
         dados['produtos'] = produtos
-        print(f"DEBUG: Extração concluída. Produtos encontrados: {len(produtos)}")
+        logger.debug(f"Extração concluída. Produtos encontrados: {len(produtos)}")
         
     except Exception as e:
-        print(f"DEBUG: Erro ao extrair dados do PDF: {type(e).__name__} - {str(e)}")
-        import traceback
-        print(f"DEBUG: Traceback na extração: {traceback.format_exc()}")
+        logger.error(f"Erro ao extrair dados do PDF: {type(e).__name__} - {str(e)}", exc_info=True)
     
-    print(f"DEBUG: Retornando dados: {dados}")
+    logger.debug(f"Retornando dados: {len(dados.get('produtos', []))} produtos")
     return dados

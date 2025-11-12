@@ -7,6 +7,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, date
 import os
 from pathlib import Path
+from app.core.logger import app_logger as logger
 
 class PDFSalesProcessor:
     """Processador de PDFs de vendas para extrair dados históricos."""
@@ -31,7 +32,7 @@ class PDFSalesProcessor:
                     text += page.extract_text() + "\n"
                 return text
         except Exception as e:
-            print(f"Erro ao extrair texto do PDF {pdf_path}: {e}")
+            logger.error(f"Erro ao extrair texto do PDF {pdf_path}: {e}", exc_info=True)
             return ""
     
     def parse_sales_data(self, text: str, company: str) -> List[Dict[str, Any]]:
@@ -143,10 +144,10 @@ class PDFSalesProcessor:
             pdf_path = self.pdf_dir / pdf_file
             
             if not pdf_path.exists():
-                print(f"Arquivo não encontrado: {pdf_path}")
+                logger.warning(f"Arquivo não encontrado: {pdf_path}")
                 continue
             
-            print(f"Processando: {pdf_file}")
+            logger.info(f"Processando: {pdf_file}")
             
             # Extrai texto do PDF
             text = self.extract_text_from_pdf(str(pdf_path))
@@ -188,9 +189,9 @@ class PDFSalesProcessor:
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(data_to_save, f, ensure_ascii=False, indent=2)
-            print(f"Dados salvos em: {output_file}")
+            logger.info(f"Dados salvos em: {output_file}")
         except Exception as e:
-            print(f"Erro ao salvar dados: {e}")
+            logger.error(f"Erro ao salvar dados: {e}", exc_info=True)
     
     def get_top_selling_products(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Retorna os produtos mais vendidos baseado nos dados processados."""
@@ -234,7 +235,7 @@ class PDFSalesProcessor:
             return top_products
             
         except Exception as e:
-            print(f"Erro ao processar produtos mais vendidos: {e}")
+            logger.error(f"Erro ao processar produtos mais vendidos: {e}", exc_info=True)
             return []
     
     def calculate_minimum_stock(self, product_name: str) -> Dict[str, Any]:
@@ -283,7 +284,7 @@ class PDFSalesProcessor:
             }
             
         except Exception as e:
-            print(f"Erro ao calcular estoque mínimo: {e}")
+            logger.error(f"Erro ao calcular estoque mínimo: {e}", exc_info=True)
             return {'error': str(e)}
 
 # Instância global do processador

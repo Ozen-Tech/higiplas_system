@@ -1,5 +1,6 @@
 import re
 from typing import List, Dict, Any
+from app.core.logger import app_logger as logger
 
 def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[Dict[str, Any]]:
     """Extração inteligente de produtos para PDFs de entrada - Versão melhorada com logs detalhados."""
@@ -7,7 +8,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
     produtos = []
     linhas = texto_completo.split('\n')
     
-    print(f"DEBUG: Total de linhas no PDF: {len(linhas)}")
+    logger.debug(f"Total de linhas no PDF: {len(linhas)}")
     
     # Primeiro, tentar detectar o formato específico do PDF (ex: CIRCUS)
     # Padrão: ITEM CÓDIGO DESCRIÇÃO NCM CST CFOP UN QTD VALOR_UNIT ... VALOR_TOTAL
@@ -25,7 +26,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         r'.*$'            # Resto da linha
     )
     
-    print("DEBUG: Tentando extrair produtos com padrão CIRCUS...")
+    logger.debug("Tentando extrair produtos com padrão CIRCUS...")
     
     # Padrão específico para PDFs do tipo "CIRCUS" - formato real observado
     padrao_circus_especifico = re.compile(
@@ -81,18 +82,18 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                 }
                 
                 produtos.append(produto)
-                print(f"DEBUG: Produto CIRCUS extraído - Item {len(produtos)}: {codigo} - {descricao} - Qtd: {quantidade}")
+                logger.debug(f"Produto CIRCUS extraído - Item {len(produtos)}: {codigo} - {descricao} - Qtd: {quantidade}")
                 
             except (ValueError, IndexError) as e:
-                print(f"DEBUG: Erro ao processar linha CIRCUS {i}: {linha} - Erro: {e}")
+                logger.warning(f"Erro ao processar linha CIRCUS {i}: {linha} - Erro: {e}")
                 continue
     
     # Se encontrou produtos com padrão CIRCUS, retornar
     if produtos:
-        print(f"DEBUG: Extração CIRCUS concluída. {len(produtos)} produtos encontrados.")
+        logger.debug(f"Extração CIRCUS concluída. {len(produtos)} produtos encontrados.")
         return produtos
     
-    print("DEBUG: Padrão CIRCUS não encontrado. Tentando padrão GIRASSOL...")
+    logger.debug("Padrão CIRCUS não encontrado. Tentando padrão GIRASSOL...")
     
     # Indicadores específicos para GIRASSOL (usados apenas para otimização, não para limitar)
     indicadores_produtos = [
@@ -110,7 +111,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         for indicador in indicadores_produtos:
             if indicador in linha:
                 linha_inicio = i
-                print(f"DEBUG: Seção de produtos iniciada na linha {i}: {indicador}")
+                logger.debug(f"Seção de produtos iniciada na linha {i}: {indicador}")
                 break
         if linha_inicio > 0:
             break
@@ -119,7 +120,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
     # Isso garante que produtos em múltiplas páginas sejam processados
     linha_fim = len(linhas)
     
-    print(f"DEBUG: Processando linhas {linha_inicio} a {linha_fim} (todas as linhas do PDF)")
+    logger.debug(f"Processando linhas {linha_inicio} a {linha_fim} (todas as linhas do PDF)")
     
     # Padrão GIRASSOL onde o código do produto vem colado à descrição (sem espaço)
     # Exemplo de linha real:
@@ -174,7 +175,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
         
         # Log de linhas com potencial de serem produtos
         if any(char.isdigit() for char in linha_limpa[:10]):  # Se começa com números
-            print(f"DEBUG: Linha {i} candidata: '{linha_limpa[:80]}...'")
+            logger.debug(f"Linha {i} candidata: '{linha_limpa[:80]}...'")
         
         # 1) Tentar primeiro o padrão GIRASSOL compacto (código colado na descrição)
         try:
@@ -192,17 +193,17 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                 
                 # Validar se não é duplicata e se os valores fazem sentido
                 if codigo in codigos_processados:
-                    print(f"DEBUG: Código {codigo} já processado, pulando duplicata")
+                    logger.debug(f"Código {codigo} já processado, pulando duplicata")
                     continue
                 
                 # Validar valores razoáveis (quantidade > 0, valores > 0)
                 if quantidade <= 0 or valor_unitario <= 0 or valor_total <= 0:
-                    print(f"DEBUG: Valores inválidos para produto {codigo}, pulando")
+                    logger.debug(f"Valores inválidos para produto {codigo}, pulando")
                     continue
                 
                 # Validar descrição não vazia e com tamanho razoável
                 if not descricao or len(descricao.strip()) < 3:
-                    print(f"DEBUG: Descrição inválida para produto {codigo}, pulando")
+                    logger.debug(f"Descrição inválida para produto {codigo}, pulando")
                     continue
                 
                 produto = {
@@ -216,10 +217,10 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                 }
                 codigos_processados.add(codigo)
                 produtos.append(produto)
-                print(f"DEBUG: Produto GIRASSOL extraído: {produto}")
+                logger.debug(f"Produto GIRASSOL extraído: {produto}")
                 continue  # Próxima linha
         except Exception as e:
-            print(f"DEBUG: Erro no parse GIRASSOL compacto: {e}")
+            logger.warning(f"Erro no parse GIRASSOL compacto: {e}")
         
         # 2) Padrões mais flexíveis para diferentes formatos de PDF
         padroes_produto = [
@@ -242,8 +243,7 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                 produto_match = re.search(padrao, linha_limpa)
                 
                 if produto_match:
-                    print(f"DEBUG: MATCH! Padrão {j} na linha {i}:")
-                    print(f"DEBUG: Grupos encontrados: {produto_match.groups()}")
+                    logger.debug(f"MATCH! Padrão {j} na linha {i}: Grupos encontrados: {produto_match.groups()}")
                     
                     # Extrair dados baseado no padrão
                     grupos = produto_match.groups()
@@ -268,23 +268,23 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                         
                         # Validar se não é duplicata
                         if codigo in codigos_processados:
-                            print(f"DEBUG: Código {codigo} já processado, pulando duplicata")
+                            logger.debug(f"Código {codigo} já processado, pulando duplicata")
                             produto_encontrado = True  # Marcar como encontrado para não tentar outros padrões
                             break
                         
                         # Validar valores razoáveis (quantidade > 0, valores > 0)
                         if quantidade <= 0 or valor_unitario <= 0 or valor_total <= 0:
-                            print(f"DEBUG: Valores inválidos para produto {codigo}, pulando")
+                            logger.debug(f"Valores inválidos para produto {codigo}, pulando")
                             continue
                         
                         # Validar descrição não vazia e com tamanho razoável
                         if not descricao or len(descricao.strip()) < 3:
-                            print(f"DEBUG: Descrição inválida para produto {codigo}, pulando")
+                            logger.debug(f"Descrição inválida para produto {codigo}, pulando")
                             continue
                         
                         # Validar que a descrição não é apenas números (pode ser total/imposto)
                         if descricao.strip().replace('.', '').replace(',', '').isdigit():
-                            print(f"DEBUG: Descrição parece ser número/total para {codigo}, pulando")
+                            logger.debug(f"Descrição parece ser número/total para {codigo}, pulando")
                             continue
                         
                         produto = {
@@ -300,15 +300,15 @@ def extrair_produtos_inteligente_entrada_melhorado(texto_completo: str) -> List[
                         produtos.append(produto)
                         produto_encontrado = True
                         
-                        print(f"DEBUG: Produto extraído: {produto}")
+                        logger.debug(f"Produto extraído: {produto}")
                         break
                         
             except Exception as e:
-                print(f"DEBUG: Erro ao processar padrão {j}: {e}")
+                logger.warning(f"Erro ao processar padrão {j}: {e}")
                 continue
         
         if not produto_encontrado and any(char.isdigit() for char in linha_limpa[:10]):
-            print(f"DEBUG: Linha {i} não matched por nenhum padrão: '{linha_limpa}'")
+            logger.debug(f"Linha {i} não matched por nenhum padrão: '{linha_limpa}'")
     
-    print(f"DEBUG: Total de produtos extraídos: {len(produtos)}")
+    logger.debug(f"Total de produtos extraídos: {len(produtos)}")
     return produtos
