@@ -81,13 +81,12 @@ def get_admin_user(
     current_user: models.Usuario = Depends(get_current_user)
 ) -> models.Usuario:
     """
-    Valida se o usuário autenticado é o administrador (enzo.alverde@gmail.com).
-    Retorna HTTP 403 se o usuário não for o administrador.
+    Valida se o usuário autenticado tem perfil de administrador ou gestor.
     """
-    ADMIN_EMAIL = "enzo.alverde@gmail.com"
-    if current_user.email.lower() != ADMIN_EMAIL.lower():
+    perfil = (current_user.perfil or "").upper()
+    if perfil not in ["ADMIN", "GESTOR"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado. Apenas o administrador pode acessar este recurso.",
+            detail="Apenas administradores ou gestores podem acessar este recurso."
         )
     return current_user
