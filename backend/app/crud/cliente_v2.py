@@ -193,6 +193,15 @@ def update_cliente(
         cidade = update_data.get('cidade', '')
         db_cliente.endereco = f"{bairro}, {cidade}".strip(", ") if (bairro or cidade) else None
 
+    # Atualizar status (mapear de StatusCliente para status_pagamento)
+    if 'status' in update_data:
+        status_value = update_data['status']
+        if status_value == 'ATIVO':
+            db_cliente.status_pagamento = 'BOM_PAGADOR'
+        elif status_value == 'INATIVO':
+            db_cliente.status_pagamento = 'MAU_PAGADOR'
+        # PROSPECTO mantém como BOM_PAGADOR por padrão
+
     db_cliente.atualizado_em = datetime.now()
 
     db.commit()

@@ -114,7 +114,7 @@ def list_clientes(
     cidade: Optional[str] = Query(None, description="Filtrar por cidade"),
     meus_clientes: bool = Query(False, description="Ver apenas meus clientes"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=1000),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
@@ -123,7 +123,9 @@ def list_clientes(
     - search: busca por nome, telefone ou documento
     - bairro/cidade: filtros de localização
     - meus_clientes: ver apenas clientes do vendedor logado
+    - Retorna TODOS os clientes da empresa quando meus_clientes=False (padrão)
     """
+    # Apenas filtrar por vendedor se meus_clientes=True
     vendedor_id = current_user.id if meus_clientes else None
     
     empresa_id = _resolve_empresa_id(db, current_user)
@@ -227,7 +229,7 @@ def update_cliente(
         referencia_localizacao=db_cliente.referencia_localizacao,
         vendedor_id=db_cliente.vendedor_id or current_user.id,
         empresa_id=db_cliente.empresa_id,
-        status="ATIVO",
+        status="ATIVO" if db_cliente.status_pagamento == "BOM_PAGADOR" else "INATIVO",
         criado_em=db_cliente.data_criacao or datetime.now(),
         atualizado_em=db_cliente.atualizado_em
     )

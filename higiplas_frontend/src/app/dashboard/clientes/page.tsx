@@ -38,7 +38,8 @@ export default function ClientesAdminPage() {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchClientes({ limit: 200 });
+      // Buscar todos os clientes da empresa sem filtros
+      fetchClientes({ limit: 1000, skip: 0 });
     }
   }, [isAdmin, fetchClientes]);
 
