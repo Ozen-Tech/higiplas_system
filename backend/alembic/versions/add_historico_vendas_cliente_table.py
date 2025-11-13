@@ -1,7 +1,7 @@
 """add_historico_vendas_cliente_table
 
 Revision ID: add_historico_vendas_cliente
-Revises: bffb357ac77f
+Revises: 712f9eaddc99
 Create Date: 2025-01-15 12:00:00.000000
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'add_historico_vendas_cliente'
-down_revision: Union[str, Sequence[str], None] = 'bffb357ac77f'
+down_revision: Union[str, Sequence[str], None] = '712f9eaddc99'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
