@@ -70,9 +70,11 @@ def busca_rapida_clientes(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
+    # Permitir que todos os vendedores vejam clientes globalmente da mesma empresa
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     query = db.query(models.Cliente).filter(
-        models.Cliente.empresa_id == current_user.empresa_id,
-        models.Cliente.vendedor_id == current_user.id
+        models.Cliente.empresa_id == empresa_id
     )
     
     if termo:
@@ -158,8 +160,10 @@ def listar_produtos_venda(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     query = db.query(models.Produto).filter(
-        models.Produto.empresa_id == current_user.empresa_id,
+        models.Produto.empresa_id == empresa_id,
         # CORREÇÃO: Remover filtro de estoque > 0 para permitir orçamentos com produtos zerados
         # models.Produto.quantidade_em_estoque > 0  # <-- COMENTAR OU REMOVER ESTA LINHA
     )
@@ -182,7 +186,7 @@ def listar_produtos_venda(
     for p in produtos:
         try:
             # Calcular estatísticas de preço
-            estatisticas_dict = calcular_estatisticas_preco(p.id, current_user.empresa_id, db)
+            estatisticas_dict = calcular_estatisticas_preco(p.id, empresa_id, db)
             # Sempre criar o objeto de estatísticas, mesmo que os valores sejam None
             estatisticas = schemas.EstatisticasPreco(**estatisticas_dict)
             
@@ -235,10 +239,12 @@ def registrar_venda(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     try:
         cliente = db.query(models.Cliente).filter(
             models.Cliente.id == venda.cliente_id,
-            models.Cliente.empresa_id == current_user.empresa_id
+            models.Cliente.empresa_id == empresa_id
         ).first()
         
         if not cliente:
@@ -250,7 +256,7 @@ def registrar_venda(
         for item in venda.itens:
             produto = db.query(models.Produto).filter(
                 models.Produto.id == item.produto_id,
-                models.Produto.empresa_id == current_user.empresa_id
+                models.Produto.empresa_id == empresa_id
             ).first()
             
             if not produto:
@@ -311,3 +317,26 @@ def registrar_venda(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _resolve_empresa_id(db: Session, usuario: models.Usuario) -> int:
+    """
+    Garante que o usuário possua um empresa_id válido.
+    Se não estiver definido, atribui a primeira empresa cadastrada.
+    """
+    if usuario.empresa_id:
+        return usuario.empresa_id
+
+    empresa = db.query(models.Empresa).order_by(models.Empresa.id).first()
+    if not empresa:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhuma empresa configurada para o usuário."
+        )
+
+    usuario.empresa_id = empresa.id
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario.empresa_id

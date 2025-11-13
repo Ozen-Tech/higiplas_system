@@ -32,12 +32,14 @@ def create_cliente_quick(
     Criação ultra-rápida de cliente - apenas nome e telefone
     Ideal para vendedor em campo
     """
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     db_cliente = crud.create_cliente_quick(
         db=db,
         nome=cliente.nome,
         telefone=cliente.telefone,
         vendedor_id=current_user.id,
-        empresa_id=current_user.empresa_id
+        empresa_id=empresa_id
     )
     
     # Adicionar campos extras para resposta
@@ -70,11 +72,13 @@ def create_cliente(
     
     try:
         logger.info(f"Tentando criar cliente: nome={cliente.nome}, telefone={cliente.telefone}, tipo_pessoa={cliente.tipo_pessoa}")
+        empresa_id = _resolve_empresa_id(db, current_user)
+
         db_cliente = crud.create_cliente(
             db=db,
             cliente=cliente,
             vendedor_id=current_user.id,
-            empresa_id=current_user.empresa_id
+            empresa_id=empresa_id
         )
     except Exception as e:
         logger.error(f"Erro ao criar cliente: {str(e)}")
@@ -121,9 +125,11 @@ def list_clientes(
     """
     vendedor_id = current_user.id if meus_clientes else None
     
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     clientes = crud.get_clientes(
         db=db,
-        empresa_id=current_user.empresa_id,
+        empresa_id=empresa_id,
         vendedor_id=vendedor_id,
         skip=skip,
         limit=limit,
@@ -152,10 +158,12 @@ def get_cliente(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Buscar cliente por ID"""
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     db_cliente = crud.get_cliente_by_id(
         db=db,
         cliente_id=cliente_id,
-        empresa_id=current_user.empresa_id
+        empresa_id=empresa_id
     )
     
     if not db_cliente:
@@ -190,11 +198,13 @@ def update_cliente(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Atualizar cliente"""
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     db_cliente = crud.update_cliente(
         db=db,
         cliente_id=cliente_id,
         cliente_update=cliente_update,
-        empresa_id=current_user.empresa_id
+        empresa_id=empresa_id
     )
     
     if not db_cliente:
@@ -228,10 +238,12 @@ def delete_cliente(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Deletar cliente (soft delete)"""
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     success = crud.delete_cliente(
         db=db,
         cliente_id=cliente_id,
-        empresa_id=current_user.empresa_id
+        empresa_id=empresa_id
     )
     
     if not success:
@@ -252,10 +264,12 @@ def get_cliente_stats(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Obter estatísticas de vendas do cliente"""
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     stats = crud.get_cliente_stats(
         db=db,
         cliente_id=cliente_id,
-        empresa_id=current_user.empresa_id
+        empresa_id=empresa_id
     )
     
     return schemas.ClienteStats(**stats)
@@ -267,11 +281,13 @@ def bulk_create_clientes(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Criar múltiplos clientes de uma vez"""
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     result = crud.bulk_create_clientes(
         db=db,
         clientes=bulk_data.clientes,
         vendedor_id=current_user.id,
-        empresa_id=current_user.empresa_id
+        empresa_id=empresa_id
     )
     
     if isinstance(result, dict):
@@ -291,9 +307,11 @@ def search_nearby_clientes(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Buscar clientes próximos (mesmo bairro)"""
+    empresa_id = _resolve_empresa_id(db, current_user)
+
     clientes = crud.get_clientes(
         db=db,
-        empresa_id=current_user.empresa_id,
+        empresa_id=empresa_id,
         bairro=bairro,
         limit=limit
     )
@@ -326,3 +344,26 @@ def extract_cidade(endereco: Optional[str]) -> Optional[str]:
 
 # Importar datetime que faltou
 from datetime import datetime
+
+
+def _resolve_empresa_id(db: Session, usuario: models.Usuario) -> int:
+    """
+    Garante que o usuário tenha um empresa_id válido.
+    Caso não tenha, atribui a primeira empresa disponível do sistema.
+    """
+    if usuario.empresa_id:
+        return usuario.empresa_id
+
+    empresa = db.query(models.Empresa).order_by(models.Empresa.id).first()
+    if not empresa:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhuma empresa configurada para o usuário."
+        )
+
+    usuario.empresa_id = empresa.id
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario.empresa_id

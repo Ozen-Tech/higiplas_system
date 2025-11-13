@@ -8,6 +8,9 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { User } from 'lucide-react';
+import { apiService } from '@/services/apiService';
+import { adminService } from '@/services/adminService';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -41,7 +44,30 @@ export default function LoginPage() {
 
       const data = await response.json();
       localStorage.setItem('authToken', data.access_token);
-      router.push('/dashboard');
+
+      // Verificar se o usuário é admin ou gestor
+      try {
+        const userData = await apiService.get('/users/me');
+        const usuario = userData?.data || userData;
+        
+        if (!usuario) {
+          throw new Error('Erro ao obter dados do usuário');
+        }
+
+        if (!adminService.isAdmin(usuario.perfil)) {
+          localStorage.removeItem('authToken');
+          throw new Error('Acesso negado. Apenas administradores ou gestores podem acessar o dashboard.');
+        }
+
+        toast.success('Login realizado com sucesso!');
+        router.push('/dashboard');
+      } catch (userError) {
+        localStorage.removeItem('authToken');
+        if (userError instanceof Error) {
+          throw userError;
+        }
+        throw new Error('Erro ao verificar permissões do usuário.');
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
