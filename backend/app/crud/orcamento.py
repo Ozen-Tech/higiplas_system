@@ -10,6 +10,7 @@ from app.core.validators import OrcamentoValidator, StockValidator
 from app.core.exceptions import BusinessRuleException, NotFoundError, OrcamentoStatusError
 from app.core.constants import OrcamentoStatus, OrigemMovimentacao, TipoMovimentacao
 from app.core.logger import orcamento_logger
+from app.services.historico_vendas_service import HistoricoVendasService
 
 def create_orcamento(db: Session, orcamento_in: schemas_orcamento.OrcamentoCreate, vendedor_id: int) -> models.Orcamento:
     """Cria um novo orçamento com seus itens."""
@@ -371,6 +372,57 @@ def _processar_baixa_estoque(
         )
 
 
+def _salvar_historico_vendas(
+    db: Session,
+    orcamento: models.Orcamento,
+    usuario_id: int,
+    empresa_id: int
+) -> None:
+    """
+    Salva histórico de vendas para cada item do orçamento.
+    Utilizado para sugestões inteligentes e análise de KPIs.
+    
+    Args:
+        db: Sessão do banco de dados
+        orcamento: Orçamento confirmado
+        usuario_id: ID do usuário que confirmou (vendedor)
+        empresa_id: ID da empresa
+    """
+    try:
+        historico_service = HistoricoVendasService(db)
+        
+        for item in orcamento.itens:
+            valor_total = item.quantidade * item.preco_unitario_congelado
+            
+            historico_service.salvar_historico_venda(
+                vendedor_id=usuario_id,
+                cliente_id=orcamento.cliente_id,
+                produto_id=item.produto_id,
+                orcamento_id=orcamento.id,
+                empresa_id=empresa_id,
+                quantidade=item.quantidade,
+                preco_unitario=item.preco_unitario_congelado,
+                valor_total=valor_total,
+                data_venda=orcamento.data_criacao
+            )
+        
+        db.commit()
+        
+        orcamento_logger.info(
+            f"Histórico de vendas salvo para orçamento #{orcamento.id}",
+            extra={"orcamento_id": orcamento.id, "itens": len(orcamento.itens)}
+        )
+        
+    except Exception as e:
+        orcamento_logger.error(
+            f"Erro ao salvar histórico de vendas para orçamento #{orcamento.id}: {str(e)}",
+            extra={"orcamento_id": orcamento.id},
+            exc_info=True
+        )
+        # Não interrompe o fluxo se houver erro ao salvar histórico
+        db.rollback()
+
+
 def _atualizar_status_finalizado(
     db: Session,
     orcamento: models.Orcamento
@@ -383,6 +435,7 @@ def _atualizar_status_finalizado(
         orcamento: Orçamento a ser atualizado
     """
     orcamento.status = OrcamentoStatus.FINALIZADO.value
+    db.add(orcamento)
     db.commit()
     db.refresh(orcamento)
 
@@ -430,6 +483,9 @@ def confirmar_orcamento(
         
         # 3. Processar baixa de estoque
         _processar_baixa_estoque(db, orcamento, usuario_id, empresa_id, stock_service)
+        
+        # 3.5. Salvar histórico de vendas para sugestões e KPIs
+        _salvar_historico_vendas(db, orcamento, usuario_id, empresa_id)
         
         # 4. Atualizar status para FINALIZADO
         _atualizar_status_finalizado(db, orcamento)

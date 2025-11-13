@@ -13,6 +13,7 @@ from ..dependencies import get_current_user
 from ..db import models
 from ..schemas import cliente_v2 as schemas
 from ..crud import cliente_v2 as crud
+from ..services.cliente_kpi_service import ClienteKPIService
 
 router = APIRouter(
     prefix="/clientes",  # Agora é o endpoint principal
@@ -253,6 +254,91 @@ def delete_cliente(
         )
     
     return {"message": "Cliente removido com sucesso"}
+
+# ============= KPIs DE CLIENTE =============
+
+@router.get("/{cliente_id}/kpis", summary="Obter todos os KPIs de um cliente")
+def obter_kpis_cliente(
+    cliente_id: int,
+    dias_periodo: int = Query(90, description="Período de análise em dias (padrão: 90 dias)"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna todos os KPIs do cliente: ticket médio, frequência de compras,
+    produtos mais comprados, previsão de demanda, etc.
+    """
+    try:
+        kpi_service = ClienteKPIService(db)
+        kpis = kpi_service.calcular_todos_kpis(cliente_id, dias_periodo)
+        return kpis
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao calcular KPIs do cliente: {str(e)}"
+        )
+
+
+@router.get("/kpis/ranking", summary="Ranking de clientes por diferentes métricas")
+def obter_ranking_clientes(
+    metrica: str = Query("total_vendido", description="Métrica para ranking: total_vendido, ticket_medio, frequencia"),
+    limite: int = Query(10, description="Número de clientes no ranking"),
+    dias_periodo: int = Query(90, description="Período de análise em dias"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna ranking de clientes por diferentes métricas.
+    Métricas disponíveis: total_vendido, ticket_medio, frequencia
+    """
+    try:
+        empresa_id = _resolve_empresa_id(db, current_user)
+        kpi_service = ClienteKPIService(db)
+        
+        # Obter todos os clientes da empresa que têm histórico
+        from datetime import datetime, timedelta
+        data_limite = datetime.now() - timedelta(days=dias_periodo)
+        
+        clientes_com_historico = db.query(
+            models.HistoricoVendaCliente.cliente_id
+        ).filter(
+            models.HistoricoVendaCliente.empresa_id == empresa_id,
+            models.HistoricoVendaCliente.data_venda >= data_limite
+        ).distinct().all()
+        
+        rankings = []
+        for cliente_tuple in clientes_com_historico:
+            cliente_id = cliente_tuple.cliente_id
+            kpis = kpi_service.calcular_todos_kpis(cliente_id, dias_periodo)
+            
+            if kpis and 'erro' not in kpis:
+                cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+                if cliente:
+                    rankings.append({
+                        'cliente_id': cliente_id,
+                        'cliente_nome': cliente.razao_social,
+                        **kpis
+                    })
+        
+        # Ordenar por métrica
+        if metrica == 'total_vendido':
+            rankings.sort(key=lambda x: x.get('total_vendido', 0), reverse=True)
+        elif metrica == 'ticket_medio':
+            rankings.sort(key=lambda x: x.get('ticket_medio', 0) or 0, reverse=True)
+        elif metrica == 'frequencia':
+            rankings.sort(key=lambda x: x.get('frequencia_compras_dias', 999) or 999)
+        
+        return {
+            'metrica': metrica,
+            'periodo_dias': dias_periodo,
+            'ranking': rankings[:limite]
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter ranking: {str(e)}"
+        )
 
 # ============= FUNCIONALIDADES EXTRAS =============
 

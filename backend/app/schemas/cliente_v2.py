@@ -5,7 +5,7 @@ Focado em eficiência e praticidade para vendedores de rua
 """
 
 from pydantic import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -123,3 +123,37 @@ class ClienteStats(BaseModel):
     ticket_medio: float = 0
     produtos_mais_comprados: list[dict] = []
     historico_vendas: list[dict] = []
+
+
+# ============= SCHEMAS DE KPIs DE CLIENTE =============
+
+class ProdutoClienteKPI(BaseModel):
+    """Produto mais comprado pelo cliente"""
+    produto_id: int
+    produto_nome: str
+    produto_codigo: Optional[str] = None
+    quantidade_total: int
+    ultima_compra: Optional[datetime] = None
+    numero_pedidos: int
+
+
+class PrevisaoDemanda(BaseModel):
+    """Previsão de demanda para um produto"""
+    produto_id: int
+    quantidade_prevista: int
+    confianca: str  # ALTA, MÉDIA, BAIXA
+    periodo_dias: int
+    media_mensal: float
+    registros_analisados: int
+
+
+class ClienteKPIs(BaseModel):
+    """Todos os KPIs de um cliente"""
+    cliente_id: int
+    periodo_dias: int
+    total_vendido: float
+    numero_pedidos: int
+    ticket_medio: Optional[float] = None
+    frequencia_compras_dias: Optional[float] = None
+    produtos_mais_comprados: List[ProdutoClienteKPI] = []
+    data_calculo: str

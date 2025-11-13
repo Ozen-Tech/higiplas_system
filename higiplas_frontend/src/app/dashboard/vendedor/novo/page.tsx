@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SugestoesCliente } from '@/components/orcamentos/SugestoesCliente';
 import { 
   Users, Package, ShoppingCart, PlusCircle, Trash2, ArrowLeft, Send, Share2, UserPlus 
 } from 'lucide-react';
@@ -53,17 +54,41 @@ export default function NovoOrcamentoPage() {
     buscarProdutos();
   }, [buscarClientes, buscarProdutos]);
   
-  const adicionarAoCarrinho = (produto: Produto) => {
-    if (carrinho.find(item => item.produto_id === produto.id)) return;
+  const adicionarAoCarrinho = (produto: Produto, preco?: number, quantidade?: number) => {
+    const itemExistente = carrinho.find(item => item.produto_id === produto.id);
+    if (itemExistente) {
+      // Atualizar item existente se preço ou quantidade foram fornecidos
+      if (preco !== undefined || quantidade !== undefined) {
+        setCarrinho(carrinho.map(item => {
+          if (item.produto_id === produto.id) {
+            return {
+              ...item,
+              preco_unitario_editavel: preco !== undefined ? preco : item.preco_unitario_editavel,
+              quantidade: quantidade !== undefined ? quantidade : item.quantidade
+            };
+          }
+          return item;
+        }));
+      }
+      return;
+    }
     const novoItem: ItemCarrinhoOrcamento = {
         produto_id: produto.id,
         nome: produto.nome,
         estoque_disponivel: produto.estoque_disponivel,
         preco_original: produto.preco,
-        preco_unitario_editavel: produto.preco,
-        quantidade: 1,
+        preco_unitario_editavel: preco !== undefined ? preco : produto.preco,
+        quantidade: quantidade !== undefined ? quantidade : 1,
     };
     setCarrinho([...carrinho, novoItem]);
+  };
+
+  const handleAplicarSugestao = (produtoId: number, preco: number, quantidade: number) => {
+    const produto = produtos.find(p => p.id === produtoId);
+    if (produto) {
+      adicionarAoCarrinho(produto, preco, quantidade);
+      toast.success('Sugestão aplicada!');
+    }
   };
   
   const atualizarItemCarrinho = (produtoId: number, campo: 'quantidade' | 'preco', valor: number) => {
@@ -243,6 +268,12 @@ export default function NovoOrcamentoPage() {
                     )}
                   </CardContent>
               </Card>
+              {clienteSelecionado && (
+                <SugestoesCliente
+                  clienteId={clienteSelecionado.id}
+                  onAplicarSugestao={handleAplicarSugestao}
+                />
+              )}
               <Card>
                   <CardHeader><CardTitle className="flex items-center gap-2"><Package/> Adicionar Produtos</CardTitle></CardHeader>
                   <CardContent>

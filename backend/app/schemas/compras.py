@@ -75,3 +75,49 @@ class ProductAnalysisResponse(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
+
+# ============= SCHEMAS DE KPIs DE COMPRAS =============
+
+class GiroEstoqueKPI(BaseModel):
+    """KPI de giro de estoque"""
+    produto_id: int
+    produto_nome: str
+    giro_mensal: float
+    giro_anual: float
+    dias_giro: float
+    estoque_atual: int
+    total_vendido_periodo: float
+
+
+class ABCCurvaKPI(BaseModel):
+    """Classificação ABC de produto"""
+    produto_id: int
+    produto_nome: str
+    produto_codigo: Optional[str] = None
+    classificacao: str  # A, B, C
+    percentual_vendas: float
+    percentual_estoque: float
+    valor_total_vendas: float
+    percentual_acumulado: float
+
+
+class PrevisaoComprasKPI(BaseModel):
+    """Previsão de necessidade de compra"""
+    produto_id: int
+    produto_nome: str
+    quantidade_necessaria: int
+    urgencia: str  # CRÍTICA, ALTA, MÉDIA, BAIXA
+    custo_estimado: float
+    dias_cobertura_atual: float
+    demanda_media_diaria: float
+
+
+class ComprasKPIs(BaseModel):
+    """Todos os KPIs de compras"""
+    empresa_id: int
+    periodo_meses: int
+    data_calculo: str
+    abc_curva: List[ABCCurvaKPI] = []
+    eficiencia_compras: dict = {}
+    estoque_parado: dict = {}
+

@@ -1,6 +1,6 @@
 # backend/app/db/models.py
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Date, Enum
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Date, Enum, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .connection import Base
@@ -172,6 +172,47 @@ class OrcamentoItem(Base):
     
     produto_id = Column(Integer, ForeignKey("produtos.id"))
     produto = relationship("Produto")
+
+class HistoricoVendaCliente(Base):
+    """Armazena histórico de vendas por vendedor-cliente-produto para análise e sugestões"""
+    __tablename__ = "historico_vendas_cliente"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Relacionamentos principais
+    vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False, index=True)
+    orcamento_id = Column(Integer, ForeignKey("orcamentos.id"), nullable=False, index=True)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False, index=True)
+    
+    # Dados da venda
+    quantidade_vendida = Column(Integer, nullable=False)
+    preco_unitario_vendido = Column(Float, nullable=False)
+    valor_total = Column(Float, nullable=False)
+    data_venda = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    
+    # Timestamps
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relacionamentos
+    vendedor = relationship("Usuario", foreign_keys=[vendedor_id])
+    cliente = relationship("Cliente")
+    produto = relationship("Produto")
+    orcamento = relationship("Orcamento")
+    empresa = relationship("Empresa")
+    
+    # Índices compostos para otimização de consultas
+    __table_args__ = (
+        # Índice para consultas por vendedor-cliente-produto (sugestões)
+        Index('idx_vendedor_cliente_produto', 'vendedor_id', 'cliente_id', 'produto_id'),
+        # Índice para consultas por cliente-produto (análise de cliente)
+        Index('idx_cliente_produto', 'cliente_id', 'produto_id'),
+        # Índice para consultas de frequência (cliente + data)
+        Index('idx_cliente_data', 'cliente_id', 'data_venda'),
+        # Índice para análise de demanda (produto + data)
+        Index('idx_produto_data', 'produto_id', 'data_venda'),
+    )
 
 class Fornecedor(Base):
     __tablename__ = "fornecedores"

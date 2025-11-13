@@ -13,6 +13,7 @@ from app.dependencies import get_current_user, get_admin_user
 from app.db import models
 from app.schemas import orcamento as schemas_orcamento
 from app.crud import orcamento as crud_orcamento
+from app.services.historico_vendas_service import HistoricoVendasService
 from fpdf import FPDF
 
 router = APIRouter(
@@ -358,7 +359,110 @@ def listar_todos_orcamentos(
     admin_user: models.Usuario = Depends(get_admin_user)
 ):
     """Lista todos os orçamentos do sistema. Apenas para administradores."""
-    return crud_orcamento.get_all_orcamentos(db=db, empresa_id=admin_user.empresa_id)
+    # Passar None para empresa_id para listar TODOS os orçamentos, independente da empresa
+    return crud_orcamento.get_all_orcamentos(db=db, empresa_id=None)
+
+# ============= ROTAS DE SUGESTÕES =============
+
+@router.get("/sugestoes/{cliente_id}", summary="Obter sugestões de preço e quantidade para um cliente")
+def obter_sugestoes_cliente(
+    cliente_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna sugestões de preço e quantidade para todos os produtos já vendidos ao cliente.
+    Baseado no histórico de vendas do vendedor para este cliente.
+    """
+    try:
+        historico_service = HistoricoVendasService(db)
+        
+        # Obter sugestões (filtra por vendedor se não for admin/gestor)
+        vendedor_id = None if current_user.perfil.upper() in ["ADMIN", "GESTOR"] else current_user.id
+        
+        sugestoes = historico_service.obter_sugestoes_cliente(
+            cliente_id=cliente_id,
+            vendedor_id=vendedor_id
+        )
+        
+        return {
+            "cliente_id": cliente_id,
+            "sugestoes": sugestoes,
+            "total_produtos": len(sugestoes)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter sugestões: {str(e)}"
+        )
+
+
+@router.get("/sugestoes/{cliente_id}/{produto_id}", summary="Obter sugestão específica de preço e quantidade")
+def obter_sugestao_produto(
+    cliente_id: int,
+    produto_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna sugestão específica de preço e quantidade para um produto específico.
+    Lógica: média dos últimos 5 pedidos (ou último se < 5).
+    """
+    try:
+        historico_service = HistoricoVendasService(db)
+        
+        # Determinar vendedor_id
+        vendedor_id = current_user.id if current_user.perfil.upper() not in ["ADMIN", "GESTOR"] else None
+        
+        # Se não for admin/gestor, usar o próprio ID como vendedor
+        if vendedor_id is None:
+            # Para admin/gestor, buscar histórico de qualquer vendedor para este cliente
+            # Mas vamos usar o último histórico encontrado
+            historicos = historico_service.obter_historico_completo(
+                cliente_id=cliente_id,
+                produto_id=produto_id,
+                limite=1
+            )
+            if historicos:
+                vendedor_id = historicos[0].vendedor_id
+            else:
+                return {
+                    "cliente_id": cliente_id,
+                    "produto_id": produto_id,
+                    "ultimo_preco": None,
+                    "quantidade_sugerida": None,
+                    "historico_disponivel": False
+                }
+        
+        # Obter último preço
+        ultimo_preco = historico_service.obter_ultimo_preco(
+            vendedor_id=vendedor_id,
+            cliente_id=cliente_id,
+            produto_id=produto_id
+        )
+        
+        # Obter média de quantidade
+        quantidade_sugerida = historico_service.obter_media_quantidade(
+            vendedor_id=vendedor_id,
+            cliente_id=cliente_id,
+            produto_id=produto_id
+        )
+        
+        return {
+            "cliente_id": cliente_id,
+            "produto_id": produto_id,
+            "ultimo_preco": ultimo_preco,
+            "quantidade_sugerida": quantidade_sugerida,
+            "historico_disponivel": ultimo_preco is not None
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter sugestão: {str(e)}"
+        )
+
 
 @router.get("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Busca um orçamento específico")
 def buscar_orcamento(

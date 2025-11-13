@@ -9,7 +9,7 @@ import {
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
   ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
   ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon, UserGroupIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -28,7 +28,15 @@ const navigation: NavigationItem[] = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
-  { name: 'Compras', href: '/dashboard/compras', icon: ShoppingCartIcon },
+  { 
+    name: 'Compras', 
+    href: '/dashboard/compras', 
+    icon: ShoppingCartIcon,
+    subItems: [
+      { name: 'Sugestões', href: '/dashboard/compras', icon: ShoppingCartIcon },
+      { name: 'KPIs de Compras', href: '/dashboard/compras/kpis', icon: ArrowTrendingUpIcon }
+    ]
+  },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: DocumentTextIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
@@ -37,6 +45,7 @@ const navigation: NavigationItem[] = [
 const adminNavigation: NavigationItem[] = [
   { name: 'Criar Usuário', href: '/admin/criar-usuario', icon: UserPlusIcon },
   { name: 'Gerenciar Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
+  { name: 'Gerenciar Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
 ];
 
 export function Sidebar() {
