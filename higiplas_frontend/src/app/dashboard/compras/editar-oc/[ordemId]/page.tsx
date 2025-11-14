@@ -50,7 +50,12 @@ export default function EditarOrdemDeCompraPage() {
                 }
 
                 // Carregar itens da ordem
-                const ordemItems: OrderItem[] = ordem.itens?.map((item: any) => ({
+                interface OrdemItemResponse {
+                    produto: Product;
+                    quantidade_solicitada: number;
+                    custo_unitario_registrado: number;
+                }
+                const ordemItems: OrderItem[] = ordem.itens?.map((item: OrdemItemResponse) => ({
                     ...item.produto,
                     quantidade_solicitada: item.quantidade_solicitada,
                     custo_unitario_registrado: item.custo_unitario_registrado,
@@ -112,7 +117,7 @@ export default function EditarOrdemDeCompraPage() {
                 quantidade_solicitada: produto.estoque_minimo || 10,
                 custo_unitario_registrado: produto.preco_custo || 0,
             }]);
-        } catch (error) {
+        } catch {
             toast.error('Erro ao buscar produtos');
         }
     };
@@ -210,7 +215,7 @@ export default function EditarOrdemDeCompraPage() {
 
                     {items.length === 0 && (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                            <p>Nenhum item adicionado. Clique em "Adicionar Produto" para começar.</p>
+                            <p>Nenhum item adicionado. Clique em &quot;Adicionar Produto&quot; para começar.</p>
                         </div>
                     )}
 
