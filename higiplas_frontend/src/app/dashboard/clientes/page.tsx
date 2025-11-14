@@ -41,7 +41,8 @@ export default function ClientesAdminPage() {
       // Buscar todos os clientes da empresa sem filtros
       fetchClientes({ limit: 1000, skip: 0 });
     }
-  }, [isAdmin, fetchClientes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   if (!isAdmin) {
     return (

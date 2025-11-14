@@ -106,7 +106,9 @@ export function useClientesV2() {
       queryParams.append('limit', (params.limit || 50).toString());
       
       const url = `/clientes/?${queryParams.toString()}`;
-      const data = await apiService.get(url);
+      const response = await apiService.get(url);
+      // apiService.get retorna { data, headers }, então precisamos acessar response.data
+      const data = response?.data || response;
       const clientesList = Array.isArray(data) ? data : [];
       
       setClientes(clientesList);
@@ -140,7 +142,9 @@ export function useClientesV2() {
     try {
       setLoading(true);
       const response = await apiService.get(`/clientes/${id}`);
-      return response?.data || null;
+      // apiService.get retorna { data, headers }
+      const data = response?.data || response;
+      return data || null;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar cliente';
       setError(errorMessage);
@@ -207,7 +211,9 @@ export function useClientesV2() {
     try {
       setLoading(true);
       const response = await apiService.get(`/clientes/${id}/stats`);
-      return response?.data || null;
+      // apiService.get retorna { data, headers }
+      const data = response?.data || response;
+      return data || null;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar estatísticas';
       setError(errorMessage);
@@ -220,7 +226,9 @@ export function useClientesV2() {
   const searchNearbyClientes = async (bairro: string): Promise<ClienteListItemV2[]> => {
     try {
       const response = await apiService.get(`/clientes/search/nearby?bairro=${encodeURIComponent(bairro)}&limit=20`);
-      return Array.isArray(response) ? response : [];
+      // apiService.get retorna { data, headers }
+      const data = response?.data || response;
+      return Array.isArray(data) ? data : [];
     } catch (err) {
       console.error('Erro ao buscar clientes próximos:', err);
       return [];
@@ -250,9 +258,7 @@ export function useClientesV2() {
 
   // ============= EFEITOS =============
   
-  useEffect(() => {
-    fetchClientes();
-  }, []);
+  // Removido useEffect automático - deixar o componente controlar quando buscar
 
   return {
     // Estado
