@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, constr
+from pydantic import BaseModel, EmailStr, Field, constr, field_serializer
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -27,8 +27,18 @@ class Usuario(UsuarioBase):
     data_criacao: datetime
     perfil: str
 
+    @field_serializer('data_criacao')
+    def serialize_datetime(self, value: datetime, _info):
+        """Serializa datetime para string ISO format"""
+        if value is None:
+            return None
+        return value.isoformat()
+
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 # Schemas para o fluxo de Token
 class Token(BaseModel):

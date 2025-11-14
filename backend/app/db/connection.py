@@ -46,7 +46,15 @@ print("----------------------------------------------------")
 # ===================================================================
 
 # O 'engine' do SQLAlchemy usa a URL acima para se conectar.
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Configurações do pool para evitar timeout de conexões
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_size=10,  # Número de conexões mantidas no pool
+    max_overflow=20,  # Número máximo de conexões além do pool_size
+    pool_pre_ping=True,  # Verifica se a conexão está viva antes de usar
+    pool_recycle=3600,  # Recicla conexões após 1 hora
+    echo=False
+)
 
 # A fábrica de sessões que o CRUD precisa
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

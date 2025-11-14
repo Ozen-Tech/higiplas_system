@@ -164,30 +164,51 @@ async def generic_exception_handler(
     Returns:
         Resposta JSON com mensagem genérica de erro
     """
+    # Capturar traceback como string para evitar problemas de serialização
+    try:
+        tb_str = traceback.format_exc()
+    except Exception:
+        tb_str = "Erro ao formatar traceback"
+    
     logger.error(
         f"Exceção não tratada: {type(exc).__name__} - {str(exc)}",
         extra={
             "path": request.url.path,
             "method": request.method,
-            "traceback": traceback.format_exc()
+            "traceback": tb_str
         },
         exc_info=True
     )
     
+    # Garantir que os detalhes sejam serializáveis
+    error_details = {
+        "path": str(request.url.path),
+        "method": str(request.method),
+        "error_type": str(type(exc).__name__),
+        "error_message": str(exc)
+    }
+    
     error_response = ErrorResponse(
         error="InternalServerError",
         message="Erro interno do servidor. Nossa equipe foi notificada.",
-        details={
-            "path": request.url.path,
-            "method": request.method,
-            "error_type": type(exc).__name__
-        }
+        details=error_details
     )
     
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump()
-    )
+    try:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=error_response.model_dump()
+        )
+    except Exception as e:
+        # Fallback se ainda houver problema de serialização
+        logger.error(f"Erro ao serializar resposta de erro: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": "InternalServerError",
+                "message": "Erro interno do servidor."
+            }
+        )
 
 
 def register_exception_handlers(app):
