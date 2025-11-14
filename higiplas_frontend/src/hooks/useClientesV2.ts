@@ -1,7 +1,7 @@
 // /src/hooks/useClientesV2.ts
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 import {
