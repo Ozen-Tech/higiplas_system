@@ -291,13 +291,13 @@ def delete_cliente(
             text("DELETE FROM clientes WHERE id = :cliente_id AND empresa_id = :empresa_id"), 
             {"cliente_id": cliente_id, "empresa_id": empresa_id}
         )
-    db.commit()
+        db.commit()
         
         # Verificar se alguma linha foi deletada
         if result.rowcount == 0:
             return False
         
-    return True
+        return True
     except Exception as e:
         db.rollback()
         api_logger.error(f"Erro ao deletar cliente {cliente_id}: {str(e)}")
