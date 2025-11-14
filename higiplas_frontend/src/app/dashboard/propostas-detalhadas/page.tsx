@@ -21,7 +21,8 @@ export default function PropostasDetalhadasPage() {
 
   useEffect(() => {
     getPropostas(0, 100, true); // true = isAdmin
-  }, [getPropostas]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Executar apenas uma vez ao montar o componente
 
   const propostasFiltradas = propostas.filter((p) => {
     if (!filtro) return true;
@@ -52,6 +53,8 @@ export default function PropostasDetalhadasPage() {
     try {
       await deleteProposta(propostaId);
       toast.success('Proposta deletada com sucesso');
+      // Recarregar lista após deletar
+      await getPropostas(0, 100, true);
     } catch {
       toast.error('Erro ao deletar proposta');
     }

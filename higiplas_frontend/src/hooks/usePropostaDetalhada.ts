@@ -1,6 +1,6 @@
 // src/hooks/usePropostaDetalhada.ts
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { propostaService, PropostaDetalhada, PropostaDetalhadaCreate } from '@/services/propostaService';
 
 export function usePropostaDetalhada() {
@@ -43,7 +43,7 @@ export function usePropostaDetalhada() {
     }
   };
 
-  const getPropostas = async (skip = 0, limit = 100, isAdmin = false) => {
+  const getPropostas = useCallback(async (skip = 0, limit = 100, isAdmin = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -59,7 +59,7 @@ export function usePropostaDetalhada() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const getPropostaById = async (propostaId: number) => {
     setLoading(true);
