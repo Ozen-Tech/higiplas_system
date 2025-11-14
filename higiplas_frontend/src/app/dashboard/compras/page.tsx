@@ -70,7 +70,7 @@ export default function ComprasPage() {
   
   const orderColumns: Column<OrdemDeCompra>[] = useMemo(() => [
     { header: 'ID da OC', accessor: 'id', render: (o) => <span className="font-mono text-xs text-gray-500">#{o.id}</span> },
-    { header: 'Fornecedor', accessor: 'fornecedor', render: (o: OrdemDeCompra) => o.fornecedor.nome },
+    { header: 'Fornecedor', accessor: 'fornecedor', render: (o: OrdemDeCompra) => o.fornecedor?.nome || 'N/A' },
     { header: 'Status', accessor: 'status', render: (o) => (
       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
         o.status === 'RECEBIDA' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
@@ -80,8 +80,8 @@ export default function ComprasPage() {
         {o.status}
       </span>
     )},
-    { header: 'Data Criação', accessor: 'data_criacao', render: (o: OrdemDeCompra) => new Date(o.data_criacao).toLocaleDateString('pt-BR') },
-    { header: 'Itens', accessor: 'itens', render: (o) => <span>{o.itens.length}</span> }
+    { header: 'Data Criação', accessor: 'data_criacao', render: (o: OrdemDeCompra) => o.data_criacao ? new Date(o.data_criacao).toLocaleDateString('pt-BR') : 'N/A' },
+    { header: 'Itens', accessor: 'itens', render: (o) => <span>{o.itens?.length || 0}</span> }
   ], []);
 
   return (
