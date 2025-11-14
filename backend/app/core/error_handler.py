@@ -6,6 +6,8 @@ facilitando tratamento de erros e melhorando a experiência do usuário.
 """
 
 import traceback
+import json
+from datetime import datetime, date
 from typing import Union
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
@@ -144,9 +146,20 @@ async def sqlalchemy_exception_handler(
         )
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     
+    try:
+        content = error_response.model_dump(mode='json')
+    except Exception:
+        # Fallback para serialização manual
+        content = error_response.model_dump()
+        # Converter datetime/date para string manualmente
+        if isinstance(content.get('details'), dict):
+            for key, value in content['details'].items():
+                if isinstance(value, (datetime, date)):
+                    content['details'][key] = value.isoformat()
+    
     return JSONResponse(
         status_code=status_code,
-        content=error_response.model_dump()
+        content=content
     )
 
 
@@ -195,20 +208,40 @@ async def generic_exception_handler(
     )
     
     try:
+        # Usar model_dump com mode='json' para serializar corretamente
+        content = error_response.model_dump(mode='json')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=error_response.model_dump()
+            content=content
         )
     except Exception as e:
         # Fallback se ainda houver problema de serialização
         logger.error(f"Erro ao serializar resposta de erro: {str(e)}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "error": "InternalServerError",
-                "message": "Erro interno do servidor."
+        # Tentar serializar manualmente
+        try:
+            safe_details = {
+                "path": str(error_details.get("path", "")),
+                "method": str(error_details.get("method", "")),
+                "error_type": str(error_details.get("error_type", "")),
+                "error_message": str(error_details.get("error_message", ""))
             }
-        )
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={
+                    "error": "InternalServerError",
+                    "message": "Erro interno do servidor.",
+                    "details": safe_details
+                }
+            )
+        except Exception:
+            # Último fallback
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={
+                    "error": "InternalServerError",
+                    "message": "Erro interno do servidor."
+                }
+            )
 
 
 def register_exception_handlers(app):

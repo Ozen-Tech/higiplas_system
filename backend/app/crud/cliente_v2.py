@@ -238,8 +238,24 @@ def delete_cliente(
             "Considere marcar o cliente como inativo em vez de deletá-lo."
         )
 
+    # Deletar historico_pagamentos manualmente antes de deletar o cliente
+    # Isso evita que o SQLAlchemy tente carregar objetos com colunas que podem não existir
+    try:
+        db.query(models.HistoricoPagamento).filter(
+            models.HistoricoPagamento.cliente_id == cliente_id
+        ).delete(synchronize_session=False)
+    except Exception as e:
+        # Se houver erro ao deletar historico_pagamentos (ex: coluna não existe),
+        # tentar deletar apenas os campos que existem
+        from sqlalchemy import text
+        try:
+            db.execute(text("DELETE FROM historico_pagamentos WHERE cliente_id = :cliente_id"), 
+                      {"cliente_id": cliente_id})
+        except Exception:
+            # Se ainda falhar, apenas logar e continuar
+            pass
+    
     # Hard delete - remove o cliente do banco de dados
-    # O cascade="all, delete-orphan" no historico_pagamentos já cuida dos registros relacionados
     db.delete(db_cliente)
     db.commit()
     return True

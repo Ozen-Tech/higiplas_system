@@ -119,14 +119,15 @@ class Cliente(Base):
     
     # Relacionamentos
     orcamentos = relationship("Orcamento", back_populates="cliente")
-    historico_pagamentos = relationship("HistoricoPagamento", back_populates="cliente", cascade="all, delete-orphan")
+    # Removido cascade para evitar problemas com colunas faltantes no banco
+    historico_pagamentos = relationship("HistoricoPagamento", back_populates="cliente")
 
 class HistoricoPagamento(Base):
     __tablename__ = "historico_pagamentos"
     
     id = Column(Integer, primary_key=True, index=True)
     valor = Column(Float, nullable=False)
-    data_vencimento = Column(Date, nullable=False)
+    data_vencimento = Column(Date, nullable=True)  # Tornado nullable para compatibilidade
     data_pagamento = Column(Date, nullable=True)
     status = Column(Enum('PENDENTE', 'PAGO', 'ATRASADO', name='status_pagamento_historico_enum'), default='PENDENTE')
     numero_nf = Column(String, nullable=True)
