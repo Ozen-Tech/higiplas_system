@@ -46,6 +46,7 @@ const adminNavigation: NavigationItem[] = [
   { name: 'Criar Usuário', href: '/admin/criar-usuario', icon: UserPlusIcon },
   { name: 'Gerenciar Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
   { name: 'Gerenciar Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
+  { name: 'Propostas Detalhadas', href: '/dashboard/propostas-detalhadas', icon: DocumentTextIcon },
 ];
 
 export function Sidebar() {

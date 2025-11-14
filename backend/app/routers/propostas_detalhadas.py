@@ -60,6 +60,8 @@ def create_proposta_detalhada(
     Cria uma proposta detalhada com cálculos automáticos de rendimento e comparação com concorrentes.
     Disponível para vendedores.
     """
+    from app.core.logger import app_logger
+    app_logger.info(f"Criando proposta detalhada para produto {proposta_in.produto_id}, cliente {proposta_in.cliente_id}")
     try:
         proposta = crud_proposta.create_proposta_detalhada(
             db, proposta_in, current_user.id
