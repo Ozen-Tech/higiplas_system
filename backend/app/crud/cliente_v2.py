@@ -22,15 +22,23 @@ def create_cliente_quick(
 ) -> models.Cliente:
     """Criação ultra-rápida de cliente - apenas nome e telefone"""
 
-    # Verificar se já existe cliente com mesmo telefone
-    existing = db.query(models.Cliente).filter(
-        models.Cliente.telefone == telefone,
-        models.Cliente.empresa_id == empresa_id
+    # Verificar se já existe cliente ATIVO com mesmo telefone
+    # Usar SQL direto para evitar problemas com clientes deletados
+    from sqlalchemy import text
+    result = db.execute(
+        text("""
+            SELECT id FROM clientes 
+            WHERE telefone = :telefone 
+            AND empresa_id = :empresa_id
+            AND status_pagamento = 'BOM_PAGADOR'
+            LIMIT 1
+        """),
+        {"telefone": telefone, "empresa_id": empresa_id}
     ).first()
 
-    if existing:
+    if result:
         # Retorna o existente ao invés de erro
-        return existing
+        return get_cliente_by_id(db, result.id, empresa_id)
 
     db_cliente = models.Cliente(
         razao_social=nome,  # Mapeando para o campo existente
@@ -56,26 +64,43 @@ def create_cliente(
     """Criar cliente completo"""
 
     # Verificar duplicados por telefone (se fornecido)
+    # Usar SQL direto para verificar se existe cliente ATIVO com este telefone
+    # Isso evita problemas com clientes deletados
     if cliente.telefone:
-        existing = db.query(models.Cliente).filter(
-            models.Cliente.telefone == cliente.telefone,
-            models.Cliente.empresa_id == empresa_id
+        from sqlalchemy import text
+        result = db.execute(
+            text("""
+                SELECT id FROM clientes 
+                WHERE telefone = :telefone 
+                AND empresa_id = :empresa_id
+                AND status_pagamento = 'BOM_PAGADOR'
+                LIMIT 1
+            """),
+            {"telefone": cliente.telefone, "empresa_id": empresa_id}
         ).first()
 
-        if existing:
+        if result:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Cliente já existe com este telefone: {cliente.nome}"
             )
 
     # Verificar duplicados por CPF/CNPJ apenas se fornecido
+    # Usar SQL direto para verificar se existe cliente ATIVO com este documento
     if cliente.cpf_cnpj and cliente.cpf_cnpj.strip():
-        existing = db.query(models.Cliente).filter(
-            models.Cliente.cnpj == cliente.cpf_cnpj.strip(),
-            models.Cliente.empresa_id == empresa_id
+        from sqlalchemy import text
+        result = db.execute(
+            text("""
+                SELECT id FROM clientes 
+                WHERE cnpj = :cnpj 
+                AND empresa_id = :empresa_id
+                AND status_pagamento = 'BOM_PAGADOR'
+                LIMIT 1
+            """),
+            {"cnpj": cliente.cpf_cnpj.strip(), "empresa_id": empresa_id}
         ).first()
 
-        if existing:
+        if result:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Cliente já existe com este documento"
@@ -219,46 +244,64 @@ def delete_cliente(
     empresa_id: int
 ) -> bool:
     """Deletar cliente permanentemente do banco de dados (hard delete)"""
+    from sqlalchemy import text
+    from app.db import models
+    from app.core.logger import api_logger
 
-    db_cliente = get_cliente_by_id(db, cliente_id, empresa_id)
-    if not db_cliente:
+    # Verificar se o cliente existe usando SQL direto (sem carregar objetos)
+    result = db.execute(
+        text("SELECT id FROM clientes WHERE id = :cliente_id AND empresa_id = :empresa_id"),
+        {"cliente_id": cliente_id, "empresa_id": empresa_id}
+    ).first()
+    
+    if not result:
         return False
 
-    # Verificar se há orçamentos relacionados
-    from app.db import models
-    orcamentos_count = db.query(models.Orcamento).filter(
-        models.Orcamento.cliente_id == cliente_id
-    ).count()
+    # Verificar se há orçamentos relacionados usando SQL direto
+    orcamentos_result = db.execute(
+        text("SELECT COUNT(*) as count FROM orcamentos WHERE cliente_id = :cliente_id"),
+        {"cliente_id": cliente_id}
+    ).first()
+    
+    orcamentos_count = orcamentos_result.count if orcamentos_result else 0
     
     if orcamentos_count > 0:
         # Se houver orçamentos, não permitir exclusão para manter integridade dos dados
-        # Alternativamente, poderia deletar em cascata, mas isso pode ser perigoso
         raise ValueError(
             f"Não é possível deletar o cliente pois existem {orcamentos_count} orçamento(s) associado(s). "
             "Considere marcar o cliente como inativo em vez de deletá-lo."
         )
 
-    # Deletar historico_pagamentos manualmente antes de deletar o cliente
+    # Deletar historico_pagamentos usando SQL direto para evitar carregar objetos
     # Isso evita que o SQLAlchemy tente carregar objetos com colunas que podem não existir
     try:
-        db.query(models.HistoricoPagamento).filter(
-            models.HistoricoPagamento.cliente_id == cliente_id
-        ).delete(synchronize_session=False)
+        db.execute(
+            text("DELETE FROM historico_pagamentos WHERE cliente_id = :cliente_id"), 
+            {"cliente_id": cliente_id}
+        )
+        db.flush()  # Aplicar a deleção sem commit
     except Exception as e:
-        # Se houver erro ao deletar historico_pagamentos (ex: coluna não existe),
-        # tentar deletar apenas os campos que existem
-        from sqlalchemy import text
-        try:
-            db.execute(text("DELETE FROM historico_pagamentos WHERE cliente_id = :cliente_id"), 
-                      {"cliente_id": cliente_id})
-        except Exception:
-            # Se ainda falhar, apenas logar e continuar
-            pass
+        # Se houver erro, apenas logar e continuar (pode ser que não existam registros ou a tabela tenha estrutura diferente)
+        api_logger.warning(f"Erro ao deletar historico_pagamentos do cliente {cliente_id}: {str(e)}")
     
-    # Hard delete - remove o cliente do banco de dados
-    db.delete(db_cliente)
+    # Hard delete - remove o cliente do banco de dados usando SQL direto
+    # Isso evita que o SQLAlchemy tente carregar relacionamentos
+    try:
+        result = db.execute(
+            text("DELETE FROM clientes WHERE id = :cliente_id AND empresa_id = :empresa_id"), 
+            {"cliente_id": cliente_id, "empresa_id": empresa_id}
+        )
     db.commit()
+        
+        # Verificar se alguma linha foi deletada
+        if result.rowcount == 0:
+            return False
+        
     return True
+    except Exception as e:
+        db.rollback()
+        api_logger.error(f"Erro ao deletar cliente {cliente_id}: {str(e)}")
+        raise
 
 def get_cliente_stats(
     db: Session,
