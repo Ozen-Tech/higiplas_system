@@ -113,6 +113,7 @@ def list_clientes(
     bairro: Optional[str] = Query(None, description="Filtrar por bairro"),
     cidade: Optional[str] = Query(None, description="Filtrar por cidade"),
     meus_clientes: bool = Query(False, description="Ver apenas meus clientes"),
+    incluir_inativos: bool = Query(False, description="Incluir clientes inativos (apenas para admin/gestor)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=1000),
     db: Session = Depends(get_db),
@@ -123,6 +124,7 @@ def list_clientes(
     - search: busca por nome, telefone ou documento
     - bairro/cidade: filtros de localização
     - meus_clientes: ver apenas clientes do vendedor logado
+    - incluir_inativos: incluir clientes inativos (apenas para admin/gestor)
     - Retorna TODOS os clientes da empresa quando meus_clientes=False (padrão)
     """
     # Apenas filtrar por vendedor se meus_clientes=True
@@ -130,6 +132,11 @@ def list_clientes(
     
     empresa_id = _resolve_empresa_id(db, current_user)
 
+    # Para vendedores, sempre filtrar apenas ativos
+    # Para admins/gestores, respeitar o parâmetro incluir_inativos
+    if current_user.perfil.upper() not in ["ADMIN", "GESTOR"]:
+        incluir_inativos = False
+    
     clientes = crud.get_clientes(
         db=db,
         empresa_id=empresa_id,
@@ -138,7 +145,8 @@ def list_clientes(
         limit=limit,
         search=search,
         bairro=bairro,
-        cidade=cidade
+        cidade=cidade,
+        incluir_inativos=incluir_inativos
     )
     
     # Mapear para lista simplificada
@@ -240,22 +248,29 @@ def delete_cliente(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Deletar cliente (soft delete)"""
+    """Deletar cliente permanentemente do banco de dados (hard delete)"""
     empresa_id = _resolve_empresa_id(db, current_user)
 
-    success = crud.delete_cliente(
-        db=db,
-        cliente_id=cliente_id,
-        empresa_id=empresa_id
-    )
-    
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Cliente não encontrado"
+    try:
+        success = crud.delete_cliente(
+            db=db,
+            cliente_id=cliente_id,
+            empresa_id=empresa_id
         )
-    
-    return {"message": "Cliente removido com sucesso"}
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Cliente não encontrado"
+            )
+        
+        return {"message": "Cliente deletado permanentemente com sucesso"}
+    except ValueError as e:
+        # Cliente tem orçamentos associados
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 # ============= KPIs DE CLIENTE =============
 

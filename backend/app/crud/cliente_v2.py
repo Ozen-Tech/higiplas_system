@@ -114,13 +114,18 @@ def get_clientes(
     limit: int = 100,
     search: Optional[str] = None,
     bairro: Optional[str] = None,
-    cidade: Optional[str] = None
+    cidade: Optional[str] = None,
+    incluir_inativos: bool = False
 ) -> List[models.Cliente]:
     """Listar clientes com filtros opcionais"""
 
     query = db.query(models.Cliente).filter(
         models.Cliente.empresa_id == empresa_id
     )
+
+    # Filtrar apenas clientes ativos (a menos que incluir_inativos=True)
+    if not incluir_inativos:
+        query = query.filter(models.Cliente.status_pagamento == "BOM_PAGADOR")
 
     # Filtro por vendedor
     if vendedor_id:
@@ -213,16 +218,29 @@ def delete_cliente(
     cliente_id: int,
     empresa_id: int
 ) -> bool:
-    """Deletar cliente (soft delete - apenas marca como inativo)"""
+    """Deletar cliente permanentemente do banco de dados (hard delete)"""
 
     db_cliente = get_cliente_by_id(db, cliente_id, empresa_id)
     if not db_cliente:
         return False
 
-    # Soft delete - apenas marca como inativo
-    db_cliente.status_pagamento = "MAU_PAGADOR"  # Temporário - mapear para status
-    db_cliente.atualizado_em = datetime.now()
+    # Verificar se há orçamentos relacionados
+    from app.db import models
+    orcamentos_count = db.query(models.Orcamento).filter(
+        models.Orcamento.cliente_id == cliente_id
+    ).count()
+    
+    if orcamentos_count > 0:
+        # Se houver orçamentos, não permitir exclusão para manter integridade dos dados
+        # Alternativamente, poderia deletar em cascata, mas isso pode ser perigoso
+        raise ValueError(
+            f"Não é possível deletar o cliente pois existem {orcamentos_count} orçamento(s) associado(s). "
+            "Considere marcar o cliente como inativo em vez de deletá-lo."
+        )
 
+    # Hard delete - remove o cliente do banco de dados
+    # O cascade="all, delete-orphan" no historico_pagamentos já cuida dos registros relacionados
+    db.delete(db_cliente)
     db.commit()
     return True
 

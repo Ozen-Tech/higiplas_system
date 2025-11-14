@@ -74,7 +74,8 @@ def busca_rapida_clientes(
     empresa_id = _resolve_empresa_id(db, current_user)
 
     query = db.query(models.Cliente).filter(
-        models.Cliente.empresa_id == empresa_id
+        models.Cliente.empresa_id == empresa_id,
+        models.Cliente.status_pagamento == "BOM_PAGADOR"  # Apenas clientes ativos
     )
     
     if termo:
