@@ -27,6 +27,10 @@ class OrdemDeCompraBase(BaseModel):
 class OrdemDeCompraCreate(OrdemDeCompraBase):
     itens: List[OrdemDeCompraItemCreate]
 
+class OrdemDeCompraUpdate(BaseModel):
+    fornecedor_id: Optional[int] = None
+    itens: Optional[List[OrdemDeCompraItemCreate]] = None
+
 class OrdemDeCompra(OrdemDeCompraBase):
     id: int
     usuario_id: int
