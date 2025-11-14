@@ -15,12 +15,12 @@ import { useAdmin } from '@/hooks/useAdmin';
 
 export default function PropostasDetalhadasPage() {
   const { isAdmin } = useAdmin();
-  const { propostas, loading, getPropostas, getPropostaById, deleteProposta } = usePropostaDetalhada();
+  const { propostas, loading, error, getPropostas, getPropostaById, deleteProposta } = usePropostaDetalhada();
   const [propostaSelecionada, setPropostaSelecionada] = useState<PropostaDetalhada | null>(null);
   const [filtro, setFiltro] = useState<string>('');
 
   useEffect(() => {
-    getPropostas(0, 100);
+    getPropostas(0, 100, true); // true = isAdmin
   }, [getPropostas]);
 
   const propostasFiltradas = propostas.filter((p) => {
@@ -98,6 +98,21 @@ export default function PropostasDetalhadasPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         </div>
+      ) : error ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-red-500 dark:text-red-400">
+              Erro ao carregar propostas: {error}
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => getPropostas(0, 100, true)}
+            >
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
       ) : propostasFiltradas.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">

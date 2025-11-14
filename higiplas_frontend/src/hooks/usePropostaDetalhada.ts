@@ -24,11 +24,13 @@ export function usePropostaDetalhada() {
     }
   };
 
-  const getPropostas = async (skip = 0, limit = 100) => {
+  const getPropostas = async (skip = 0, limit = 100, isAdmin = false) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await propostaService.getMyPropostas(skip, limit);
+      const data = isAdmin 
+        ? await propostaService.getAll(skip, limit)
+        : await propostaService.getMyPropostas(skip, limit);
       setPropostas(data);
       return data;
     } catch (err) {
