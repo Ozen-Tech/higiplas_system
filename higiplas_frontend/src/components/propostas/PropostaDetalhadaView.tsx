@@ -7,8 +7,9 @@ import { FichaTecnicaCard } from './FichaTecnicaCard';
 import { ComparacaoConcorrentes } from './ComparacaoConcorrentes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calculator, TrendingUp, DollarSign, Share2, Copy } from 'lucide-react';
+import { Calculator, TrendingUp, DollarSign, Share2, Copy, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { apiService } from '@/services/apiService';
 
 interface PropostaDetalhadaViewProps {
   proposta: PropostaDetalhada;
@@ -24,6 +25,42 @@ export function PropostaDetalhadaView({ proposta, onCompartilhar }: PropostaDeta
     }
   };
 
+  const handleDownloadPDF = async () => {
+    toast.loading('Gerando PDF...');
+    try {
+      const response = await apiService.getBlob(`/propostas-detalhadas/${proposta.id}/pdf/`);
+      const blob = await response.blob();
+
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = `proposta_detalhada_${proposta.id}.pdf`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+
+      toast.dismiss();
+      toast.success('PDF baixado com sucesso!');
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        link.remove();
+      }, 100);
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF');
+      console.error('Erro no download:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -36,12 +73,18 @@ export function PropostaDetalhadaView({ proposta, onCompartilhar }: PropostaDeta
                 Criada em {new Date(proposta.data_criacao).toLocaleDateString('pt-BR')}
               </p>
             </div>
-            {proposta.compartilhavel && proposta.token_compartilhamento && (
-              <Button variant="outline" onClick={copiarLink} size="sm">
-                <Copy className="mr-2 h-4 w-4" />
-                Copiar Link
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleDownloadPDF} size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Baixar PDF
               </Button>
-            )}
+              {proposta.compartilhavel && proposta.token_compartilhamento && (
+                <Button variant="outline" onClick={copiarLink} size="sm">
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copiar Link
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

@@ -9,9 +9,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PropostaDetalhada } from '@/services/propostaService';
-import { Eye, Trash2, Loader2 } from 'lucide-react';
+import { Eye, Trash2, Loader2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAdmin } from '@/hooks/useAdmin';
+import { apiService } from '@/services/apiService';
 
 export default function PropostasDetalhadasPage() {
   const { isAdmin } = useAdmin();
@@ -57,6 +58,42 @@ export default function PropostasDetalhadasPage() {
       await getPropostas(0, 100, true);
     } catch {
       toast.error('Erro ao deletar proposta');
+    }
+  };
+
+  const handleDownloadPDF = async (propostaId: number) => {
+    toast.loading('Gerando PDF...');
+    try {
+      const response = await apiService.getBlob(`/propostas-detalhadas/${propostaId}/pdf/`);
+      const blob = await response.blob();
+
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = `proposta_detalhada_${propostaId}.pdf`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+
+      toast.dismiss();
+      toast.success('PDF baixado com sucesso!');
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        link.remove();
+      }, 100);
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF');
+      console.error('Erro no download:', error);
     }
   };
 
@@ -168,6 +205,14 @@ export default function PropostasDetalhadasPage() {
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Ver
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadPDF(proposta.id)}
+                      title="Baixar PDF"
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
                     {isAdmin && (
                       <Button
