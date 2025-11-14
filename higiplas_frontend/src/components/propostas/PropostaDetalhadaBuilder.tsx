@@ -127,7 +127,24 @@ export function PropostaDetalhadaBuilder() {
       setRendimentoCalculado(null);
       setCustoPorLitro(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao criar proposta';
+      console.error('Erro ao criar proposta:', error);
+      let errorMessage = 'Erro ao criar proposta';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        // Extrair mensagem de erro da API se disponível
+        if (error.message.includes('[') && error.message.includes(']')) {
+          try {
+            const match = error.message.match(/\[(\d+)\]\s*(.+)/);
+            if (match) {
+              errorMessage = match[2];
+            }
+          } catch {
+            // Se não conseguir extrair, usar a mensagem original
+          }
+        }
+      }
+      
       toast.error(errorMessage);
     }
   };

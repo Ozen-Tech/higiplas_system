@@ -61,14 +61,23 @@ def create_proposta_detalhada(
     Disponível para vendedores.
     """
     from app.core.logger import app_logger
-    app_logger.info(f"Criando proposta detalhada para produto {proposta_in.produto_id}, cliente {proposta_in.cliente_id}")
+    app_logger.info(f"Criando proposta detalhada para produto {proposta_in.produto_id}, cliente {proposta_in.cliente_id}, vendedor {current_user.id}")
+    app_logger.info(f"Dados da proposta: quantidade={proposta_in.quantidade_produto}, dilucao={proposta_in.dilucao_aplicada}, num={proposta_in.dilucao_numerador}, den={proposta_in.dilucao_denominador}")
     try:
         proposta = crud_proposta.create_proposta_detalhada(
             db, proposta_in, current_user.id
         )
+        app_logger.info(f"Proposta criada com sucesso: ID {proposta.id}")
         
         # Buscar proposta completa com relacionamentos
         proposta_completa = crud_proposta.get_proposta_by_id(db, proposta.id, incluir_relacionamentos=True)
+        
+        if not proposta_completa:
+            app_logger.error(f"Erro: Proposta {proposta.id} não encontrada após criação")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao recuperar proposta criada"
+            )
         
         # Buscar comparações
         if proposta_completa.rendimento_total_litros and proposta_completa.custo_por_litro_final:
@@ -83,14 +92,20 @@ def create_proposta_detalhada(
             comparacoes = []
         
         # Montar resposta usando função auxiliar
-        return _proposta_to_response(proposta_completa, comparacoes)
+        response = _proposta_to_response(proposta_completa, comparacoes)
+        app_logger.info(f"Resposta montada com sucesso para proposta {proposta.id}")
+        return response
         
     except ValueError as e:
+        app_logger.error(f"Erro de validação ao criar proposta: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        app_logger.error(f"Erro inesperado ao criar proposta: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao criar proposta: {str(e)}"

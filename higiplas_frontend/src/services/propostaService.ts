@@ -183,7 +183,7 @@ export const concorrenteService = {
 
 export const propostaService = {
   async create(proposta: PropostaDetalhadaCreate): Promise<PropostaDetalhada> {
-    const response = await apiService.post('/propostas-detalhadas', proposta);
+    const response = await apiService.post('/propostas-detalhadas/', proposta);
     if (!response?.data) {
       throw new Error('Resposta inválida ao criar proposta');
     }

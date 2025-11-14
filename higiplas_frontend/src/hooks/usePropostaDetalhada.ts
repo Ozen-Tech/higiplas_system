@@ -12,13 +12,32 @@ export function usePropostaDetalhada() {
     setLoading(true);
     setError(null);
     try {
+      console.log('Criando proposta:', proposta);
       const novaProposta = await propostaService.create(proposta);
+      console.log('Proposta criada com sucesso:', novaProposta);
       setPropostas((prev) => [novaProposta, ...prev]);
       return novaProposta;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar proposta';
+      console.error('Erro ao criar proposta:', err);
+      let errorMessage = 'Erro ao criar proposta';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        // Extrair mensagem de erro da API se disponível
+        if (errorMessage.includes('[') && errorMessage.includes(']')) {
+          try {
+            const match = errorMessage.match(/\[(\d+)\]\s*(.+)/);
+            if (match && match[2]) {
+              errorMessage = match[2].trim();
+            }
+          } catch {
+            // Se não conseguir extrair, usar a mensagem original
+          }
+        }
+      }
+      
       setError(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
