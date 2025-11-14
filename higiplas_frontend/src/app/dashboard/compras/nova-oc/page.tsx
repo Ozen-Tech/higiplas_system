@@ -34,7 +34,7 @@ export default function NovaOrdemDeCompraPage() {
             try {
                 const [productsData, fornecedoresData] = await Promise.all([
                     Promise.all(productIds.map(id => apiService.get(`/produtos/${id}`))),
-                    apiService.get('/fornecedores/')
+                    apiService.get('/fornecedores/').catch(() => ({ data: [] })) // Não falhar se não houver fornecedores
                 ]);
 
                 const initialItems: OrderItem[] = productsData.map(response => ({
@@ -46,9 +46,7 @@ export default function NovaOrdemDeCompraPage() {
                 setItems(initialItems);
                 const fornecedores = fornecedoresData?.data || [];
                 setFornecedores(fornecedores);
-                if (fornecedores.length > 0) {
-                    setSelectedFornecedorId(String(fornecedores[0].id));
-                }
+                // Não selecionar fornecedor por padrão - deixar opcional
             } catch (error) {
                 console.error("Erro ao carregar dados da OC", error);
                 toast.error("Falha ao carregar dados. Tente novamente.");
@@ -70,13 +68,13 @@ export default function NovaOrdemDeCompraPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedFornecedorId || items.length === 0) {
-            toast.error("Selecione um fornecedor e adicione itens.");
+        if (items.length === 0) {
+            toast.error("Adicione pelo menos um item à ordem de compra.");
             return;
         }
 
         const payload = {
-            fornecedor_id: parseInt(selectedFornecedorId, 10),
+            fornecedor_id: selectedFornecedorId ? parseInt(selectedFornecedorId, 10) : null,
             itens: items.map(item => ({
                 produto_id: item.id,
                 quantidade_solicitada: Number(item.quantidade_solicitada),
@@ -104,13 +102,16 @@ export default function NovaOrdemDeCompraPage() {
             <main className="flex-1 p-6">
                 <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
                     <div className="mb-6">
-                        <label htmlFor="fornecedor" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Fornecedor</label>
+                        <label htmlFor="fornecedor" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            Fornecedor <span className="text-gray-500 text-xs">(Opcional)</span>
+                        </label>
                         <select
                             id="fornecedor"
                             value={selectedFornecedorId}
                             onChange={e => setSelectedFornecedorId(e.target.value)}
                             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                         >
+                            <option value="">Nenhum fornecedor</option>
                             {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
                         </select>
                     </div>

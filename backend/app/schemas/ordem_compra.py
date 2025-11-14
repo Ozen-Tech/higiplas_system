@@ -22,7 +22,7 @@ class OrdemDeCompraItem(OrdemDeCompraItemBase):
 
 # --- Ordem de Compra Principal ---
 class OrdemDeCompraBase(BaseModel):
-    fornecedor_id: int
+    fornecedor_id: Optional[int] = None
 
 class OrdemDeCompraCreate(OrdemDeCompraBase):
     itens: List[OrdemDeCompraItemCreate]
@@ -33,7 +33,7 @@ class OrdemDeCompra(OrdemDeCompraBase):
     status: str
     data_criacao: datetime
     data_recebimento: Optional[datetime] = None
-    fornecedor: Fornecedor
+    fornecedor: Optional[Fornecedor] = None
     itens: List[OrdemDeCompraItem]
 
     model_config = ConfigDict(from_attributes=True)

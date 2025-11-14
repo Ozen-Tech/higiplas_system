@@ -266,7 +266,7 @@ class HistoricoPrecoProduto(Base):
 class OrdemDeCompra(Base):
     __tablename__ = "ordens_compra"
     id = Column(Integer, primary_key=True, index=True)
-    fornecedor_id = Column(Integer, ForeignKey("fornecedores.id"))
+    fornecedor_id = Column(Integer, ForeignKey("fornecedores.id"), nullable=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     status = Column(String, default="RASCUNHO") # RASCUNHO, ENVIADA, RECEBIDA
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
@@ -286,3 +286,103 @@ class OrdemDeCompraItem(Base):
 
     ordem = relationship("OrdemDeCompra", back_populates="itens")
     produto = relationship("Produto")
+
+class FichaTecnica(Base):
+    """Armazena informações técnicas dos produtos Girassol extraídas das fichas técnicas"""
+    __tablename__ = "fichas_tecnicas"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=True, index=True)
+    nome_produto = Column(String, nullable=False, index=True)  # Nome do produto conforme PDF
+    dilucao_recomendada = Column(String, nullable=True)  # Ex: "1:10", "1 litro para 10 litros"
+    dilucao_numerador = Column(Float, nullable=True)  # Parte 1 da diluição (ex: 1)
+    dilucao_denominador = Column(Float, nullable=True)  # Parte 2 da diluição (ex: 10)
+    rendimento_litro = Column(Float, nullable=True)  # Quantos litros rende por litro do produto
+    modo_uso = Column(String, nullable=True)  # Descrição do modo de uso
+    arquivo_pdf_path = Column(String, nullable=True)  # Caminho do arquivo PDF original
+    observacoes = Column(String, nullable=True)
+    data_atualizacao = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relacionamento
+    produto = relationship("Produto")
+    
+    # Índices
+    __table_args__ = (
+        Index('idx_ficha_produto', 'produto_id'),
+        Index('idx_ficha_nome', 'nome_produto'),
+    )
+
+class ProdutoConcorrente(Base):
+    """Armazena informações sobre produtos concorrentes para comparação"""
+    __tablename__ = "produtos_concorrentes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False, index=True)
+    marca = Column(String, nullable=True)
+    preco_medio = Column(Float, nullable=True)  # Preço médio no mercado
+    rendimento_litro = Column(Float, nullable=True)  # Rendimento por litro
+    dilucao = Column(String, nullable=True)  # Diluição recomendada
+    dilucao_numerador = Column(Float, nullable=True)
+    dilucao_denominador = Column(Float, nullable=True)
+    categoria = Column(String, nullable=True, index=True)  # Para agrupar produtos similares
+    observacoes = Column(String, nullable=True)
+    ativo = Column(Boolean, default=True)  # Para desativar sem deletar
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    data_atualizacao = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Índices
+    __table_args__ = (
+        Index('idx_concorrente_categoria', 'categoria'),
+        Index('idx_concorrente_ativo', 'ativo'),
+    )
+
+class PropostaDetalhada(Base):
+    """Armazena propostas detalhadas criadas pelos vendedores"""
+    __tablename__ = "propostas_detalhadas"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    orcamento_id = Column(Integer, ForeignKey("orcamentos.id"), nullable=True, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, index=True)
+    vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False, index=True)
+    ficha_tecnica_id = Column(Integer, ForeignKey("fichas_tecnicas.id"), nullable=True)
+    
+    # Dados da proposta
+    quantidade_produto = Column(Float, nullable=False)  # Quantidade do produto (em litros/unidades)
+    dilucao_aplicada = Column(String, nullable=True)  # Diluição aplicada na proposta
+    dilucao_numerador = Column(Float, nullable=True)
+    dilucao_denominador = Column(Float, nullable=True)
+    rendimento_total_litros = Column(Float, nullable=True)  # Rendimento total calculado
+    preco_produto = Column(Float, nullable=True)  # Preço do produto no momento da proposta
+    custo_por_litro_final = Column(Float, nullable=True)  # Custo por litro após diluição
+    
+    # Comparação com concorrentes
+    concorrente_id = Column(Integer, ForeignKey("produtos_concorrentes.id"), nullable=True)
+    economia_vs_concorrente = Column(Float, nullable=True)  # Economia em percentual ou valor
+    economia_percentual = Column(Float, nullable=True)  # Economia em percentual
+    economia_valor = Column(Float, nullable=True)  # Economia em valor (R$)
+    
+    # Informações adicionais
+    observacoes = Column(String, nullable=True)
+    compartilhavel = Column(Boolean, default=False)  # Se pode ser compartilhada com cliente
+    token_compartilhamento = Column(String, unique=True, nullable=True, index=True)  # Token para link compartilhável
+    
+    # Timestamps
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    data_atualizacao = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relacionamentos
+    orcamento = relationship("Orcamento")
+    cliente = relationship("Cliente")
+    vendedor = relationship("Usuario", foreign_keys=[vendedor_id])
+    produto = relationship("Produto")
+    ficha_tecnica = relationship("FichaTecnica")
+    concorrente = relationship("ProdutoConcorrente")
+    
+    # Índices compostos
+    __table_args__ = (
+        Index('idx_proposta_vendedor_cliente', 'vendedor_id', 'cliente_id'),
+        Index('idx_proposta_produto', 'produto_id'),
+        Index('idx_proposta_data', 'data_criacao'),
+    )

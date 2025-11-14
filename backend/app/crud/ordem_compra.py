@@ -8,7 +8,7 @@ from datetime import datetime
 def create_ordem_compra(db: Session, ordem_in: schemas_oc.OrdemDeCompraCreate, usuario_id: int):
     try:
         db_ordem = models.OrdemDeCompra(
-            fornecedor_id=ordem_in.fornecedor_id,
+            fornecedor_id=ordem_in.fornecedor_id if ordem_in.fornecedor_id else None,
             usuario_id=usuario_id,
             status="RASCUNHO"
         )
