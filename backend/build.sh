@@ -61,14 +61,14 @@ set +e
 
 # Verifica se há múltiplas heads
 HEADS_OUTPUT=$(alembic heads 2>&1)
-HEAD_COUNT=$(echo "$HEADS_OUTPUT" | grep -c "revision" || echo "0")
+HEAD_COUNT=$(echo "$HEADS_OUTPUT" | grep -c "revision" 2>/dev/null || echo "0")
 
 # Garante que HEAD_COUNT é um número válido
-if [ -z "$HEAD_COUNT" ] || [ "$HEAD_COUNT" = "" ]; then
+if [ -z "$HEAD_COUNT" ] || [ "$HEAD_COUNT" = "" ] || ! [[ "$HEAD_COUNT" =~ ^[0-9]+$ ]]; then
     HEAD_COUNT=0
 fi
 
-if [ "$HEAD_COUNT" -gt 1 ]; then
+if [ "$HEAD_COUNT" -gt 1 ] 2>/dev/null; then
     echo "==> Múltiplas heads detectadas ($HEAD_COUNT), aplicando individualmente..."
     # Aplica cada head individualmente
     echo "==> Aplicando: merge_proposta_fornecedor"

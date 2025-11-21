@@ -36,6 +36,19 @@ def authenticate_user(db: Session, email: str, password: str) -> models.Usuario 
     user = get_user_by_email(db, email=email)
     if not user:
         return None
-    if not verify_password(password, user.hashed_password):
+    
+    # Verifica se o hash da senha é válido antes de tentar verificar
+    if not user.hashed_password:
         return None
+    
+    try:
+        if not verify_password(password, user.hashed_password):
+            return None
+    except Exception as e:
+        # Log do erro mas não expõe detalhes
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao verificar senha do usuário {email}: {e}")
+        return None
+    
     return user

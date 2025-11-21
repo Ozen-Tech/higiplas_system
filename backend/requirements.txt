@@ -11,7 +11,7 @@ psycopg2-binary>=2.9.10
 
 # Segurança e Autenticação
 passlib[bcrypt]>=1.7.4
-bcrypt>=4.2.1
+bcrypt>=4.0.0,<5.0.0
 python-jose[cryptography]>=3.3.0
 
 # Ferramentas de Utilidade
