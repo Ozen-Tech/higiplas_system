@@ -1,5 +1,6 @@
 # /backend/app/services/ai_service.py
 
+import time
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
@@ -219,35 +220,50 @@ EXEMPLOS DE ANÁLISES ASSERTIVAS:
 
 RESPONDA DE FORMA ASSERTIVA E ACIONÁVEL COMO UM ANALISTA DE ESTOQUE EXPERIENTE:"""
      
-    try:
-        print("[AI Service] Gerando análise com Gemini...")
-        response = model.generate_content(prompt_template)
-        
-        # Bloco de tratamento de erro para respostas bloqueadas
-        try:
-            print("[AI Service] Resposta da IA recebida.")
-            return response.text
-        except ValueError:
-            print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
-            return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
+    attempt = 0
+    max_attempts = 2
+    delay_seconds = 2
 
-    except Exception as e:
-        error_message = str(e)
-        print(f"❌ Erro na comunicação com a API do Gemini: {error_message}")
-        
-        # Detecta erro 429 (Rate Limit)
-        if "429" in error_message or "Resource exhausted" in error_message or "quota" in error_message.lower():
-            raise Exception("RATE_LIMIT_EXCEEDED: O limite de requisições da API foi excedido. Por favor, aguarde alguns minutos antes de tentar novamente.")
-        
-        # Detecta outros erros da API
-        if "403" in error_message or "permission" in error_message.lower():
-            raise Exception("API_PERMISSION_DENIED: Problema de permissão na API. Verifique a chave da API.")
-        
-        if "400" in error_message or "invalid" in error_message.lower():
-            raise Exception("API_INVALID_REQUEST: Requisição inválida. O contexto pode estar muito grande.")
-        
-        # Outros erros
-        raise Exception(f"API_ERROR: {error_message}")
+    while attempt < max_attempts:
+        try:
+            print("[AI Service] Gerando análise com Gemini...")
+            response = model.generate_content(prompt_template)
+            
+            try:
+                print("[AI Service] Resposta da IA recebida.")
+                return response.text
+            except ValueError:
+                print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
+                return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
+
+        except Exception as e:
+            error_message = str(e)
+            print(f"❌ Erro na comunicação com a API do Gemini: {error_message}")
+
+            is_rate_limit = (
+                "429" in error_message
+                or "Resource exhausted" in error_message
+                or "quota" in error_message.lower()
+            )
+
+            if is_rate_limit and attempt + 1 < max_attempts:
+                attempt += 1
+                print(f"[AI Service] Rate limit detectado. Tentativa {attempt}/{max_attempts}. Aguardando {delay_seconds}s...")
+                time.sleep(delay_seconds)
+                continue
+
+            if is_rate_limit:
+                raise Exception("RATE_LIMIT_EXCEEDED: O limite de requisições da API foi excedido. Por favor, aguarde alguns minutos antes de tentar novamente.")
+            
+            if "403" in error_message or "permission" in error_message.lower():
+                raise Exception("API_PERMISSION_DENIED: Problema de permissão na API. Verifique a chave da API.")
+            
+            if "400" in error_message or "invalid" in error_message.lower():
+                raise Exception("API_INVALID_REQUEST: Requisição inválida. O contexto pode estar muito grande.")
+            
+            raise Exception(f"API_ERROR: {error_message}")
+
+    raise Exception("RATE_LIMIT_EXCEEDED: O limite de requisições da API foi excedido. Por favor, aguarde alguns minutos antes de tentar novamente.")
 
 def extract_products_from_invoice_image(image_bytes: bytes) -> str:
     """

@@ -19,7 +19,7 @@ from ..crud import cliente_v2 as crud_cliente
 from ..crud import orcamento as crud_orcamento
 from ..crud import ordem_compra as crud_ordem_compra
 from ..crud import fornecedor as crud_fornecedor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, or_, desc
 
 # Inicializa o router
@@ -61,6 +61,14 @@ def _observacao_filter(patterns: List[str]):
     observacao_col = func.coalesce(models.MovimentacaoEstoque.observacao, "")
     return or_(*[observacao_col.ilike(f"{pattern}%") for pattern in patterns])
 
+
+def _ensure_timezone(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 @router.post("/ask", summary="Faz uma pergunta para o assistente de IA")
 def ask_ai_question(
     request: QuestionRequest,
@@ -83,6 +91,8 @@ def ask_ai_question(
         # b) Histórico de Vendas
         historico_top_vendas_db = crud_historico.get_top_10_vendas(db)
         
+        now_utc = datetime.now(timezone.utc)
+
         # c) Movimentações Recentes (últimos 30 dias)
         movimentacoes_recentes_db = crud_movimentacao.get_recent_movimentacoes(
             db=db,
@@ -156,10 +166,10 @@ def ask_ai_question(
                 empresa_id=current_user.empresa_id
             )
             # Filtrar últimos 30 dias
-            data_limite = datetime.now() - timedelta(days=30)
+            data_limite = now_utc - timedelta(days=30)
             orcamentos_recentes_db = [
-                o for o in orcamentos_recentes_db 
-                if o.data_criacao and o.data_criacao >= data_limite
+                o for o in orcamentos_recentes_db
+                if _ensure_timezone(o.data_criacao) and _ensure_timezone(o.data_criacao) >= data_limite
             ][:50]  # Limitar a 50
         except Exception as e:
             print(f" -> Erro ao buscar orçamentos: {e}")
@@ -172,10 +182,10 @@ def ask_ai_question(
                 empresa_id=current_user.empresa_id
             )
             # Filtrar últimos 30 dias
-            data_limite = datetime.now() - timedelta(days=30)
+            data_limite = now_utc - timedelta(days=30)
             ordens_compra_recentes = [
-                oc for oc in ordens_compra_db 
-                if oc.data_criacao and oc.data_criacao >= data_limite
+                oc for oc in ordens_compra_db
+                if _ensure_timezone(oc.data_criacao) and _ensure_timezone(oc.data_criacao) >= data_limite
             ][:30]  # Limitar a 30
         except Exception as e:
             print(f" -> Erro ao buscar ordens de compra: {e}")
@@ -198,7 +208,7 @@ def ask_ai_question(
             ).filter(
                 models.Produto.empresa_id == current_user.empresa_id,
                 models.MovimentacaoEstoque.tipo_movimentacao == 'ENTRADA',
-                models.MovimentacaoEstoque.data_movimentacao >= datetime.now() - timedelta(days=30)
+                models.MovimentacaoEstoque.data_movimentacao >= now_utc - timedelta(days=30)
             ).scalar() or 0
             
             total_saidas = db.query(func.sum(models.MovimentacaoEstoque.quantidade)).join(
@@ -206,7 +216,7 @@ def ask_ai_question(
             ).filter(
                 models.Produto.empresa_id == current_user.empresa_id,
                 models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
-                models.MovimentacaoEstoque.data_movimentacao >= datetime.now() - timedelta(days=30)
+                models.MovimentacaoEstoque.data_movimentacao >= now_utc - timedelta(days=30)
             ).scalar() or 0
         except Exception as e:
             print(f" -> Erro ao calcular estatísticas: {e}")
