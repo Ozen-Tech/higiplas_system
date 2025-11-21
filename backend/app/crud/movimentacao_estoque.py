@@ -163,6 +163,27 @@ def edit_movimentacao(
         observacao_motivo=edicao.observacao_motivo
     )
 
+def edit_pending_movimentacao(
+    db: Session,
+    movimentacao_id: int,
+    empresa_id: int,
+    edicao: schemas_movimentacao.MovimentacaoEstoqueEdicao
+) -> models.MovimentacaoEstoque:
+    """Edita uma movimentação pendente SEM confirmar (não altera o estoque)."""
+    from ..schemas.movimentacao_estoque import MotivoMovimentacao
+    
+    return StockService.edit_pending_movimentacao(
+        db=db,
+        movimentacao_id=movimentacao_id,
+        empresa_id=empresa_id,
+        produto_id=edicao.produto_id,
+        quantidade=edicao.quantidade,
+        tipo_movimentacao=edicao.tipo_movimentacao,
+        motivo_movimentacao=edicao.motivo_movimentacao,
+        observacao=edicao.observacao,
+        observacao_motivo=edicao.observacao_motivo
+    )
+
 def reject_movimentacao(
     db: Session,
     movimentacao_id: int,

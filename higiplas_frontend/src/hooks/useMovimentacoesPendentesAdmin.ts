@@ -49,6 +49,18 @@ export function useMovimentacoesPendentesAdmin(status?: string) {
     }
   }, [carregarMovimentacoes]);
 
+  const editarMovimentacao = useCallback(async (movimentacaoId: number, edicao: EdicaoMovimentacao) => {
+    try {
+      await movimentacoesPendentesService.edit(movimentacaoId, edicao);
+      toast.success('Movimentação editada com sucesso!');
+      await carregarMovimentacoes();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao editar movimentação';
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [carregarMovimentacoes]);
+
   const editarEConfirmarMovimentacao = useCallback(async (movimentacaoId: number, edicao: EdicaoMovimentacao) => {
     try {
       await movimentacoesPendentesService.editAndConfirm(movimentacaoId, edicao);
@@ -79,6 +91,7 @@ export function useMovimentacoesPendentesAdmin(status?: string) {
     error,
     carregarMovimentacoes,
     confirmarMovimentacao,
+    editarMovimentacao,
     editarEConfirmarMovimentacao,
     rejeitarMovimentacao,
   };

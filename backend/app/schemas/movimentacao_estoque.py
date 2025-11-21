@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, Literal
 from enum import Enum
 from .usuario import Usuario
+from .produto import Produto
 
 OrigemMovimentacao = Literal['VENDA', 'DEVOLUCAO', 'CORRECAO_MANUAL', 'COMPRA', 'AJUSTE', 'OUTRO']
 
@@ -88,6 +89,7 @@ class MovimentacaoEstoqueResponse(MovimentacaoEstoqueBase):
     tipo_movimentacao: str
     data_movimentacao: datetime
     usuario: Optional[Usuario] = None
+    produto: Optional[Produto] = None
     quantidade_antes: Optional[float] = None
     quantidade_depois: Optional[float] = None
     status: StatusMovimentacao

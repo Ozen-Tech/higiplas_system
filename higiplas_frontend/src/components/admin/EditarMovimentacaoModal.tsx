@@ -34,8 +34,9 @@ interface EditarMovimentacaoModalProps {
 }
 
 export function EditarMovimentacaoModal({ movimentacao, onClose }: EditarMovimentacaoModalProps) {
-  const { editarEConfirmarMovimentacao } = useMovimentacoesPendentesAdmin();
+  const { editarMovimentacao, editarEConfirmarMovimentacao } = useMovimentacoesPendentesAdmin();
   const [loading, setLoading] = useState(false);
+  const [confirmarAposEditar, setConfirmarAposEditar] = useState(false);
   
   const [produtoId, setProdutoId] = useState(movimentacao.produto_id);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoBusca | null>(movimentacao.produto ? {
@@ -105,7 +106,11 @@ export function EditarMovimentacaoModal({ movimentacao, onClose }: EditarMovimen
         edicao.observacao_motivo = observacaoMotivo;
       }
 
-      await editarEConfirmarMovimentacao(movimentacao.id, edicao);
+      if (confirmarAposEditar) {
+        await editarEConfirmarMovimentacao(movimentacao.id, edicao);
+      } else {
+        await editarMovimentacao(movimentacao.id, edicao);
+      }
       onClose();
     } catch (error) {
       console.error('Erro ao editar:', error);
@@ -232,33 +237,47 @@ export function EditarMovimentacaoModal({ movimentacao, onClose }: EditarMovimen
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Salvar e Confirmar
-                </>
-              )}
-            </Button>
+          <div className="space-y-3 pt-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="confirmar"
+                checked={confirmarAposEditar}
+                onChange={(e) => setConfirmarAposEditar(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <Label htmlFor="confirmar" className="text-sm font-normal cursor-pointer">
+                Confirmar e aplicar ao estoque após editar
+              </Label>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="mr-2 h-4 w-4" />
+                    {confirmarAposEditar ? 'Salvar e Confirmar' : 'Salvar'}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </div>

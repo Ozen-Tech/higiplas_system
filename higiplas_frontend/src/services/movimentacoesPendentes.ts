@@ -80,9 +80,9 @@ export const movimentacoesPendentesService = {
     }
   },
 
-  async editAndConfirm(movimentacaoId: number, edicao: Partial<MovimentacaoPendenteCreate>): Promise<void> {
+  async edit(movimentacaoId: number, edicao: Partial<MovimentacaoPendenteCreate>): Promise<MovimentacaoPendente> {
     const response = await fetch(`${API_BASE_URL}/movimentacoes/pendentes/${movimentacaoId}/editar`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(edicao),
     });
@@ -90,6 +90,21 @@ export const movimentacoesPendentesService = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Erro ao editar movimentação' }));
       throw new Error(error.detail || 'Erro ao editar movimentação');
+    }
+
+    return response.json();
+  },
+
+  async editAndConfirm(movimentacaoId: number, edicao: Partial<MovimentacaoPendenteCreate>): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/movimentacoes/pendentes/${movimentacaoId}/editar-e-confirmar`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(edicao),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Erro ao editar e confirmar movimentação' }));
+      throw new Error(error.detail || 'Erro ao editar e confirmar movimentação');
     }
   },
 

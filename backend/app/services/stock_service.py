@@ -504,3 +504,102 @@ class StockService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Erro ao editar e confirmar movimentação: {str(e)}"
             )
+    
+    @staticmethod
+    def edit_pending_movimentacao(
+        db: Session,
+        movimentacao_id: int,
+        empresa_id: int,
+        produto_id: Optional[int] = None,
+        quantidade: Optional[float] = None,
+        tipo_movimentacao: Optional[TipoMovimentacao] = None,
+        motivo_movimentacao: Optional[MotivoMovimentacao] = None,
+        observacao: Optional[str] = None,
+        observacao_motivo: Optional[str] = None
+    ) -> models.MovimentacaoEstoque:
+        """Edita uma movimentação pendente SEM confirmar (não altera o estoque)."""
+        try:
+            movimentacao = db.query(models.MovimentacaoEstoque).join(
+                models.Produto
+            ).filter(
+                models.MovimentacaoEstoque.id == movimentacao_id,
+                models.Produto.empresa_id == empresa_id,
+                models.MovimentacaoEstoque.status == 'PENDENTE'
+            ).first()
+            
+            if not movimentacao:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Movimentação pendente não encontrada ou já foi processada."
+                )
+            
+            # Salvar dados antes da edição para auditoria
+            dados_antes = {
+                'produto_id': movimentacao.produto_id,
+                'quantidade': movimentacao.quantidade,
+                'tipo_movimentacao': movimentacao.tipo_movimentacao,
+                'motivo_movimentacao': movimentacao.motivo_movimentacao,
+                'observacao': movimentacao.observacao
+            }
+            movimentacao.dados_antes_edicao = json.dumps(dados_antes)
+            
+            # Aplicar edições (sem alterar o estoque)
+            if produto_id is not None:
+                novo_produto = db.query(models.Produto).filter(
+                    models.Produto.id == produto_id,
+                    models.Produto.empresa_id == empresa_id
+                ).first()
+                if not novo_produto:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Novo produto não encontrado."
+                    )
+                movimentacao.produto_id = produto_id
+            
+            if quantidade is not None:
+                movimentacao.quantidade = quantidade
+            
+            if tipo_movimentacao is not None:
+                movimentacao.tipo_movimentacao = tipo_movimentacao
+            
+            if motivo_movimentacao is not None:
+                movimentacao.motivo_movimentacao = motivo_movimentacao.value if isinstance(motivo_movimentacao, MotivoMovimentacao) else motivo_movimentacao
+            
+            if observacao is not None:
+                movimentacao.observacao = observacao
+            
+            if observacao_motivo is not None:
+                movimentacao.observacao_motivo = observacao_motivo
+            
+            # Salvar dados depois da edição
+            dados_depois = {
+                'produto_id': movimentacao.produto_id,
+                'quantidade': movimentacao.quantidade,
+                'tipo_movimentacao': movimentacao.tipo_movimentacao,
+                'motivo_movimentacao': movimentacao.motivo_movimentacao,
+                'observacao': movimentacao.observacao
+            }
+            movimentacao.dados_depois_edicao = json.dumps(dados_depois)
+            
+            db.commit()
+            db.refresh(movimentacao)
+            
+            stock_operations_logger.info(
+                f"[editPendingMovimentacao] SUCCESS - movimentacao_id={movimentacao_id}, "
+                f"produto_id={movimentacao.produto_id}, quantidade={movimentacao.quantidade}"
+            )
+            
+            return movimentacao
+            
+        except HTTPException:
+            db.rollback()
+            raise
+        except Exception as e:
+            db.rollback()
+            stock_operations_logger.error(
+                f"[editPendingMovimentacao] ERROR - movimentacao_id={movimentacao_id}, error={str(e)}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erro ao editar movimentação: {str(e)}"
+            )

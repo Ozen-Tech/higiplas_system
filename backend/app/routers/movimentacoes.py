@@ -1016,8 +1016,38 @@ def confirm_movimentacao(
             detail=f"Erro ao confirmar movimentação: {str(e)}"
         )
 
-@router.put(
+@router.patch(
     "/pendentes/{movimentacao_id}/editar",
+    response_model=schemas_movimentacao.MovimentacaoEstoqueResponse,
+    summary="Edita uma movimentação pendente (sem confirmar)",
+    description="Edita uma movimentação pendente sem aplicar ao estoque (apenas ADMIN/GESTOR)."
+)
+def edit_pending_movimentacao(
+    movimentacao_id: int,
+    edicao: schemas_movimentacao.MovimentacaoEstoqueEdicao,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_admin_user)
+):
+    """Edita uma movimentação pendente sem confirmar (não altera o estoque)."""
+    try:
+        movimentacao = crud_movimentacao.edit_pending_movimentacao(
+            db=db,
+            movimentacao_id=movimentacao_id,
+            empresa_id=current_user.empresa_id,
+            edicao=edicao
+        )
+        db.refresh(movimentacao)
+        return schemas_movimentacao.MovimentacaoEstoqueResponse.model_validate(movimentacao)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao editar movimentação: {str(e)}"
+        )
+
+@router.put(
+    "/pendentes/{movimentacao_id}/editar-e-confirmar",
     response_model=schemas_produto.Produto,
     summary="Edita e confirma uma movimentação pendente",
     description="Edita uma movimentação pendente e confirma aplicando ao estoque (apenas ADMIN/GESTOR)."
