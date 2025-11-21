@@ -153,23 +153,6 @@ def read_historico_geral(
         )
 
 @router.get(
-    "/{produto_id}",
-    response_model=List[schemas_movimentacao.MovimentacaoEstoqueResponse],
-    summary="Lista o histórico de movimentações de um produto",
-    description="Retorna todas as movimentações de estoque para um produto específico, ordenadas da mais recente para a mais antiga."
-)
-def read_movimentacoes_por_produto(
-    produto_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(get_current_user)
-):
-    return crud_movimentacao.get_movimentacoes_by_produto_id(
-        db=db, 
-        produto_id=produto_id, 
-        empresa_id=current_user.empresa_id
-    )
-
-@router.get(
     "/buscar-produtos-similares",
     response_model=List[Dict[str, Any]],
     summary="Busca produtos similares por termo de pesquisa",
@@ -921,6 +904,7 @@ async def processar_pdf_movimentacao(
         )
 
 # ==================== ENDPOINTS DE MOVIMENTAÇÕES PENDENTES ====================
+# IMPORTANTE: Estas rotas devem estar ANTES da rota /{produto_id} para evitar conflito
 
 @router.post(
     "/pendentes",
@@ -1099,6 +1083,24 @@ def reject_movimentacao(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao rejeitar movimentação: {str(e)}"
         )
+
+@router.get(
+    "/{produto_id}",
+    response_model=List[schemas_movimentacao.MovimentacaoEstoqueResponse],
+    summary="Lista o histórico de movimentações de um produto",
+    description="Retorna todas as movimentações de estoque para um produto específico, ordenadas da mais recente para a mais antiga."
+)
+def read_movimentacoes_por_produto(
+    produto_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Lista movimentações de um produto específico."""
+    return crud_movimentacao.get_movimentacoes_by_produto_id(
+        db=db, 
+        produto_id=produto_id, 
+        empresa_id=current_user.empresa_id
+    )
 
 def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
     """Extrai dados estruturados de um PDF de nota fiscal de ENTRADA."""

@@ -59,10 +59,14 @@ export function RegistrarMovimentacaoForm() {
     const timeoutId = setTimeout(() => {
       if (termoBusca) {
         buscarProdutos(termoBusca);
+      } else {
+        setProdutosEncontrados([]);
+        // Não limpar produto selecionado automaticamente quando o campo está vazio
       }
     }, 300);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [termoBusca]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,8 +161,13 @@ export function RegistrarMovimentacaoForm() {
                 placeholder="Buscar por nome ou código..."
                 value={termoBusca}
                 onChange={(e) => {
-                  setTermoBusca(e.target.value);
-                  if (!e.target.value) {
+                  const novoTermo = e.target.value;
+                  setTermoBusca(novoTermo);
+                  // Se o usuário está editando e o termo não corresponde ao produto selecionado, limpar seleção
+                  if (produtoSelecionado && novoTermo !== produtoSelecionado.nome && novoTermo !== produtoSelecionado.codigo) {
+                    setProdutoSelecionado(null);
+                  }
+                  if (!novoTermo) {
                     setProdutoSelecionado(null);
                     setProdutosEncontrados([]);
                   }
@@ -172,45 +181,62 @@ export function RegistrarMovimentacaoForm() {
                 Buscando...
               </div>
             )}
-            {produtosEncontrados.length > 0 && !produtoSelecionado && (
-              <div className="mt-2 border rounded-lg max-h-48 overflow-y-auto">
-                {produtosEncontrados.map((produto) => (
-                  <button
-                    key={produto.id}
-                    type="button"
-                    onClick={() => {
-                      setProdutoSelecionado(produto);
-                      setTermoBusca(produto.nome);
-                      setProdutosEncontrados([]);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 border-b last:border-b-0"
-                  >
-                    <div className="font-medium">{produto.nome}</div>
-                    <div className="text-sm text-gray-500">
-                      Código: {produto.codigo} | Estoque: {produto.quantidade_em_estoque} {produto.unidade_medida}
-                    </div>
-                  </button>
-                ))}
+            {/* Lista de produtos encontrados - sempre visível quando há resultados */}
+            {produtosEncontrados.length > 0 && (
+              <div className="mt-2 border rounded-lg max-h-48 overflow-y-auto bg-white dark:bg-gray-800 shadow-sm">
+                {produtosEncontrados.map((produto) => {
+                  const isSelected = produtoSelecionado?.id === produto.id;
+                  return (
+                    <button
+                      key={produto.id}
+                      type="button"
+                      onClick={() => {
+                        setProdutoSelecionado(produto);
+                        setTermoBusca(produto.nome);
+                        // Não limpar a lista para permitir ver outras opções
+                      }}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0 transition-colors ${
+                        isSelected ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+                      }`}
+                    >
+                      <div className="font-medium flex items-center gap-2">
+                        {produto.nome}
+                        {isSelected && (
+                          <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded">Selecionado</span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Código: {produto.codigo} | Estoque: {produto.quantidade_em_estoque} {produto.unidade_medida}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
+            {/* Indicador de produto selecionado */}
             {produtoSelecionado && (
-              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="font-medium">{produtoSelecionado.nome}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Código: {produtoSelecionado.codigo} | Estoque atual: {produtoSelecionado.quantidade_em_estoque} {produtoSelecionado.unidade_medida}
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-blue-900 dark:text-blue-100">{produtoSelecionado.nome}</div>
+                    <div className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Código: {produtoSelecionado.codigo} | Estoque atual: {produtoSelecionado.quantidade_em_estoque} {produtoSelecionado.unidade_medida}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setProdutoSelecionado(null);
+                      setTermoBusca('');
+                      setProdutosEncontrados([]);
+                    }}
+                    className="ml-2"
+                  >
+                    Limpar
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setProdutoSelecionado(null);
-                    setTermoBusca('');
-                  }}
-                  className="mt-2"
-                >
-                  Alterar produto
-                </Button>
               </div>
             )}
           </div>

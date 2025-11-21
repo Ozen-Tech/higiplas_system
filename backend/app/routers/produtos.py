@@ -14,7 +14,7 @@ from ..db.connection import get_db
 from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from app.dependencies import get_current_user
-from sqlalchemy import func, case
+from sqlalchemy import func, case, or_
 from ..services.purchase_suggestion_service import PurchaseSuggestionService
 
 # Define o prefixo e as tags para todas as rotas neste arquivo
@@ -137,6 +137,31 @@ def download_produtos_excel(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ocorreu um erro no servidor ao gerar o arquivo Excel: {str(e)}"
         )
+
+@router.get("/buscar", response_model=List[schemas_produto.Produto], summary="Buscar produtos por termo")
+def buscar_produtos(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Busca produtos por nome ou código.
+    Retorna produtos que contenham o termo de busca no nome ou código.
+    """
+    if not q or len(q.strip()) < 2:
+        return []
+    
+    termo = q.strip().upper()
+    
+    produtos = db.query(models.Produto).filter(
+        models.Produto.empresa_id == current_user.empresa_id,
+        or_(
+            func.upper(models.Produto.nome).contains(termo),
+            func.upper(models.Produto.codigo).contains(termo)
+        )
+    ).limit(50).all()
+    
+    return produtos
 
 @router.get("/{produto_id}", response_model=schemas_produto.Produto, summary="Buscar um produto por ID")
 def read_one_produto(

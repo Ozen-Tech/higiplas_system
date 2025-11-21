@@ -95,9 +95,26 @@ async def validation_exception_handler(
         }
     )
     
+    # Serializar corretamente, convertendo datetime/date para string
+    try:
+        content = error_response.model_dump(mode='json')
+    except Exception:
+        # Fallback: serializar manualmente
+        content = error_response.model_dump()
+        # Converter datetime/date recursivamente
+        def convert_datetime(obj):
+            if isinstance(obj, dict):
+                return {k: convert_datetime(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_datetime(item) for item in obj]
+            elif isinstance(obj, (datetime, date)):
+                return obj.isoformat()
+            return obj
+        content = convert_datetime(content)
+    
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_response.model_dump()
+        content=content
     )
 
 
