@@ -63,7 +63,12 @@ set +e
 HEADS_OUTPUT=$(alembic heads 2>&1)
 HEAD_COUNT=$(echo "$HEADS_OUTPUT" | grep -c "revision" || echo "0")
 
-if [ "$HEAD_COUNT" -gt "1" ]; then
+# Garante que HEAD_COUNT é um número válido
+if [ -z "$HEAD_COUNT" ] || [ "$HEAD_COUNT" = "" ]; then
+    HEAD_COUNT=0
+fi
+
+if [ "$HEAD_COUNT" -gt 1 ]; then
     echo "==> Múltiplas heads detectadas ($HEAD_COUNT), aplicando individualmente..."
     # Aplica cada head individualmente
     echo "==> Aplicando: merge_proposta_fornecedor"

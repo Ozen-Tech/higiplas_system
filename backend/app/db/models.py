@@ -28,7 +28,11 @@ class Usuario(Base):
     level = Column(Integer, default=1) # Nível
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     empresa = relationship("Empresa", back_populates="usuarios")
-    movimentacoes = relationship("MovimentacaoEstoque", back_populates="usuario")
+    movimentacoes = relationship(
+        "MovimentacaoEstoque", 
+        back_populates="usuario", 
+        primaryjoin="Usuario.id == MovimentacaoEstoque.usuario_id"
+    )
 
 class Produto(Base):
     __tablename__ = "produtos"
