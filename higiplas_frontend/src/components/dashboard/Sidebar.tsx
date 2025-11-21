@@ -9,7 +9,7 @@ import {
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
   ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
   ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon,
-  ClipboardDocumentListIcon, UserGroupIcon
+  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -44,6 +44,7 @@ const navigation: NavigationItem[] = [
 
 const adminNavigation: NavigationItem[] = [
   { name: 'Criar Usuário', href: '/admin/criar-usuario', icon: UserPlusIcon },
+  { name: 'Solicitações de Movimentação', href: '/dashboard/movimentacoes-pendentes', icon: CheckCircleIcon },
   { name: 'Gerenciar Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
   { name: 'Gerenciar Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
   { name: 'Propostas Detalhadas', href: '/dashboard/propostas-detalhadas', icon: DocumentTextIcon },

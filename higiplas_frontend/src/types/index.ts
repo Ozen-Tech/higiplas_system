@@ -68,6 +68,52 @@ export interface User {
   level?: number;
 }
 
+// ======================== MOVIMENTAÇÕES PENDENTES ========================
+
+export enum StatusMovimentacao {
+  PENDENTE = 'PENDENTE',
+  CONFIRMADO = 'CONFIRMADO',
+  REJEITADO = 'REJEITADO'
+}
+
+export enum MotivoMovimentacao {
+  CARREGAMENTO = 'CARREGAMENTO',
+  DEVOLUCAO = 'DEVOLUCAO',
+  AJUSTE_FISICO = 'AJUSTE_FISICO',
+  PERDA_AVARIA = 'PERDA_AVARIA',
+  TRANSFERENCIA_INTERNA = 'TRANSFERENCIA_INTERNA'
+}
+
+export interface MovimentacaoPendente {
+  id: number;
+  produto_id: number;
+  quantidade: number;
+  tipo_movimentacao: 'ENTRADA' | 'SAIDA';
+  observacao?: string | null;
+  origem?: string | null;
+  data_movimentacao: string;
+  quantidade_antes?: number | null;
+  quantidade_depois?: number | null;
+  status: StatusMovimentacao;
+  aprovado_por_id?: number | null;
+  data_aprovacao?: string | null;
+  motivo_rejeicao?: string | null;
+  motivo_movimentacao?: MotivoMovimentacao | null;
+  observacao_motivo?: string | null;
+  produto?: Product;
+  usuario?: User;
+  aprovado_por?: User;
+}
+
+export interface MovimentacaoPendenteCreate {
+  produto_id: number;
+  quantidade: number;
+  tipo_movimentacao: 'ENTRADA' | 'SAIDA';
+  motivo_movimentacao: MotivoMovimentacao;
+  observacao?: string | null;
+  observacao_motivo?: string | null;
+}
+
 
 // ======================== ORDENS DE COMPRA ========================
 

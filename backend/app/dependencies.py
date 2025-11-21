@@ -90,3 +90,19 @@ def get_admin_user(
             detail="Apenas administradores ou gestores podem acessar este recurso."
         )
     return current_user
+
+
+def get_current_operador(
+    current_user: models.Usuario = Depends(get_current_user)
+) -> models.Usuario:
+    """
+    Valida se o usuário autenticado tem perfil de operador (entregador).
+    Retorna HTTP 403 se o usuário não for operador.
+    """
+    perfil = (current_user.perfil or "").upper()
+    if perfil != "OPERADOR":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado. Apenas operadores (entregadores) podem acessar este recurso.",
+        )
+    return current_user

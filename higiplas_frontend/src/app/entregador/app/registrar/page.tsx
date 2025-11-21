@@ -1,0 +1,67 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { useEntregador } from '@/hooks/useEntregador';
+import { RegistrarMovimentacaoForm } from '@/components/entregador/RegistrarMovimentacaoForm';
+
+export default function RegistrarMovimentacaoPage() {
+  const router = useRouter();
+  const { loading, error, isOperador } = useEntregador();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+          <p className="text-gray-600 dark:text-gray-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !isOperador) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <p className="text-red-600 dark:text-red-400">{error || 'Acesso negado. Apenas entregadores podem acessar esta área.'}</p>
+            <Button onClick={() => router.push('/entregador/login')}>
+              Voltar para Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Registrar Movimentação
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Registre uma movimentação de estoque que será enviada para aprovação
+          </p>
+        </div>
+      </div>
+
+      <RegistrarMovimentacaoForm />
+    </div>
+  );
+}
+

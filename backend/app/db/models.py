@@ -70,11 +70,22 @@ class MovimentacaoEstoque(Base):
     quantidade_antes = Column(Float, nullable=True)
     quantidade_depois = Column(Float, nullable=True)
     
+    # Campos de aprovação
+    status = Column(Enum('PENDENTE', 'CONFIRMADO', 'REJEITADO', name='status_movimentacao_enum'), nullable=False, default='CONFIRMADO')
+    aprovado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    data_aprovacao = Column(DateTime(timezone=True), nullable=True)
+    motivo_rejeicao = Column(String, nullable=True)
+    motivo_movimentacao = Column(Enum('CARREGAMENTO', 'DEVOLUCAO', 'AJUSTE_FISICO', 'PERDA_AVARIA', 'TRANSFERENCIA_INTERNA', name='motivo_movimentacao_enum'), nullable=True)
+    observacao_motivo = Column(String, nullable=True)
+    dados_antes_edicao = Column(String, nullable=True)  # JSON como string
+    dados_depois_edicao = Column(String, nullable=True)  # JSON como string
+    
     produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
     produto = relationship("Produto", back_populates="movimentacoes")
-    usuario = relationship("Usuario", back_populates="movimentacoes")
+    usuario = relationship("Usuario", back_populates="movimentacoes", foreign_keys=[usuario_id])
+    aprovado_por = relationship("Usuario", foreign_keys=[aprovado_por_id])
 
 
 class VendaHistorica(Base):

@@ -3,8 +3,8 @@
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
-[![Next.js](https://img.shields.io/badge/next.js-14+-black.svg)](https://nextjs.org)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
+[![Next.js](https://img.shields.io/badge/next.js-15+-black.svg)](https://nextjs.org)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-13+-blue.svg)](https://postgresql.org)
 
 ## 📋 Descrição
@@ -37,9 +37,9 @@ Antes de começar, certifique-se de ter instalado:
 - **macOS**, **Linux** ou **Windows** (com WSL2 recomendado)
 
 ### Software Necessário
-- **Python 3.9+** - [Download](https://python.org/downloads/)
-- **Node.js 18+** - [Download](https://nodejs.org/)
-- **PostgreSQL 13+** - [Download](https://postgresql.org/download/)
+- **Python 3.11+** (recomendado 3.11 ou superior) - [Download](https://python.org/downloads/)
+- **Node.js 18+** (recomendado 20+) - [Download](https://nodejs.org/)
+- **PostgreSQL 13+** (recomendado 15+) - [Download](https://postgresql.org/download/)
 - **Git** - [Download](https://git-scm.com/downloads/)
 
 ### Ferramentas Opcionais

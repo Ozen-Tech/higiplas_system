@@ -3,7 +3,7 @@
 # Adicionamos 'Body' às importações do FastAPI
 from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ..db import models
 import json
 import os
@@ -18,7 +18,7 @@ from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from ..db.connection import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_current_operador, get_admin_user
 # Serviço de similaridade importado dinamicamente quando necessário
 
 router = APIRouter(
@@ -918,6 +918,186 @@ async def processar_pdf_movimentacao(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF: {str(e)}"
+        )
+
+# ==================== ENDPOINTS DE MOVIMENTAÇÕES PENDENTES ====================
+
+@router.post(
+    "/pendentes",
+    response_model=schemas_movimentacao.MovimentacaoEstoqueResponse,
+    summary="Cria uma movimentação pendente",
+    description="Registra uma movimentação pendente de aprovação. O estoque NÃO é alterado até que seja confirmada por um administrador."
+)
+def create_pending_movimentacao(
+    movimentacao: schemas_movimentacao.MovimentacaoEstoquePendenteCreate,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_operador)
+):
+    """Cria uma movimentação pendente para aprovação (apenas OPERADOR)."""
+    try:
+        movimentacao_criada = crud_movimentacao.create_pending_movimentacao(
+            db=db,
+            movimentacao=movimentacao,
+            usuario_id=current_user.id,
+            empresa_id=current_user.empresa_id
+        )
+        
+        # Carregar relacionamentos para resposta
+        db.refresh(movimentacao_criada)
+        return schemas_movimentacao.MovimentacaoEstoqueResponse.model_validate(movimentacao_criada)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao criar movimentação pendente: {str(e)}"
+        )
+
+@router.get(
+    "/pendentes",
+    response_model=List[schemas_movimentacao.MovimentacaoEstoqueResponse],
+    summary="Lista movimentações pendentes do usuário",
+    description="Retorna todas as movimentações pendentes, confirmadas e rejeitadas do usuário logado."
+)
+def get_pending_movimentacoes_by_user(
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_operador)
+):
+    """Lista movimentações pendentes do usuário (apenas OPERADOR)."""
+    try:
+        movimentacoes = crud_movimentacao.get_pending_movimentacoes_by_user(
+            db=db,
+            usuario_id=current_user.id,
+            empresa_id=current_user.empresa_id,
+            status_filter=status
+        )
+        return [schemas_movimentacao.MovimentacaoEstoqueResponse.model_validate(m) for m in movimentacoes]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar movimentações: {str(e)}"
+        )
+
+@router.get(
+    "/pendentes/admin",
+    response_model=List[schemas_movimentacao.MovimentacaoEstoqueResponse],
+    summary="Lista todas as movimentações pendentes da empresa",
+    description="Retorna todas as movimentações pendentes da empresa para aprovação (apenas ADMIN/GESTOR)."
+)
+def get_pending_movimentacoes_admin(
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_admin_user)
+):
+    """Lista todas as movimentações pendentes da empresa (apenas ADMIN/GESTOR)."""
+    try:
+        movimentacoes = crud_movimentacao.get_pending_movimentacoes(
+            db=db,
+            empresa_id=current_user.empresa_id,
+            status_filter=status
+        )
+        return [schemas_movimentacao.MovimentacaoEstoqueResponse.model_validate(m) for m in movimentacoes]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar movimentações: {str(e)}"
+        )
+
+@router.post(
+    "/pendentes/{movimentacao_id}/confirmar",
+    response_model=schemas_produto.Produto,
+    summary="Confirma uma movimentação pendente",
+    description="Confirma e aplica uma movimentação pendente ao estoque (apenas ADMIN/GESTOR)."
+)
+def confirm_movimentacao(
+    movimentacao_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_admin_user)
+):
+    """Confirma uma movimentação pendente e aplica ao estoque."""
+    try:
+        produto = crud_movimentacao.confirm_movimentacao(
+            db=db,
+            movimentacao_id=movimentacao_id,
+            aprovado_por_id=current_user.id,
+            empresa_id=current_user.empresa_id
+        )
+        return produto
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao confirmar movimentação: {str(e)}"
+        )
+
+@router.put(
+    "/pendentes/{movimentacao_id}/editar",
+    response_model=schemas_produto.Produto,
+    summary="Edita e confirma uma movimentação pendente",
+    description="Edita uma movimentação pendente e confirma aplicando ao estoque (apenas ADMIN/GESTOR)."
+)
+def edit_and_confirm_movimentacao(
+    movimentacao_id: int,
+    edicao: schemas_movimentacao.MovimentacaoEstoqueEdicao,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_admin_user)
+):
+    """Edita uma movimentação pendente e confirma aplicando ao estoque."""
+    try:
+        produto = crud_movimentacao.edit_movimentacao(
+            db=db,
+            movimentacao_id=movimentacao_id,
+            aprovado_por_id=current_user.id,
+            empresa_id=current_user.empresa_id,
+            edicao=edicao
+        )
+        return produto
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao editar e confirmar movimentação: {str(e)}"
+        )
+
+@router.post(
+    "/pendentes/{movimentacao_id}/rejeitar",
+    response_model=schemas_movimentacao.MovimentacaoEstoqueResponse,
+    summary="Rejeita uma movimentação pendente",
+    description="Rejeita uma movimentação pendente sem alterar o estoque (apenas ADMIN/GESTOR)."
+)
+def reject_movimentacao(
+    movimentacao_id: int,
+    dados: schemas_movimentacao.MovimentacaoEstoqueAprovacao = Body(...),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_admin_user)
+):
+    """Rejeita uma movimentação pendente sem alterar o estoque."""
+    try:
+        if not dados.motivo_rejeicao:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Motivo da rejeição é obrigatório."
+            )
+        
+        movimentacao = crud_movimentacao.reject_movimentacao(
+            db=db,
+            movimentacao_id=movimentacao_id,
+            aprovado_por_id=current_user.id,
+            motivo_rejeicao=dados.motivo_rejeicao,
+            empresa_id=current_user.empresa_id
+        )
+        
+        db.refresh(movimentacao)
+        return schemas_movimentacao.MovimentacaoEstoqueResponse.model_validate(movimentacao)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao rejeitar movimentação: {str(e)}"
         )
 
 def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:

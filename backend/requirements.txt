@@ -1,31 +1,36 @@
 # Framework e Servidor
-fastapi
-uvicorn[standard]
-python-dotenv
-pydantic-settings
-fpdf2
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-dotenv>=1.0.1
+pydantic-settings>=2.6.0
+fpdf2>=2.8.1
+
 # Banco de Dados e ORM
-SQLAlchemy[asyncio]
-psycopg2-binary
+SQLAlchemy[asyncio]>=2.0.36
+psycopg2-binary>=2.9.10
 
 # Segurança e Autenticação
-passlib==1.7.4
-bcrypt==3.2.2
-python-jose[cryptography]
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.2.1
+python-jose[cryptography]>=3.3.0
 
 # Ferramentas de Utilidade
-typer 
-pandas
-openpyxl
-email-validator
-python-multipart
-beautifulsoup4 
-lxml
-PyPDF2
-pdfplumber
+typer>=0.15.1
+pandas>=2.2.3
+openpyxl>=3.1.5
+email-validator>=2.2.0
+python-multipart>=0.0.12
+beautifulsoup4>=4.12.3
+lxml>=5.3.0
+PyPDF2>=3.0.1
+pdfplumber>=0.11.4
+
 # Busca por Similaridade
-fuzzywuzzy
-python-Levenshtein
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.25.1
+
 # Inteligência Artificial
-google-generativeai
-alembic
+google-generativeai>=0.8.3
+
+# Migrações
+alembic>=1.14.0
