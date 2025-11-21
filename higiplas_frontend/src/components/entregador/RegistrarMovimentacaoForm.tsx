@@ -37,7 +37,7 @@ export function RegistrarMovimentacaoForm() {
 
     setSearching(true);
     try {
-      const response = await apiService.get(`/produtos/buscar/?q=${encodeURIComponent(termo.trim())}`);
+      const response = await apiService.get(`/produtos/buscar?q=${encodeURIComponent(termo.trim())}`);
       const produtos = (response?.data || []).map((p: Product) => ({
         id: p.id,
         nome: p.nome,
