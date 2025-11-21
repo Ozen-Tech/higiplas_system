@@ -12,7 +12,7 @@ from app.db import models
 from app.dependencies import get_current_user
 from app.services import ai_service
 from ..crud import produto as crud_produto
-from ..crud import movimentacao_estoque as crud_movimentacao 
+from ..crud import movimentacao_estoque as crud_movimentacao
 from ..crud import venda_historica as crud_historico
 from ..crud import analise_estoque as crud_analise
 from ..crud import cliente_v2 as crud_cliente
@@ -20,7 +20,7 @@ from ..crud import orcamento as crud_orcamento
 from ..crud import ordem_compra as crud_ordem_compra
 from ..crud import fornecedor as crud_fornecedor
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, or_, desc
 
 # Inicializa o router
 router = APIRouter(prefix="/insights", tags=["Inteligência Artificial"])
@@ -36,6 +36,30 @@ def clean_sqlalchemy_object(obj):
     clean = obj.__dict__.copy()
     clean.pop('_sa_instance_state', None)
     return clean
+
+
+OBSERVACOES_VENDA_PADRAO = [
+    "Venda Operador",
+    "Venda realizada pelo vendedor",
+    "Venda para"
+]
+
+OBSERVACOES_NF_PADRAO = [
+    "Importação automática - NF",
+    "Processamento automático - NF"
+]
+
+
+def _status_confirmado_expression():
+    return or_(
+        models.MovimentacaoEstoque.status == 'CONFIRMADO',
+        models.MovimentacaoEstoque.status.is_(None)
+    )
+
+
+def _observacao_filter(patterns: List[str]):
+    observacao_col = func.coalesce(models.MovimentacaoEstoque.observacao, "")
+    return or_(*[observacao_col.ilike(f"{pattern}%") for pattern in patterns])
 
 @router.post("/ask", summary="Faz uma pergunta para o assistente de IA")
 def ask_ai_question(
@@ -61,10 +85,58 @@ def ask_ai_question(
         
         # c) Movimentações Recentes (últimos 30 dias)
         movimentacoes_recentes_db = crud_movimentacao.get_recent_movimentacoes(
-            db=db, 
-            empresa_id=current_user.empresa_id, 
+            db=db,
+            empresa_id=current_user.empresa_id,
             days=30
         )
+
+        status_confirmado_expr = _status_confirmado_expression()
+        vendas_nf_expr = _observacao_filter(OBSERVACOES_NF_PADRAO)
+        vendas_operador_expr = _observacao_filter(OBSERVACOES_VENDA_PADRAO)
+
+        vendas_nf_resumo = db.query(
+            models.MovimentacaoEstoque.produto_id,
+            models.Produto.nome.label('produto_nome'),
+            models.Produto.codigo.label('produto_codigo'),
+            func.sum(models.MovimentacaoEstoque.quantidade).label('total_quantidade'),
+            func.count(models.MovimentacaoEstoque.id).label('total_movimentacoes'),
+            func.max(models.MovimentacaoEstoque.data_movimentacao).label('ultima_saida')
+        ).join(
+            models.Produto, models.MovimentacaoEstoque.produto_id == models.Produto.id
+        ).filter(
+            models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
+            models.Produto.empresa_id == current_user.empresa_id,
+            status_confirmado_expr,
+            vendas_nf_expr
+        ).group_by(
+            models.MovimentacaoEstoque.produto_id,
+            models.Produto.nome,
+            models.Produto.codigo
+        ).order_by(
+            desc('total_quantidade')
+        ).limit(100).all()
+
+        vendas_operador_resumo = db.query(
+            models.MovimentacaoEstoque.produto_id,
+            models.Produto.nome.label('produto_nome'),
+            models.Produto.codigo.label('produto_codigo'),
+            func.sum(models.MovimentacaoEstoque.quantidade).label('total_quantidade'),
+            func.count(models.MovimentacaoEstoque.id).label('total_movimentacoes'),
+            func.max(models.MovimentacaoEstoque.data_movimentacao).label('ultima_saida')
+        ).join(
+            models.Produto, models.MovimentacaoEstoque.produto_id == models.Produto.id
+        ).filter(
+            models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
+            models.Produto.empresa_id == current_user.empresa_id,
+            status_confirmado_expr,
+            vendas_operador_expr
+        ).group_by(
+            models.MovimentacaoEstoque.produto_id,
+            models.Produto.nome,
+            models.Produto.codigo
+        ).order_by(
+            desc('total_quantidade')
+        ).limit(100).all()
         
         # d) Clientes (resumo)
         try:
@@ -200,6 +272,30 @@ def ask_ai_question(
             }
             for mov in movimentacoes_limitadas
         ]
+
+        vendas_nf_formatado = [
+            {
+                "produto_id": registro.produto_id,
+                "produto": registro.produto_nome,
+                "codigo": registro.produto_codigo,
+                "quantidade_total_saida_nf": float(registro.total_quantidade),
+                "movimentacoes_registradas": int(registro.total_movimentacoes),
+                "ultima_saida_nf": registro.ultima_saida.strftime('%Y-%m-%d %H:%M') if registro.ultima_saida else None
+            }
+            for registro in vendas_nf_resumo
+        ]
+
+        vendas_operador_formatado = [
+            {
+                "produto_id": registro.produto_id,
+                "produto": registro.produto_nome,
+                "codigo": registro.produto_codigo,
+                "quantidade_total_vendida_operador": float(registro.total_quantidade),
+                "movimentacoes_registradas": int(registro.total_movimentacoes),
+                "ultima_saida_operador": registro.ultima_saida.strftime('%Y-%m-%d %H:%M') if registro.ultima_saida else None
+            }
+            for registro in vendas_operador_resumo
+        ]
         
         # Formata clientes
         clientes_formatado = [
@@ -256,6 +352,8 @@ def ask_ai_question(
             "estoque_atual_da_empresa": produtos_atuais_formatado,
             "resumo_historico_dos_produtos_mais_vendidos": historico_top_vendas_formatado,
             "log_de_movimentacoes_recentes_ultimos_30_dias": movimentacoes_recentes_formatado,
+            "resumo_vendas_nf_confirmadas": vendas_nf_formatado,
+            "resumo_vendas_vendedores_confirmadas": vendas_operador_formatado,
             "clientes_cadastrados": clientes_formatado,
             "orcamentos_recentes_ultimos_30_dias": orcamentos_formatado,
             "ordens_de_compra_recentes_ultimos_30_dias": ordens_compra_formatado,

@@ -15,6 +15,8 @@ from ..dependencies import get_current_user
 from ..db import models
 from ..schemas import vendas as schemas
 
+OBSERVACAO_VENDA_OPERADOR = "Venda Operador"
+
 router = APIRouter(
     prefix="/vendas",
     tags=["Vendas Mobile"]
@@ -270,7 +272,7 @@ def registrar_venda(
             total_venda += produto.preco_venda * item.quantidade
         
         movimentacoes_criadas = []
-        observacao_base = f"Venda para {cliente.razao_social}"
+        observacao_base = f"{OBSERVACAO_VENDA_OPERADOR} - Usuario:{current_user.id} - Cliente:{cliente.razao_social}"
         if venda.observacao:
             observacao_base += f" - {venda.observacao}"
         

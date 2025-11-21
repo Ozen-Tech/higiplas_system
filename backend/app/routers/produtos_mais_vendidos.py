@@ -25,6 +25,37 @@ router = APIRouter(
 # Inclui: VENDA (vendas e orçamentos confirmados), DEVOLUCAO, COMPRA, OUTRO
 ORIGENS_AUTOMATICAS = ['VENDA', 'DEVOLUCAO', 'COMPRA', 'OUTRO']
 
+# Observações padrão que caracterizam vendas realizadas pelo aplicativo de vendedores
+OBSERVACOES_VENDA_PADRAO = [
+    "Venda Operador",
+    "Venda realizada pelo vendedor",
+    "Venda para"
+]
+
+# Observações padrão utilizadas para baixas automáticas a partir de notas fiscais importadas
+OBSERVACOES_NF_PADRAO = [
+    "Importação automática - NF",
+    "Processamento automático - NF"
+]
+
+
+def _status_confirmado_expression():
+    """Garante que apenas movimentações confirmadas (ou legadas sem status) sejam consideradas."""
+    return or_(
+        models.MovimentacaoEstoque.status == 'CONFIRMADO',
+        models.MovimentacaoEstoque.status.is_(None)
+    )
+
+
+def _observacao_permitida_expression():
+    """Filtra apenas movimentações que tenham observações padronizadas (vendedores / NF)."""
+    observacao_col = func.coalesce(models.MovimentacaoEstoque.observacao, "")
+    condicoes = [
+        observacao_col.ilike(f"{pattern}%")
+        for pattern in (OBSERVACOES_VENDA_PADRAO + OBSERVACOES_NF_PADRAO)
+    ]
+    return or_(*condicoes)
+
 @router.get("/", response_model=schemas.ProdutosMaisVendidosResponse)
 def get_produtos_mais_vendidos(
     periodo_dias: Optional[int] = Query(365, description="Período em dias para análise (padrão: 365 dias)"),
@@ -52,6 +83,9 @@ def get_produtos_mais_vendidos(
         fim = datetime.now()
         inicio = fim - timedelta(days=periodo_dias)
 
+    allowed_observacoes = _observacao_permitida_expression()
+    status_confirmado = _status_confirmado_expression()
+
     # Query base para movimentações de SAÍDA automáticas
     query = db.query(
         models.MovimentacaoEstoque.produto_id,
@@ -77,7 +111,9 @@ def get_produtos_mais_vendidos(
             or_(
                 models.MovimentacaoEstoque.origem.in_(ORIGENS_AUTOMATICAS),
                 models.MovimentacaoEstoque.origem.is_(None)  # Incluir movimentações antigas sem origem definida
-            )
+            ),
+            status_confirmado,
+            allowed_observacoes
         )
     )
 
@@ -201,6 +237,9 @@ def get_tendencias_vendas(
     # Query para dados mensais (apenas movimentações automáticas)
     # Nota: Calculamos quantidade_mensal primeiro, depois multiplicamos pelo preço atual
     # Isso evita distorções se o preço mudou ao longo do tempo
+    allowed_observacoes = _observacao_permitida_expression()
+    status_confirmado = _status_confirmado_expression()
+
     query = db.query(
         extract('year', models.MovimentacaoEstoque.data_movimentacao).label('ano'),
         extract('month', models.MovimentacaoEstoque.data_movimentacao).label('mes'),
@@ -219,7 +258,9 @@ def get_tendencias_vendas(
             or_(
                 models.MovimentacaoEstoque.origem.in_(ORIGENS_AUTOMATICAS),
                 models.MovimentacaoEstoque.origem.is_(None)  # Incluir movimentações antigas sem origem definida
-            )
+            ),
+            status_confirmado,
+            allowed_observacoes
         )
     )
 
@@ -264,6 +305,9 @@ def get_comparativo_vendedores(
     fim = datetime.now()
     inicio = fim - timedelta(days=periodo_dias)
 
+    allowed_observacoes = _observacao_permitida_expression()
+    status_confirmado = _status_confirmado_expression()
+
     # Query para comparativo de vendedores
     # Nota: Agrupamos por produto primeiro para calcular valor corretamente
     query = db.query(
@@ -287,7 +331,9 @@ def get_comparativo_vendedores(
             or_(
                 models.MovimentacaoEstoque.origem.in_(ORIGENS_AUTOMATICAS),
                 models.MovimentacaoEstoque.origem.is_(None)  # Incluir movimentações antigas sem origem definida
-            )
+            ),
+            status_confirmado,
+            allowed_observacoes
         )
     ).group_by(
         models.Usuario.nome, 

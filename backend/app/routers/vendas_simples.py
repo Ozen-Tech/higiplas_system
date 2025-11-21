@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from typing import List, Dict
+from pydantic import BaseModel
+
 from app.db import models
 from app.db.connection import get_db
 from app.dependencies import get_current_user
-from pydantic import BaseModel
 
+OBSERVACAO_VENDA_OPERADOR = "Venda Operador"  # Prefixo padronizado para identificar vendas feitas no app de vendedores
 
 router = APIRouter(
     prefix="/vendas-simples",
@@ -66,7 +68,7 @@ def registrar_pedido(pedido: PedidoCreate, db: Session = Depends(get_db), curren
             quantidade_antes=quantidade_antes,
             quantidade_depois=quantidade_depois,
             origem="VENDA",
-            observacao="Venda realizada pelo vendedor",
+            observacao=f"{OBSERVACAO_VENDA_OPERADOR} - Usuario:{current_user.id}",
             usuario_id=current_user.id
         )
         db.add(movimentacao)
