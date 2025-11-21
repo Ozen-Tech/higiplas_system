@@ -15,6 +15,12 @@ from ..crud import produto as crud_produto
 from ..crud import movimentacao_estoque as crud_movimentacao 
 from ..crud import venda_historica as crud_historico
 from ..crud import analise_estoque as crud_analise
+from ..crud import cliente_v2 as crud_cliente
+from ..crud import orcamento as crud_orcamento
+from ..crud import ordem_compra as crud_ordem_compra
+from ..crud import fornecedor as crud_fornecedor
+from datetime import datetime, timedelta
+from sqlalchemy import func
 
 # Inicializa o router
 router = APIRouter(prefix="/insights", tags=["Inteligência Artificial"])
@@ -44,15 +50,15 @@ def ask_ai_question(
     """
     print("\n--- [Insights] ROTA /insights/ask ACIONADA ---")
     try:
-        # --- 1. COLETA DE DADOS RELEVANTES ---
-        print("[Insights] Coletando dados do sistema...")
+        # --- 1. COLETA COMPLETA DE DADOS DO SISTEMA ---
+        print("[Insights] Coletando dados completos do sistema...")
         
-        # a) Estoque atual
+        # a) Estoque atual com mais detalhes
         produtos_atuais_db = crud_produto.get_produtos(db=db, empresa_id=current_user.empresa_id)
         
         # b) Histórico de Vendas
         historico_top_vendas_db = crud_historico.get_top_10_vendas(db)
-
+        
         # c) Movimentações Recentes (últimos 30 dias)
         movimentacoes_recentes_db = crud_movimentacao.get_recent_movimentacoes(
             db=db, 
@@ -60,10 +66,89 @@ def ask_ai_question(
             days=30
         )
         
+        # d) Clientes (resumo)
+        try:
+            clientes_db = crud_cliente.get_clientes(
+                db=db, 
+                empresa_id=current_user.empresa_id, 
+                limit=50
+            )
+        except Exception as e:
+            print(f" -> Erro ao buscar clientes: {e}")
+            clientes_db = []
+        
+        # e) Orçamentos recentes (últimos 30 dias)
+        try:
+            orcamentos_recentes_db = crud_orcamento.get_all_orcamentos(
+                db=db, 
+                empresa_id=current_user.empresa_id
+            )
+            # Filtrar últimos 30 dias
+            data_limite = datetime.now() - timedelta(days=30)
+            orcamentos_recentes_db = [
+                o for o in orcamentos_recentes_db 
+                if o.data_criacao and o.data_criacao >= data_limite
+            ][:50]  # Limitar a 50
+        except Exception as e:
+            print(f" -> Erro ao buscar orçamentos: {e}")
+            orcamentos_recentes_db = []
+        
+        # f) Ordens de compra recentes
+        try:
+            ordens_compra_db = crud_ordem_compra.get_ordens_compra(
+                db=db, 
+                empresa_id=current_user.empresa_id
+            )
+            # Filtrar últimos 30 dias
+            data_limite = datetime.now() - timedelta(days=30)
+            ordens_compra_recentes = [
+                oc for oc in ordens_compra_db 
+                if oc.data_criacao and oc.data_criacao >= data_limite
+            ][:30]  # Limitar a 30
+        except Exception as e:
+            print(f" -> Erro ao buscar ordens de compra: {e}")
+            ordens_compra_recentes = []
+        
+        # g) Fornecedores
+        try:
+            fornecedores_db = crud_fornecedor.get_fornecedores(
+                db=db, 
+                empresa_id=current_user.empresa_id
+            )
+        except Exception as e:
+            print(f" -> Erro ao buscar fornecedores: {e}")
+            fornecedores_db = []
+        
+        # h) Estatísticas gerais de movimentações
+        try:
+            total_entradas = db.query(func.sum(models.MovimentacaoEstoque.quantidade)).join(
+                models.Produto
+            ).filter(
+                models.Produto.empresa_id == current_user.empresa_id,
+                models.MovimentacaoEstoque.tipo_movimentacao == 'ENTRADA',
+                models.MovimentacaoEstoque.data_movimentacao >= datetime.now() - timedelta(days=30)
+            ).scalar() or 0
+            
+            total_saidas = db.query(func.sum(models.MovimentacaoEstoque.quantidade)).join(
+                models.Produto
+            ).filter(
+                models.Produto.empresa_id == current_user.empresa_id,
+                models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
+                models.MovimentacaoEstoque.data_movimentacao >= datetime.now() - timedelta(days=30)
+            ).scalar() or 0
+        except Exception as e:
+            print(f" -> Erro ao calcular estatísticas: {e}")
+            total_entradas = 0
+            total_saidas = 0
+        
         # Logs de verificação
         print(f" -> Encontrados {len(produtos_atuais_db)} produtos no estoque.")
         print(f" -> Encontrados {len(historico_top_vendas_db)} registros de top vendas históricas.")
         print(f" -> Encontrados {len(movimentacoes_recentes_db)} registros de movimentações recentes.")
+        print(f" -> Encontrados {len(clientes_db)} clientes.")
+        print(f" -> Encontrados {len(orcamentos_recentes_db)} orçamentos recentes.")
+        print(f" -> Encontrados {len(ordens_compra_recentes)} ordens de compra recentes.")
+        print(f" -> Encontrados {len(fornecedores_db)} fornecedores.")
 
 
         # --- 2. FORMATAÇÃO DOS DADOS PARA A IA ---
@@ -82,12 +167,19 @@ def ask_ai_question(
         # Limita a 100 produtos (priorizando os críticos)
         produtos_limitados = produtos_ordenados[:100]
         
+        # Formata produtos com mais detalhes
         produtos_atuais_formatado = [
             {
+                "id": p.id,
                 "nome": p.nome,
                 "codigo": p.codigo,
+                "categoria": p.categoria or "Sem categoria",
                 "estoque_atual": p.quantidade_em_estoque,
-                "estoque_minimo": p.estoque_minimo
+                "estoque_minimo": p.estoque_minimo or 0,
+                "preco_custo": float(p.preco_custo) if p.preco_custo else None,
+                "preco_venda": float(p.preco_venda) if p.preco_venda else None,
+                "unidade_medida": p.unidade_medida,
+                "status_estoque": "CRÍTICO" if p.quantidade_em_estoque <= (p.estoque_minimo or 0) else "OK"
             } for p in produtos_limitados
         ]
         
@@ -98,22 +190,84 @@ def ask_ai_question(
         
         movimentacoes_recentes_formatado = [
             {
-                "data": mov.data_movimentacao.strftime('%Y-%m-%d'),
+                "data": mov.data_movimentacao.strftime('%Y-%m-%d %H:%M'),
                 "produto": mov.produto.nome if mov.produto else 'N/A',
+                "produto_codigo": mov.produto.codigo if mov.produto else 'N/A',
                 "tipo": mov.tipo_movimentacao,
                 "quantidade": mov.quantidade,
-                "usuario": mov.usuario.nome if mov.usuario else 'N/A'
+                "usuario": mov.usuario.nome if mov.usuario else 'N/A',
+                "observacao": mov.observacao or ""
             }
             for mov in movimentacoes_limitadas
         ]
         
-        print(f" -> Dados limitados: {len(produtos_atuais_formatado)} produtos (de {len(produtos_atuais_db)}), {len(movimentacoes_recentes_formatado)} movimentações (de {len(movimentacoes_recentes_db)})")
+        # Formata clientes
+        clientes_formatado = [
+            {
+                "id": c.id,
+                "nome": c.razao_social or "Sem nome",
+                "telefone": c.telefone or "N/A",
+                "cidade": c.endereco.split(',')[-1].strip() if c.endereco and ',' in c.endereco else (c.endereco or "N/A"),
+                "status_pagamento": c.status_pagamento or "N/A",
+                "empresa_vinculada": c.empresa_vinculada or "N/A"
+            } for c in clientes_db[:50]
+        ]
+        
+        # Formata orçamentos recentes
+        orcamentos_formatado = [
+            {
+                "id": o.id,
+                "cliente": o.cliente.razao_social if o.cliente else "N/A",
+                "status": o.status,
+                "data_criacao": o.data_criacao.strftime('%Y-%m-%d') if o.data_criacao else "N/A",
+                "total_itens": len(o.itens),
+                "vendedor": o.usuario.nome if o.usuario else "N/A",
+                "valor_total": sum(item.quantidade * item.preco_unitario_congelado for item in o.itens)
+            } for o in orcamentos_recentes_db
+        ]
+        
+        # Formata ordens de compra
+        ordens_compra_formatado = [
+            {
+                "id": oc.id,
+                "fornecedor": oc.fornecedor.nome if oc.fornecedor else "N/A",
+                "status": oc.status,
+                "data_criacao": oc.data_criacao.strftime('%Y-%m-%d') if oc.data_criacao else "N/A",
+                "data_recebimento": oc.data_recebimento.strftime('%Y-%m-%d') if oc.data_recebimento else None,
+                "total_itens": len(oc.itens),
+                "valor_total": sum(item.quantidade_solicitada * item.custo_unitario_registrado for item in oc.itens)
+            } for oc in ordens_compra_recentes
+        ]
+        
+        # Formata fornecedores
+        fornecedores_formatado = [
+            {
+                "id": f.id,
+                "nome": f.nome,
+                "email": f.contato_email or "N/A",
+                "telefone": f.contato_telefone or "N/A"
+            } for f in fornecedores_db
+        ]
+        
+        print(f" -> Dados formatados: {len(produtos_atuais_formatado)} produtos, {len(movimentacoes_recentes_formatado)} movimentações, {len(clientes_formatado)} clientes, {len(orcamentos_formatado)} orçamentos, {len(ordens_compra_formatado)} ordens de compra")
 
-        # Agrupa tudo em um único dicionário de contexto
+        # Agrupa tudo em um único dicionário de contexto completo
         system_context_data = {
             "estoque_atual_da_empresa": produtos_atuais_formatado,
             "resumo_historico_dos_produtos_mais_vendidos": historico_top_vendas_formatado,
-            "log_de_movimentacoes_recentes_ultimos_30_dias": movimentacoes_recentes_formatado
+            "log_de_movimentacoes_recentes_ultimos_30_dias": movimentacoes_recentes_formatado,
+            "clientes_cadastrados": clientes_formatado,
+            "orcamentos_recentes_ultimos_30_dias": orcamentos_formatado,
+            "ordens_de_compra_recentes_ultimos_30_dias": ordens_compra_formatado,
+            "fornecedores_cadastrados": fornecedores_formatado,
+            "estatisticas_gerais_ultimos_30_dias": {
+                "total_entradas_estoque": float(total_entradas),
+                "total_saidas_estoque": float(total_saidas),
+                "saldo_movimentacoes": float(total_entradas - total_saidas),
+                "total_produtos_cadastrados": len(produtos_atuais_db),
+                "total_clientes": len(clientes_db),
+                "total_fornecedores": len(fornecedores_db)
+            }
         }
         
         system_data_json_string = json.dumps(system_context_data, indent=2, default=str)
