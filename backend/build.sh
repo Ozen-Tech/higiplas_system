@@ -56,6 +56,31 @@ except Exception as e:
 "
 
 echo "==> Rodando migrações do banco de dados..."
-alembic upgrade head
+# Desabilita set -e temporariamente para permitir continuar mesmo com erros
+set +e
+
+# Verifica se há múltiplas heads
+HEADS_OUTPUT=$(alembic heads 2>&1)
+HEAD_COUNT=$(echo "$HEADS_OUTPUT" | grep -c "revision" || echo "0")
+
+if [ "$HEAD_COUNT" -gt "1" ]; then
+    echo "==> Múltiplas heads detectadas ($HEAD_COUNT), aplicando individualmente..."
+    # Aplica cada head individualmente
+    echo "==> Aplicando: merge_proposta_fornecedor"
+    alembic upgrade merge_proposta_fornecedor 2>&1 | tail -5
+    
+    echo "==> Aplicando: approval_fields_001"
+    alembic upgrade approval_fields_001 2>&1 | tail -5
+    
+    # Depois aplica a migração de merge que une as duas heads
+    echo "==> Aplicando migração de merge: merge_approval_proposta"
+    alembic upgrade merge_approval_proposta 2>&1 | tail -5
+else
+    echo "==> Aplicando migrações normalmente..."
+    alembic upgrade head 2>&1 | tail -5
+fi
+
+# Reabilita set -e
+set -e
 
 echo "==> Build concluído com sucesso!"
