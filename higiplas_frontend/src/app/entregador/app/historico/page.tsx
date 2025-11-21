@@ -14,8 +14,8 @@ export default function HistoricoMovimentacoesPage() {
   const router = useRouter();
   const { loading: loadingUser, error, isOperador } = useEntregador();
   const [mounted, setMounted] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const { movimentacoes, loading: loadingMovimentacoes, carregarMovimentacoes } = useMovimentacoesPendentes(statusFilter || undefined);
+  const [statusFilter, setStatusFilter] = useState<string>('TODAS');
+  const { movimentacoes, loading: loadingMovimentacoes, carregarMovimentacoes } = useMovimentacoesPendentes(statusFilter === 'TODAS' ? undefined : statusFilter);
 
   useEffect(() => {
     setMounted(true);
@@ -107,7 +107,7 @@ export default function HistoricoMovimentacoesPage() {
             <SelectValue placeholder="Filtrar por status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
+            <SelectItem value="TODAS">Todas</SelectItem>
             <SelectItem value="PENDENTE">Pendentes</SelectItem>
             <SelectItem value="CONFIRMADO">Confirmadas</SelectItem>
             <SelectItem value="REJEITADO">Rejeitadas</SelectItem>

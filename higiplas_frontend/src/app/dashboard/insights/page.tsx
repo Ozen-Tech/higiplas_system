@@ -20,8 +20,23 @@ function InsightsPageContent() {
     try {
       const response = await apiService.post('/insights/ask', { question });
       setAnswer(response?.data?.answer || 'Resposta não disponível');
-    } catch (err) {
-       setAnswer(err instanceof Error ? `Erro: ${err.message}` : "Erro desconhecido.");
+    } catch (err: any) {
+      // Trata erros específicos da API
+      let errorMessage = "Erro desconhecido ao processar a pergunta.";
+      
+      if (err?.response?.status === 429) {
+        errorMessage = "⚠️ **Limite de requisições excedido**\n\nO limite de requisições da API foi excedido. Por favor, aguarde alguns minutos antes de tentar novamente.";
+      } else if (err?.response?.status === 403) {
+        errorMessage = "🔒 **Problema de permissão**\n\nProblema de permissão na API. Entre em contato com o administrador do sistema.";
+      } else if (err?.response?.status === 400) {
+        errorMessage = "📝 **Requisição inválida**\n\nO contexto enviado é muito grande. Tente fazer uma pergunta mais específica ou focada em menos produtos.";
+      } else if (err?.response?.data?.detail) {
+        errorMessage = `❌ **Erro**: ${err.response.data.detail}`;
+      } else if (err instanceof Error) {
+        errorMessage = `❌ **Erro**: ${err.message}`;
+      }
+      
+      setAnswer(errorMessage);
     } finally {
        setIsLoading(false);
     }

@@ -69,16 +69,32 @@ def ask_ai_question(
         # --- 2. FORMATAÇÃO DOS DADOS PARA A IA ---
         print("[Insights] Formatando dados para o contexto da IA...")
         
+        # Limita a quantidade de dados para evitar exceder limites da API
+        # Prioriza produtos com estoque baixo ou crítico
+        produtos_ordenados = sorted(
+            produtos_atuais_db,
+            key=lambda p: (
+                0 if p.quantidade_em_estoque <= (p.estoque_minimo or 0) else 1,  # Críticos primeiro
+                -p.quantidade_em_estoque  # Menor estoque primeiro
+            )
+        )
+        
+        # Limita a 100 produtos (priorizando os críticos)
+        produtos_limitados = produtos_ordenados[:100]
+        
         produtos_atuais_formatado = [
             {
                 "nome": p.nome,
                 "codigo": p.codigo,
                 "estoque_atual": p.quantidade_em_estoque,
                 "estoque_minimo": p.estoque_minimo
-            } for p in produtos_atuais_db
+            } for p in produtos_limitados
         ]
         
         historico_top_vendas_formatado = [clean_sqlalchemy_object(h) for h in historico_top_vendas_db]
+        
+        # Limita movimentações recentes a 100 registros
+        movimentacoes_limitadas = movimentacoes_recentes_db[:100]
         
         movimentacoes_recentes_formatado = [
             {
@@ -88,8 +104,10 @@ def ask_ai_question(
                 "quantidade": mov.quantidade,
                 "usuario": mov.usuario.nome if mov.usuario else 'N/A'
             }
-            for mov in movimentacoes_recentes_db
+            for mov in movimentacoes_limitadas
         ]
+        
+        print(f" -> Dados limitados: {len(produtos_atuais_formatado)} produtos (de {len(produtos_atuais_db)}), {len(movimentacoes_recentes_formatado)} movimentações (de {len(movimentacoes_recentes_db)})")
 
         # Agrupa tudo em um único dicionário de contexto
         system_context_data = {
@@ -106,18 +124,44 @@ def ask_ai_question(
 
         # --- 3. CHAMADA AO SERVIÇO DE IA ---
         print("[Insights] Enviando contexto para o serviço de IA...")
-        answer = ai_service.generate_analysis_from_data(
-            user_question=request.question,
-            system_data=system_data_json_string
-        )
+        try:
+            answer = ai_service.generate_analysis_from_data(
+                user_question=request.question,
+                system_data=system_data_json_string
+            )
+            print("[Insights] Resposta da IA recebida com sucesso.")
+            return {"answer": answer}
+        except Exception as ai_error:
+            error_message = str(ai_error)
+            print(f"❌ Erro na chamada da IA: {error_message}")
+            
+            # Trata erros específicos da API
+            if "RATE_LIMIT_EXCEEDED" in error_message:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Limite de requisições da API excedido. Por favor, aguarde alguns minutos antes de tentar novamente."
+                )
+            elif "API_PERMISSION_DENIED" in error_message:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Problema de permissão na API. Entre em contato com o administrador do sistema."
+                )
+            elif "API_INVALID_REQUEST" in error_message:
+                raise HTTPException(
+                    status_code=400,
+                    detail="O contexto enviado é muito grande. Tente fazer uma pergunta mais específica."
+                )
+            else:
+                # Re-levanta a exceção para ser capturada pelo handler geral
+                raise
 
-        print("[Insights] Resposta da IA recebida com sucesso.")
-        return {"answer": answer}
-
+    except HTTPException:
+        # Re-levanta HTTPExceptions (já tratadas acima)
+        raise
     except Exception as e:
         print(f"❌ Erro grave no endpoint /insights/ask: {e}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Erro interno no servidor ao processar a análise de IA.")
+        raise HTTPException(status_code=500, detail=f"Erro interno no servidor ao processar a análise de IA: {str(e)}")
 
 
 # Novos endpoints para análise assertiva de estoque

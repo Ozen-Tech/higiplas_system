@@ -17,7 +17,7 @@ export default function MovimentacoesPendentesPage() {
   const [selectedMovimentacao, setSelectedMovimentacao] = useState<MovimentacaoPendente | null>(null);
   const [modalType, setModalType] = useState<'confirmar' | 'editar' | 'rejeitar' | null>(null);
 
-  const { movimentacoes, loading, carregarMovimentacoes } = useMovimentacoesPendentesAdmin(statusFilter);
+  const { movimentacoes, loading, carregarMovimentacoes } = useMovimentacoesPendentesAdmin(statusFilter === 'TODAS' ? undefined : statusFilter);
 
   const handleConfirmar = (movimentacao: MovimentacaoPendente) => {
     setSelectedMovimentacao(movimentacao);
@@ -63,7 +63,7 @@ export default function MovimentacoesPendentesPage() {
                 <SelectItem value="PENDENTE">Pendentes ({pendentes})</SelectItem>
                 <SelectItem value="CONFIRMADO">Confirmadas</SelectItem>
                 <SelectItem value="REJEITADO">Rejeitadas</SelectItem>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="TODAS">Todas</SelectItem>
               </SelectContent>
             </Select>
           </div>

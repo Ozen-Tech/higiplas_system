@@ -31,6 +31,8 @@ python-Levenshtein>=0.25.1
 
 # Inteligência Artificial
 google-generativeai>=0.8.3
+# Nova API do Gemini 3.0 (se disponível)
+# google-genai>=1.0.0  # Descomente quando o pacote estiver disponível
 
 # Migrações
 alembic>=1.14.0

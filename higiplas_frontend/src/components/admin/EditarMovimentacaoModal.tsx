@@ -61,7 +61,7 @@ export function EditarMovimentacaoModal({ movimentacao, onClose }: EditarMovimen
     }
 
     try {
-      const response = await apiService.get(`/produtos/buscar/?q=${encodeURIComponent(termo.trim())}`);
+      const response = await apiService.get(`/produtos/buscar?q=${encodeURIComponent(termo.trim())}`);
       const produtos = (response?.data || []).map((p: { id: number; nome: string; codigo: string; unidade_medida: string }) => ({
         id: p.id,
         nome: p.nome,
