@@ -14,7 +14,7 @@ export default function HistoricoMovimentacoesPage() {
   const router = useRouter();
   const { loading: loadingUser, error, isOperador } = useEntregador();
   const [mounted, setMounted] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('TODAS');
+  const [statusFilter, setStatusFilter] = useState<string>('CONFIRMADO');
   const { movimentacoes, loading: loadingMovimentacoes, carregarMovimentacoes } = useMovimentacoesPendentes(statusFilter === 'TODAS' ? undefined : statusFilter);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function HistoricoMovimentacoesPage() {
             Histórico de Movimentações
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Visualize todas as suas movimentações registradas
+            Visualize suas movimentações confirmadas (aprovadas pelo administrador)
           </p>
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>

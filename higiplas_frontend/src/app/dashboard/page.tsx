@@ -24,7 +24,9 @@ import {
   RefreshCw,
   Download,
   Plus,
-  BarChart3
+  BarChart3,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { apiService } from "@/services/apiService";
 import ReactMarkdown from 'react-markdown';
@@ -55,6 +57,7 @@ export default function DashboardPage() {
   const [aiInsight, setAiInsight] = useState<AIInsight>({ content: '', loading: false });
   const [filterStatus, setFilterStatus] = useState<'all' | 'critical' | 'low' | 'ok'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [aiInsightMinimized, setAiInsightMinimized] = useState(false);
 
   useEffect(() => {
     fetchProducts(true);
@@ -304,38 +307,55 @@ export default function DashboardPage() {
                     Insights da IA - Rozana
                   </CardTitle>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={fetchAIInsight}
-                  disabled={aiInsight.loading}
-                >
-                  <RefreshCw className={`h-4 w-4 ${aiInsight.loading ? 'animate-spin' : ''}`} />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchAIInsight}
+                    disabled={aiInsight.loading}
+                    title="Atualizar insights"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${aiInsight.loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAiInsightMinimized(!aiInsightMinimized)}
+                    title={aiInsightMinimized ? "Expandir" : "Minimizar"}
+                  >
+                    {aiInsightMinimized ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronUp className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
-              {aiInsight.loading ? (
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span>Analisando estoque...</span>
-                </div>
-              ) : aiInsight.content ? (
-                <div className="prose dark:prose-invert max-w-none prose-sm">
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0 text-gray-700 dark:text-gray-300">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                      strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-gray-100">{children}</strong>,
-                    }}
-                  >
-                    {aiInsight.content}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400">Clique em atualizar para ver insights</p>
-              )}
-            </CardContent>
+            {!aiInsightMinimized && (
+              <CardContent>
+                {aiInsight.loading ? (
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span>Analisando estoque...</span>
+                  </div>
+                ) : aiInsight.content ? (
+                  <div className="prose dark:prose-invert max-w-none prose-sm">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0 text-gray-700 dark:text-gray-300">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                        strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-gray-100">{children}</strong>,
+                      }}
+                    >
+                      {aiInsight.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400">Clique em atualizar para ver insights</p>
+                )}
+              </CardContent>
+            )}
           </Card>
 
           {/* Alertas Críticos */}
