@@ -1,20 +1,36 @@
 # /backend/app/services/ai_service.py
 
-from google import genai
+import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
 import json
 import os
 from pathlib import Path
 
-# Inicializa o cliente da API
-client = None
+# Inicializa a variável do modelo
+model = None
 
 # Tenta configurar a API ao iniciar o módulo
 try:
-    # Inicializa o cliente com a chave da API
-    client = genai.Client(api_key=settings.GOOGLE_API_KEY)
-    print("✅ Cliente de IA Gemini 3.0 inicializado com sucesso.")
+    # Configura a API com a chave
+    genai.configure(api_key=settings.GOOGLE_API_KEY)
+    
+    # Configuração de segurança para permitir respostas menos restritivas
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+    ]
+    
+    # Usa o modelo mais recente disponível (gemini-2.0-flash ou gemini-1.5-pro)
+    try:
+        model = genai.GenerativeModel('gemini-2.0-flash', safety_settings=safety_settings)
+        print("✅ Modelo de IA Gemini 2.0 Flash inicializado com sucesso.")
+    except Exception:
+        # Fallback para modelo anterior se o 2.0 não estiver disponível
+        model = genai.GenerativeModel('gemini-1.5-pro', safety_settings=safety_settings)
+        print("✅ Modelo de IA Gemini 1.5 Pro inicializado com sucesso.")
 
 except Exception as e:
     print(f"❌ Erro ao configurar a API do Gemini: {e}")
@@ -77,10 +93,10 @@ def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: 
     """
     Recebe uma pergunta do usuário e os dados do sistema, envia para a IA 
     com um prompt aprimorado e retorna a resposta.
-    Usa Gemini 3.0 Pro Preview como analista inteligente de estoque.
+    Usa Gemini como analista inteligente de estoque.
     """
-    if not client:
-        raise Exception("Erro: O cliente de IA não foi inicializado corretamente. Verifique a chave da API e a configuração do serviço no servidor.")
+    if not model:
+        raise Exception("Erro: O modelo de IA não foi inicializado corretamente. Verifique a chave da API e a configuração do serviço no servidor.")
     
     # Carrega dados históricos de vendas automaticamente
     historical_data = load_historical_sales_data()
@@ -150,14 +166,16 @@ EXEMPLOS DE ANÁLISES ASSERTIVAS:
 RESPONDA DE FORMA ASSERTIVA E ACIONÁVEL COMO UM ANALISTA DE ESTOQUE EXPERIENTE:"""
      
     try:
-        print("[AI Service] Gerando análise com Gemini 3.0 Pro Preview...")
-        response = client.models.generate_content(
-            model="gemini-3-pro-preview",
-            contents=prompt_template
-        )
+        print("[AI Service] Gerando análise com Gemini...")
+        response = model.generate_content(prompt_template)
         
-        print("[AI Service] Resposta da IA recebida.")
-        return response.text
+        # Bloco de tratamento de erro para respostas bloqueadas
+        try:
+            print("[AI Service] Resposta da IA recebida.")
+            return response.text
+        except ValueError:
+            print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
+            return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
 
     except Exception as e:
         error_message = str(e)
@@ -179,10 +197,10 @@ RESPONDA DE FORMA ASSERTIVA E ACIONÁVEL COMO UM ANALISTA DE ESTOQUE EXPERIENTE:
 
 def extract_products_from_invoice_image(image_bytes: bytes) -> str:
     """
-    Usa o Gemini 3.0 Pro Preview para extrair uma lista de produtos de uma imagem de nota fiscal.
+    Usa o Gemini para extrair uma lista de produtos de uma imagem de nota fiscal.
     """
-    if not client:
-        raise Exception("Cliente de IA não inicializado.")
+    if not model:
+        raise Exception("Modelo de IA não inicializado.")
 
     prompt = """
     Analise a imagem desta Nota Fiscal (DANFE) e extraia APENAS a tabela de produtos.
@@ -194,14 +212,8 @@ def extract_products_from_invoice_image(image_bytes: bytes) -> str:
     """
     
     try:
-        # Para imagens, ainda precisamos usar a API antiga ou adaptar para a nova API
-        # Por enquanto, vamos manter compatibilidade com a API antiga para visão
-        import google.generativeai as genai_legacy
-        genai_legacy.configure(api_key=settings.GOOGLE_API_KEY)
-        model_vision = genai_legacy.GenerativeModel('gemini-2.0-flash')
-        
         image_part = {"mime_type": "image/jpeg", "data": image_bytes}
-        response = model_vision.generate_content([prompt, image_part])
+        response = model.generate_content([prompt, image_part])
         return response.text
     except Exception as e:
         print(f"Erro na API Gemini Vision: {e}")
