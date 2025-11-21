@@ -78,6 +78,32 @@ def read_low_stock_produtos(
     
     return produtos_baixo_estoque
 
+@router.get("/buscar", response_model=List[schemas_produto.Produto], summary="Buscar produtos por termo")
+def buscar_produtos(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Busca produtos por nome ou código.
+    Retorna produtos que contenham o termo de busca no nome ou código.
+    IMPORTANTE: Esta rota deve estar ANTES da rota /{produto_id} para evitar conflito.
+    """
+    if not q or len(q.strip()) < 2:
+        return []
+    
+    termo = q.strip().upper()
+    
+    produtos = db.query(models.Produto).filter(
+        models.Produto.empresa_id == current_user.empresa_id,
+        or_(
+            func.upper(models.Produto.nome).contains(termo),
+            func.upper(models.Produto.codigo).contains(termo)
+        )
+    ).limit(50).all()
+    
+    return produtos
+
 @router.get("/download/excel", response_description="Retorna um arquivo Excel com todos os produtos", summary="Exportar produtos para Excel")
 def download_produtos_excel(
     db: Session = Depends(get_db),
@@ -137,31 +163,6 @@ def download_produtos_excel(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ocorreu um erro no servidor ao gerar o arquivo Excel: {str(e)}"
         )
-
-@router.get("/buscar", response_model=List[schemas_produto.Produto], summary="Buscar produtos por termo")
-def buscar_produtos(
-    q: str,
-    db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(get_current_user)
-):
-    """
-    Busca produtos por nome ou código.
-    Retorna produtos que contenham o termo de busca no nome ou código.
-    """
-    if not q or len(q.strip()) < 2:
-        return []
-    
-    termo = q.strip().upper()
-    
-    produtos = db.query(models.Produto).filter(
-        models.Produto.empresa_id == current_user.empresa_id,
-        or_(
-            func.upper(models.Produto.nome).contains(termo),
-            func.upper(models.Produto.codigo).contains(termo)
-        )
-    ).limit(50).all()
-    
-    return produtos
 
 @router.get("/{produto_id}", response_model=schemas_produto.Produto, summary="Buscar um produto por ID")
 def read_one_produto(
