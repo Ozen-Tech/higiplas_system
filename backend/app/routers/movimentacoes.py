@@ -490,15 +490,16 @@ async def confirmar_movimentacoes(
                 continue
             
             # Calcular nova quantidade
-            quantidade_antes = produto.quantidade_em_estoque
+            estoque_atual = produto.quantidade_em_estoque or 0
+            quantidade_antes = estoque_atual
             if tipo_movimentacao == 'ENTRADA':
-                nova_quantidade = produto.quantidade_em_estoque + quantidade
+                nova_quantidade = estoque_atual + quantidade
             else:  # SAIDA
-                nova_quantidade = produto.quantidade_em_estoque - quantidade
+                nova_quantidade = estoque_atual - quantidade
                 if nova_quantidade < 0:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {produto.quantidade_em_estoque}, Quantidade solicitada: {quantidade}"
+                        detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {estoque_atual}, Quantidade solicitada: {quantidade}"
                     )
 
             # Criar movimentação
