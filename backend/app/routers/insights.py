@@ -387,12 +387,12 @@ def ask_ai_question(
         # --- 3. CHAMADA AO SERVIÇO DE IA ---
         print("[Insights] Enviando contexto para o serviço de IA...")
         try:
-        answer = ai_service.generate_analysis_from_data(
-            user_question=request.question,
-            system_data=system_data_json_string
-        )
-        print("[Insights] Resposta da IA recebida com sucesso.")
-        return {"answer": answer}
+            answer = ai_service.generate_analysis_from_data(
+                user_question=request.question,
+                system_data=system_data_json_string
+            )
+            print("[Insights] Resposta da IA recebida com sucesso.")
+            return {"answer": answer}
         except Exception as ai_error:
             error_message = str(ai_error)
             print(f"❌ Erro na chamada da IA: {error_message}")

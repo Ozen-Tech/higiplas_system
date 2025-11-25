@@ -225,18 +225,18 @@ RESPONDA DE FORMA ASSERTIVA E ACIONÁVEL COMO UM ANALISTA DE ESTOQUE EXPERIENTE:
     delay_seconds = 2
 
     while attempt < max_attempts:
-    try:
-            print("[AI Service] Gerando análise com Gemini...")
-        response = model.generate_content(prompt_template)
-        
         try:
-            print("[AI Service] Resposta da IA recebida.")
-            return response.text
-        except ValueError:
-            print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
-            return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
+            print("[AI Service] Gerando análise com Gemini...")
+            response = model.generate_content(prompt_template)
+            
+            try:
+                print("[AI Service] Resposta da IA recebida.")
+                return response.text
+            except ValueError:
+                print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
+                return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
 
-    except Exception as e:
+        except Exception as e:
             error_message = str(e)
             print(f"❌ Erro na comunicação com a API do Gemini: {error_message}")
 
