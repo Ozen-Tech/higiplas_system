@@ -3,7 +3,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, status
 from typing import Optional, Literal, List, Dict
 from datetime import datetime
-import json
 
 from ..db import models
 from ..core.logger import stock_operations_logger
@@ -409,7 +408,7 @@ class StockService:
                 'motivo_movimentacao': movimentacao.motivo_movimentacao,
                 'observacao': movimentacao.observacao
             }
-            movimentacao.dados_antes_edicao = json.dumps(dados_antes)
+            movimentacao.dados_antes_edicao = dados_antes
             
             # Aplicar edições
             produto_id_final = produto_id if produto_id is not None else movimentacao.produto_id
@@ -478,7 +477,7 @@ class StockService:
                 'motivo_movimentacao': movimentacao.motivo_movimentacao,
                 'observacao': movimentacao.observacao
             }
-            movimentacao.dados_depois_edicao = json.dumps(dados_depois)
+            movimentacao.dados_depois_edicao = dados_depois
             
             db.commit()
             db.refresh(produto)
@@ -541,7 +540,7 @@ class StockService:
                 'motivo_movimentacao': movimentacao.motivo_movimentacao,
                 'observacao': movimentacao.observacao
             }
-            movimentacao.dados_antes_edicao = json.dumps(dados_antes)
+            movimentacao.dados_antes_edicao = dados_antes
             
             # Aplicar edições (sem alterar o estoque)
             if produto_id is not None:
@@ -579,7 +578,7 @@ class StockService:
                 'motivo_movimentacao': movimentacao.motivo_movimentacao,
                 'observacao': movimentacao.observacao
             }
-            movimentacao.dados_depois_edicao = json.dumps(dados_depois)
+            movimentacao.dados_depois_edicao = dados_depois
             
             db.commit()
             db.refresh(movimentacao)

@@ -1,6 +1,7 @@
 # backend/app/db/models.py
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Date, Enum, Index
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .connection import Base
@@ -81,8 +82,8 @@ class MovimentacaoEstoque(Base):
     motivo_rejeicao = Column(String, nullable=True)
     motivo_movimentacao = Column(Enum('CARREGAMENTO', 'DEVOLUCAO', 'AJUSTE_FISICO', 'PERDA_AVARIA', 'TRANSFERENCIA_INTERNA', name='motivo_movimentacao_enum'), nullable=True)
     observacao_motivo = Column(String, nullable=True)
-    dados_antes_edicao = Column(String, nullable=True)  # JSON como string
-    dados_depois_edicao = Column(String, nullable=True)  # JSON como string
+    dados_antes_edicao = Column(JSON, nullable=True)
+    dados_depois_edicao = Column(JSON, nullable=True)
     
     produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
