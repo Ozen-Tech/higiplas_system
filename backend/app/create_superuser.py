@@ -13,7 +13,7 @@ from app.db.connection import SessionLocal
 from app.db import models
 from app.core.config import settings
 from app.core.hashing import get_password_hash
-from app.schemas.usuario import PerfilUsuario
+from app.schemas.usuario import PerfilUsuario 
 
 # Configurando um logger para ver as saídas no Render
 logging.basicConfig(level=logging.INFO)
@@ -44,7 +44,7 @@ def create_initial_superuser() -> None:
 
     # Cria uma sessão com o banco de dados que será fechada no final
     db: Session = SessionLocal()
-
+    
     try:
         # 1. Verifica se o superusuário já existe
         user = (
@@ -52,7 +52,7 @@ def create_initial_superuser() -> None:
             .filter(models.Usuario.email == settings.SUPERUSER_EMAIL)
             .first()
         )
-
+        
         if user:
             logger.info(
                 f"Superusuário com o e-mail '{settings.SUPERUSER_EMAIL}' "
@@ -79,10 +79,10 @@ def create_initial_superuser() -> None:
             db.commit()
             db.refresh(empresa)
             logger.info(f"Empresa '{default_company_name}' criada com ID: {empresa.id}.")
-
+        
         # 3. Cria o objeto do superusuário
         hashed_password = get_password_hash(settings.SUPERUSER_PASSWORD)
-
+        
         superuser = models.Usuario(
             nome="Admin Higiplas",
             email=settings.SUPERUSER_EMAIL,
@@ -91,11 +91,11 @@ def create_initial_superuser() -> None:
             is_active=True,
             empresa_id=empresa.id,
         )
-
+        
         db.add(superuser)
         db.commit()
         db.refresh(superuser)
-
+        
         logger.info(
             f"Superusuário criado com sucesso! ID: {superuser.id}, "
             f"Email: {superuser.email}"

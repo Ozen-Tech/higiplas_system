@@ -162,9 +162,9 @@ export default function DashboardPage() {
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(p =>
-      p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.codigo.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
     if (filterStatus === 'critical') {
       filtered = filtered.filter(p => p.quantidade_em_estoque <= (p.estoque_minimo || 0));
@@ -185,9 +185,9 @@ export default function DashboardPage() {
       <Header>
         <div className="flex items-center justify-between w-full">
           <div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               Estoque Inteligente
-            </h1>
+        </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Visão completa e insights em tempo real
             </p>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
             <Card className="border-l-4 border-l-purple-500 hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
+            <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Valor Total</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                       {stats.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -425,16 +425,16 @@ export default function DashboardPage() {
                     >
                       Atenção ({stats.low})
                     </Button>
-                  </div>
-                  
+            </div>
+
                   {/* Busca */}
                   <div className="relative flex-1 sm:flex-initial">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <input
-                      type="text"
+                        type="text"
                       placeholder="Buscar produto..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Produto
                   </Button>
-                </div>
+                  </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -471,15 +471,15 @@ export default function DashboardPage() {
                       </Button>
                     )}
                   </div>
-                  <ProductTable
-                    products={filteredProducts}
-                    onSave={updateProduct}
-                    onRemove={removeProduct}
+                <ProductTable
+                  products={filteredProducts}
+                  onSave={updateProduct}
+                  onRemove={removeProduct}
                     onMoveStock={(product) => { 
                       setSelectedProduct(product); 
                       setIsMovementModalOpen(true); 
                     }}
-                  />
+                />
                 </>
               )}
             </CardContent>
@@ -516,7 +516,7 @@ export default function DashboardPage() {
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Sugestões de Compra
-                </Button>
+                  </Button>
               </div>
             </CardContent>
           </Card>
@@ -526,15 +526,15 @@ export default function DashboardPage() {
       {/* Modais */}
       {selectedProduct && (
         <StockMovementModal 
-          isOpen={isMovementModalOpen} 
-          onClose={() => setIsMovementModalOpen(false)} 
+        isOpen={isMovementModalOpen} 
+        onClose={() => setIsMovementModalOpen(false)} 
           onSubmit={(tipo, qtd, obs) => moveStock(selectedProduct.id, tipo, qtd, obs).then(() => {
             setIsMovementModalOpen(false);
             fetchProducts(true);
             fetchKPIs();
             fetchAIInsight();
           })} 
-          productName={selectedProduct.nome}
+        productName={selectedProduct.nome}
         />
       )}
       <CreateProductModal 

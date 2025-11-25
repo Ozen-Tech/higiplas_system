@@ -55,7 +55,7 @@ function InsightsPageContent() {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-
+    
     try {
       const response = await apiService.post('/insights/ask', { question: questionToSend });
       const answer = response?.data?.answer || 'Resposta não disponível';
@@ -96,7 +96,7 @@ function InsightsPageContent() {
 
       setMessages(prev => [...prev, errorMsg]);
     } finally {
-      setIsLoading(false);
+       setIsLoading(false);
     }
   };
 
@@ -252,16 +252,16 @@ function InsightsPageContent() {
                         minute: '2-digit',
                       })}
                     </span>
-                  </div>
-
+           </div>
+           
                   {message.role === 'user' && (
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center">
                         <User className="h-5 w-5 text-white" />
                       </div>
                     </div>
-                  )}
-                </div>
+                )}
+             </div>
               ))}
 
               {isLoading && (

@@ -12,7 +12,7 @@ from app.db import models
 from app.dependencies import get_current_user
 from app.services import ai_service
 from ..crud import produto as crud_produto
-from ..crud import movimentacao_estoque as crud_movimentacao
+from ..crud import movimentacao_estoque as crud_movimentacao 
 from ..crud import venda_historica as crud_historico
 from ..crud import analise_estoque as crud_analise
 from ..crud import cliente_v2 as crud_cliente
@@ -95,8 +95,8 @@ def ask_ai_question(
 
         # c) Movimentações Recentes (últimos 30 dias)
         movimentacoes_recentes_db = crud_movimentacao.get_recent_movimentacoes(
-            db=db,
-            empresa_id=current_user.empresa_id,
+            db=db, 
+            empresa_id=current_user.empresa_id, 
             days=30
         )
 
@@ -318,7 +318,7 @@ def ask_ai_question(
                 "empresa_vinculada": c.empresa_vinculada or "N/A"
             } for c in clientes_db[:50]
         ]
-        
+
         # Formata orçamentos recentes
         orcamentos_formatado = [
             {
@@ -387,12 +387,12 @@ def ask_ai_question(
         # --- 3. CHAMADA AO SERVIÇO DE IA ---
         print("[Insights] Enviando contexto para o serviço de IA...")
         try:
-            answer = ai_service.generate_analysis_from_data(
-                user_question=request.question,
-                system_data=system_data_json_string
-            )
-            print("[Insights] Resposta da IA recebida com sucesso.")
-            return {"answer": answer}
+        answer = ai_service.generate_analysis_from_data(
+            user_question=request.question,
+            system_data=system_data_json_string
+        )
+        print("[Insights] Resposta da IA recebida com sucesso.")
+        return {"answer": answer}
         except Exception as ai_error:
             error_message = str(ai_error)
             print(f"❌ Erro na chamada da IA: {error_message}")

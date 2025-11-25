@@ -42,7 +42,7 @@ def authenticate_user(db: Session, email: str, password: str) -> models.Usuario 
         return None
     
     try:
-        if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.hashed_password):
             return None
     except Exception as e:
         # Log do erro mas não expõe detalhes

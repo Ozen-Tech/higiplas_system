@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/dashboard/Header';
 import { apiService } from '@/services/apiService';
-import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, EyeIcon, ArrowUpTrayIcon, CogIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, EyeIcon, ArrowUpTrayIcon, CogIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/Button';
 import { useSearchParams } from 'next/navigation';
 
@@ -24,6 +24,7 @@ interface ProdutoPreview {
   encontrado: boolean;
   produto_id?: number;
   nome_sistema?: string;
+  codigo_sistema?: string;
   estoque_atual?: number;
   estoque_projetado?: number;
   produtos_similares?: ProdutoSimilar[];
@@ -51,7 +52,16 @@ interface ProcessingResult {
   movimentacoes_criadas: number;
   produtos_atualizados: string[];
   detalhes: unknown[];
+  codigos_sincronizados?: {
+    produto_id: number;
+    produto_nome: string;
+    codigo_anterior?: string | null;
+    codigo_novo: string;
+  }[];
 }
+
+type WizardStep = 'UPLOAD' | 'ASSOCIACAO' | 'REVISAO';
+type ProdutoFiltro = 'TODOS' | 'PRONTOS' | 'PENDENTES' | 'ALERTAS';
 
 export default function MovimentacoesPage() {
   const [tipoMovimentacao, setTipoMovimentacao] = useState<'ENTRADA' | 'SAIDA'>('ENTRADA');
@@ -60,12 +70,14 @@ export default function MovimentacoesPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [wizardStep, setWizardStep] = useState<WizardStep>('UPLOAD');
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [selectedSimilarProducts, setSelectedSimilarProducts] = useState<{[key: number]: number}>({});
   const [searchTerms, setSearchTerms] = useState<{[key: number]: string}>({});
   const [searchResults, setSearchResults] = useState<{[key: number]: ProdutoSimilar[]}>({});
   const [isSearching, setIsSearching] = useState<{[key: number]: boolean}>({});
+  const [quantidadesEditadas, setQuantidadesEditadas] = useState<{[key: number]: number}>({});
+  const [filterStatus, setFilterStatus] = useState<ProdutoFiltro>('TODOS');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const searchParams = useSearchParams();
@@ -76,6 +88,15 @@ export default function MovimentacoesPage() {
       setTipoMovimentacao(tipo);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!previewData) {
+      setWizardStep('UPLOAD');
+      setSelectedProducts([]);
+      setQuantidadesEditadas({});
+      setFilterStatus('TODOS');
+    }
+  }, [previewData]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -106,12 +127,18 @@ export default function MovimentacoesPage() {
       const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
 
       if (response && response.data.sucesso) {
-        setPreviewData(response.data);
-        setSelectedProducts([]);
+        const preview = response.data as PreviewResult;
+        setPreviewData(preview);
+        const preSelecionados = preview.produtos_encontrados
+          .map((produto, index) => (produto.produto_id ? index : null))
+          .filter((index): index is number => index !== null);
+        setSelectedProducts(preSelecionados);
         setSelectedSimilarProducts({});
         setSearchTerms({});
         setSearchResults({});
-        setShowModal(true);
+        setQuantidadesEditadas({});
+        setWizardStep('ASSOCIACAO');
+        setFilterStatus('TODOS');
       } else {
         setError(response?.data?.mensagem || 'Erro ao processar o arquivo PDF.');
       }
@@ -211,14 +238,35 @@ export default function MovimentacoesPage() {
     setError(null);
 
     try {
-      const produtosSelecionados = selectedProducts.map(index => {
-        const produto = previewData.produtos_encontrados[index];
-        return {
-          produto_id: produto.produto_id,
-          quantidade: produto.quantidade
-        };
-      });
+      type ProdutoConfirmado = {
+        produto_id: number;
+        quantidade: number;
+        codigo_nf?: string;
+        descricao_nf?: string;
+      };
       
+      const produtosSelecionados = selectedProducts
+        .map(index => {
+          const produto = previewData.produtos_encontrados[index];
+          if (!produto?.produto_id) {
+            return null;
+          }
+          const produtoConfirmado: ProdutoConfirmado = {
+            produto_id: produto.produto_id,
+            quantidade: quantidadesEditadas[index] ?? produto.quantidade,
+            codigo_nf: produto.codigo,
+            descricao_nf: produto.descricao_pdf
+          };
+          return produtoConfirmado;
+        })
+        .filter((item): item is ProdutoConfirmado => item !== null);
+      
+      if (produtosSelecionados.length === 0) {
+        setError('Selecione pelo menos um produto válido para processar.');
+        setIsConfirming(false);
+        return;
+      }
+
       const dados = {
         tipo_movimentacao: previewData.tipo_movimentacao,
         produtos_confirmados: produtosSelecionados,
@@ -230,9 +278,10 @@ export default function MovimentacoesPage() {
 
       if (response && response.data.sucesso) {
         setResult(response.data);
-        setShowModal(false);
         setPreviewData(null);
         setSelectedProducts([]);
+        setQuantidadesEditadas({});
+        setWizardStep('UPLOAD');
         setArquivo(null);
         const fileInput = document.getElementById('arquivo') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
@@ -253,6 +302,10 @@ export default function MovimentacoesPage() {
   };
 
   const toggleProductSelection = (index: number) => {
+    const produto = previewData?.produtos_encontrados[index];
+    if (!produto?.produto_id) {
+      return;
+    }
     setSelectedProducts(prev => 
       prev.includes(index) 
         ? prev.filter(i => i !== index)
@@ -262,7 +315,10 @@ export default function MovimentacoesPage() {
 
   const selectAllProducts = () => {
     if (previewData?.produtos_encontrados) {
-      setSelectedProducts(previewData.produtos_encontrados.map((_, index) => index));
+      const selecionaveis = previewData.produtos_encontrados
+        .map((produto, index) => (produto.produto_id ? index : null))
+        .filter((index): index is number => index !== null);
+      setSelectedProducts(selecionaveis);
     }
   };
 
@@ -335,14 +391,21 @@ export default function MovimentacoesPage() {
           ...produtoAssociado,
           encontrado: true,
           produto_id: produtoId,
-          nome_sistema: response.data.produto_associado?.nome || 'Produto Associado'
+          nome_sistema: response.data.produto?.nome || response.data.produto_associado?.nome || 'Produto Associado',
+          codigo_sistema: response.data.produto?.codigo || response.data.produto_associado?.codigo,
+          estoque_atual: response.data.produto?.estoque_atual ?? produtoAssociado.estoque_atual,
+          estoque_projetado: response.data.produto?.estoque_apos_movimentacao ?? produtoAssociado.estoque_projetado
         }];
 
-        setPreviewData({
+        const previewAtualizado = {
           ...previewData,
           produtos_encontrados: novosProdutosEncontrados,
           produtos_nao_encontrados: novosProdutosNaoEncontrados
-        });
+        };
+
+        setPreviewData(previewAtualizado);
+        const novoIndex = previewAtualizado.produtos_encontrados.length - 1;
+        setSelectedProducts(prev => [...prev, novoIndex]);
 
         // Limpar seleção de produto similar e busca
         const novosSelectedSimilar = { ...selectedSimilarProducts };
@@ -369,6 +432,103 @@ export default function MovimentacoesPage() {
       setError(errorMessage);
     }
   };
+
+  const produtosComInsights = useMemo(() => {
+    if (!previewData) return [];
+    return previewData.produtos_encontrados.map((produto, index) => {
+      const quantidadePlanejada = quantidadesEditadas[index] ?? produto.quantidade;
+      const estoqueAtual =
+        typeof produto.estoque_atual === 'number' ? produto.estoque_atual : Number(produto.estoque_atual);
+      const estoqueInsuficiente =
+        previewData.tipo_movimentacao === 'SAIDA' &&
+        typeof estoqueAtual === 'number' &&
+        !Number.isNaN(estoqueAtual) &&
+        estoqueAtual < quantidadePlanejada;
+      const divergenciaCodigo =
+        Boolean(produto.codigo && produto.codigo_sistema && produto.codigo_sistema !== produto.codigo);
+      const pendenteAssociacao = !produto.produto_id;
+      let status: ProdutoFiltro = 'PRONTOS';
+      if (estoqueInsuficiente || divergenciaCodigo) {
+        status = 'ALERTAS';
+      } else if (pendenteAssociacao) {
+        status = 'PENDENTES';
+      }
+      return {
+        ...produto,
+        index,
+        quantidadePlanejada,
+        estoqueInsuficiente,
+        divergenciaCodigo,
+        pendenteAssociacao,
+        status
+      };
+    });
+  }, [previewData, quantidadesEditadas]);
+
+  const produtosFiltrados = useMemo(() => {
+    if (filterStatus === 'TODOS') {
+      return produtosComInsights;
+    }
+    return produtosComInsights.filter(produto => produto.status === filterStatus);
+  }, [produtosComInsights, filterStatus]);
+
+  const alertasCriticos = useMemo(() => produtosComInsights.filter(produto => produto.status === 'ALERTAS'), [produtosComInsights]);
+
+  const resumoKPIs = useMemo(() => {
+    return {
+      encontrados: previewData?.produtos_encontrados.length ?? 0,
+      pendentes: produtosComInsights.filter(p => p.status === 'PENDENTES').length,
+      alertas: alertasCriticos.length,
+      totalPdf: previewData?.total_produtos_pdf ?? 0
+    };
+  }, [previewData, produtosComInsights, alertasCriticos]);
+
+  const quantidadeSelecionavel = produtosComInsights.filter(produto => !produto.pendenteAssociacao).length;
+  const podeAvancar = quantidadeSelecionavel > 0;
+  const valorTotalSelecionado = selectedProducts.reduce((total, index) => {
+    const produto = produtosComInsights.find(item => item.index === index);
+    if (!produto) return total;
+    const valorLinha = (produto.valor_unitario || 0) * produto.quantidadePlanejada;
+    return total + valorLinha;
+  }, 0);
+
+  const handleQuantidadeChange = (index: number, value: string) => {
+    setQuantidadesEditadas(prev => {
+      if (value === '') {
+        const novoEstado = { ...prev };
+        delete novoEstado[index];
+        return novoEstado;
+      }
+      const parsed = Number(value);
+      if (Number.isNaN(parsed) || parsed <= 0) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [index]: parsed
+      };
+    });
+  };
+
+  const handleAvancarParaRevisao = () => {
+    if (!podeAvancar) {
+      setError('Associe pelo menos um produto ao estoque antes de avançar.');
+      return;
+    }
+    setWizardStep('REVISAO');
+  };
+
+  const handleVoltarParaAssociacao = () => {
+    setWizardStep('ASSOCIACAO');
+  };
+
+  const wizardSequence: WizardStep[] = ['UPLOAD', 'ASSOCIACAO', 'REVISAO'];
+  const wizardCopy: Record<WizardStep, { title: string; description: string }> = {
+    UPLOAD: { title: 'Upload', description: 'PDF recebido e analisado' },
+    ASSOCIACAO: { title: 'Associação', description: 'Valide correspondências e conclua pendentes' },
+    REVISAO: { title: 'Revisão', description: 'Selecione e confirme as baixas' }
+  };
+  const currentStepIndex = wizardSequence.indexOf(wizardStep);
 
   return (
     <>
@@ -537,564 +697,302 @@ export default function MovimentacoesPage() {
         )}
       </div>
 
-      {/* Modal de Preview */}
-      {showModal && previewData && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
-            {/* Header do Modal */}
-            <div className="flex items-center justify-between p-6 border-b dark:border-gray-700 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                  <DocumentTextIcon className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    Preview da Nota Fiscal
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                      previewData.tipo_movimentacao === 'ENTRADA' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                    }`}>
-                      {previewData.tipo_movimentacao}
-                    </span>
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1">
-                      📄 {previewData.arquivo}
-                    </span>
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-white/80 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 hover:scale-105 group"
-              >
-                <XMarkIcon className="h-6 w-6 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
-              </button>
-            </div>
 
-            {/* Informações da Nota Fiscal */}
-            <div className="p-6 border-b dark:border-gray-700 bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-blue-900/10 dark:to-indigo-900/10">
-              <div className="flex items-center mb-6">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg mr-3">
-                  <DocumentTextIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Informações da Nota Fiscal</h4>
+      {previewData && (
+        <section className="max-w-6xl mx-auto px-6 mt-10 mb-16">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl p-8 space-y-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Fluxo guiado da nota</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.nota_fiscal || 'Nota sem número'}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{previewData.cliente || previewData.fornecedor || 'Origem não identificada'}</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {previewData.nota_fiscal && (
-                  <div className="bg-white/80 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm hover:shadow-md transition-all duration-200">
-                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">📋 Nota Fiscal</div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{previewData.nota_fiscal}</div>
-                  </div>
-                )}
-                {previewData.data_emissao && (
-                  <div className="bg-white/80 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm hover:shadow-md transition-all duration-200">
-                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">📅 Data Emissão</div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{previewData.data_emissao}</div>
-                  </div>
-                )}
-                {(previewData.cliente || previewData.fornecedor) && (
-                  <div className="bg-white/80 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm hover:shadow-md transition-all duration-200">
-                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                      🏢 {previewData.tipo_movimentacao === 'ENTRADA' ? 'Fornecedor' : 'Cliente'}
-                    </div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate" title={previewData.fornecedor || previewData.cliente}>
-                      {previewData.fornecedor || previewData.cliente}
-                    </div>
-                  </div>
-                )}
-                {previewData.cnpj_fornecedor && (
-                  <div className="bg-white/80 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600 backdrop-blur-sm hover:shadow-md transition-all duration-200">
-                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">🆔 CNPJ</div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100 font-mono">{previewData.cnpj_fornecedor}</div>
-                  </div>
-                )}
-                {previewData.valor_total && (
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 p-4 rounded-xl border border-green-200 dark:border-green-700 hover:shadow-md transition-all duration-200">
-                    <div className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2">💰 Valor Total</div>
-                    <div className="text-xl font-bold text-green-700 dark:text-green-300">R$ {previewData.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                  </div>
-                )}
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${previewData.tipo_movimentacao === 'ENTRADA' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}`}>
+                  {previewData.tipo_movimentacao}
+                </span>
+                <Button variant="secondary" className="text-sm" onClick={() => setPreviewData(null)}>Descartar análise</Button>
               </div>
             </div>
 
-            {/* Conteúdo do Modal */}
-            <div className="flex-1 overflow-hidden flex flex-col">
-              {/* Resumo Aprimorado */}
-              <div className="p-6 border-b dark:border-gray-700 bg-gradient-to-r from-gray-50/50 to-blue-50/50 dark:from-gray-900/50 dark:to-blue-900/20">
-                <div className="flex items-center mb-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg mr-3">
-                    <CogIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="grid gap-4 md:grid-cols-3">
+              {wizardSequence.map((step, index) => {
+                const meta = wizardCopy[step];
+                const isDone = index < currentStepIndex;
+                const isActive = step === wizardStep;
+                return (
+                  <div
+                    key={step}
+                    className={`rounded-2xl border p-4 transition ${isDone ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : isActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}`}
+                  >
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Etapa {index + 1}</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{meta.title}</div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{meta.description}</p>
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Resumo dos Produtos</h4>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 p-5 rounded-2xl border border-green-200 dark:border-green-700 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{previewData.produtos_encontrados.length}</div>
-                        <div className="text-sm font-semibold text-green-700 dark:text-green-300">✅ Encontrados</div>
-                      </div>
-                      <div className="p-2 bg-green-200 dark:bg-green-800 rounded-xl">
-                        <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30 p-5 rounded-2xl border border-red-200 dark:border-red-700 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-1">{previewData.produtos_nao_encontrados.length}</div>
-                        <div className="text-sm font-semibold text-red-700 dark:text-red-300">❌ Não Encontrados</div>
-                      </div>
-                      <div className="p-2 bg-red-200 dark:bg-red-800 rounded-xl">
-                        <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-2xl border border-blue-200 dark:border-blue-700 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">{selectedProducts.length}</div>
-                        <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">🔵 Selecionados</div>
-                      </div>
-                      <div className="p-2 bg-blue-200 dark:bg-blue-800 rounded-xl">
-                        <CogIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 p-5 rounded-2xl border border-purple-200 dark:border-purple-700 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">{previewData.total_produtos_pdf}</div>
-                        <div className="text-sm font-semibold text-purple-700 dark:text-purple-300">📄 Total no PDF</div>
-                      </div>
-                      <div className="p-2 bg-purple-200 dark:bg-purple-800 rounded-xl">
-                        <DocumentTextIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Controles e Lista de Produtos */}
-              <div className="flex-1 overflow-y-auto p-6">
-
-                {/* Controles de Seleção Aprimorados */}
-                {previewData.produtos_encontrados.length > 0 && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                        <CogIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="grid gap-8 lg:grid-cols-[2fr,1fr]">
+              <div className="space-y-6">
+                {wizardStep === 'ASSOCIACAO' ? (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4">
+                        <p className="text-xs text-green-600 dark:text-green-300 uppercase">Encontrados</p>
+                        <p className="text-3xl font-bold text-green-700 dark:text-green-200">{resumoKPIs.encontrados}</p>
                       </div>
-                      <div>
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">Produtos para Processar</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 rounded-full text-sm font-semibold">
-                            {selectedProducts.length} selecionados
-                          </span>
-                          <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
-                            de {previewData.produtos_encontrados.length} disponíveis
-                          </span>
+                      <div className="rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+                        <p className="text-xs text-amber-600 dark:text-amber-300 uppercase">Pendentes</p>
+                        <p className="text-3xl font-bold text-amber-700 dark:text-amber-200">{resumoKPIs.pendentes + previewData.produtos_nao_encontrados.length}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Produtos identificados</h3>
+                        <span className="text-sm text-gray-500">Revise antes de seguir</span>
+                      </div>
+                      <div className="space-y-3">
+                        {produtosComInsights.length === 0 && (
+                          <div className="p-4 rounded-2xl border border-dashed text-sm text-gray-500 dark:text-gray-400">Nenhum produto associado até o momento.</div>
+                        )}
+                        {produtosComInsights.map(produto => (
+                          <div key={produto.index} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm text-gray-500">Código NF: <span className="font-mono">{produto.codigo || '—'}</span></p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{produto.nome_sistema || produto.descricao_pdf}</p>
+                                <p className="text-xs text-gray-500">Qty: {produto.quantidade}</p>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${produto.status === 'ALERTAS' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : produto.status === 'PENDENTES' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}>
+                                {produto.status === 'ALERTAS' ? 'Alerta' : produto.status === 'PENDENTES' ? 'Pendente' : 'Pronto'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Produtos sem correspondência</h3>
+                        <span className="text-sm text-gray-500">Associe itens antes de avançar</span>
+                      </div>
+                      {previewData.produtos_nao_encontrados.length === 0 ? (
+                        <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm">Todos os itens foram associados com sucesso.</div>
+                      ) : (
+                        <div className="space-y-4">
+                          {previewData.produtos_nao_encontrados.map((produto, index) => (
+                            <div key={`pendente-${index}`} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-4">
+                              <div className="flex flex-col gap-1">
+                                <p className="text-xs text-gray-500">Código NF: {produto.codigo}</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{produto.descricao_pdf}</p>
+                                <p className="text-xs text-gray-500">Quantidade: {produto.quantidade}</p>
+                              </div>
+                              <div className="flex flex-col gap-3 sm:flex-row">
+                                <input
+                                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent px-3 py-2 text-sm"
+                                  placeholder="Buscar produto similar..."
+                                  value={searchTerms[index] ?? produto.descricao_pdf}
+                                  onChange={(event) => setSearchTerms(prev => ({ ...prev, [index]: event.target.value }))}
+                                  onBlur={(event) => handleBuscarProdutosSimilares(index, event.target.value)}
+                                />
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => handleBuscarProdutosSimilares(index, searchTerms[index] ?? produto.descricao_pdf)}
+                                  disabled={isSearching[index]}
+                                >
+                                  {isSearching[index] ? 'Buscando...' : 'Buscar'}
+                                </Button>
+                              </div>
+                              {searchResults[index]?.length ? (
+                                <div className="space-y-2">
+                                  {searchResults[index].map(similar => (
+                                    <label key={similar.produto_id} className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm">
+                                      <div className="flex-1">
+                                        <p className="font-semibold">{similar.nome}</p>
+                                        <p className="text-xs text-gray-500">Código: {similar.codigo} • Estoque: {similar.estoque_atual}</p>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <input
+                                          type="radio"
+                                          name={`similar-${index}`}
+                                          checked={selectedSimilarProducts[index] === similar.produto_id}
+                                          onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
+                                        />
+                                        <Button className="px-3 py-2 text-sm" onClick={() => handleAssociarProdutoSimilar(index, similar.produto_id)}>
+                                          Associar
+                                        </Button>
+                                      </div>
+                                    </label>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">Pesquise para encontrar correspondências.</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      </div>
+                      )}
                     </div>
-                    <div className="flex gap-3">
-                      <Button 
-                        onClick={selectAllProducts} 
-                        className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
-                      >
-                        ✓ Selecionar Todos
-                      </Button>
-                      <Button 
-                        onClick={deselectAllProducts} 
-                        variant="secondary" 
-                        className="px-5 py-2.5 text-sm font-semibold border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 hover:scale-105"
-                      >
-                        ✗ Desmarcar Todos
-                      </Button>
-                    </div>
-                  </div>
-                )}
 
-                {/* Lista de Produtos Encontrados Aprimorada */}
-                {previewData.produtos_encontrados.length > 0 && (
-                  <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
-                        <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-                      </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                      <Button variant="secondary" className="text-sm" onClick={() => setPreviewData(null)}>Cancelar</Button>
+                      <Button onClick={handleAvancarParaRevisao} disabled={!podeAvancar} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        Avançar para revisão
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <h4 className="text-xl font-bold text-gray-900 dark:text-white">Produtos Encontrados</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {previewData.produtos_encontrados.length} produtos identificados no PDF
-                        </p>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Checklist final de saída</h3>
+                        <p className="text-sm text-gray-500">Selecione os itens que serão confirmados</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(['TODOS','PRONTOS','PENDENTES','ALERTAS'] as ProdutoFiltro[]).map(filtro => (
+                          <button
+                            key={filtro}
+                            onClick={() => setFilterStatus(filtro)}
+                            className={`px-4 py-2 rounded-full text-sm font-semibold border transition ${filterStatus === filtro ? 'border-blue-500 text-blue-600 dark:text-blue-300' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'}`}
+                          >
+                            {filtro}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    <div className="grid gap-4">
-                      {previewData.produtos_encontrados.map((produto, index) => (
-                        <div key={index} className={`group relative p-5 bg-white dark:bg-gray-800 border-2 rounded-xl transition-all duration-200 hover:shadow-lg ${
-                          selectedProducts.includes(index) 
-                            ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-md' 
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}>
-                          <div className="flex items-start gap-4">
-                            <div className="flex items-center pt-1">
+
+                    <div className="flex flex-col gap-3 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-4">
+                      <div className="text-sm text-gray-700 dark:text-gray-200">{selectedProducts.length} itens selecionados de {quantidadeSelecionavel} elegíveis</div>
+                      <div className="flex flex-wrap gap-3">
+                        <Button className="px-3 py-2 text-sm" onClick={selectAllProducts}>Selecionar todos</Button>
+                        <Button className="px-3 py-2 text-sm" variant="secondary" onClick={deselectAllProducts}>Limpar seleção</Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {produtosFiltrados.length === 0 && (
+                        <div className="p-6 text-center text-sm text-gray-500 border border-dashed rounded-2xl">Nenhum produto corresponde ao filtro atual.</div>
+                      )}
+                      {produtosFiltrados.map(produto => (
+                        <div key={`revisao-${produto.index}`} className={`rounded-3xl border p-5 ${selectedProducts.includes(produto.index) ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
                               <input
                                 type="checkbox"
-                                checked={selectedProducts.includes(index)}
-                                onChange={() => toggleProductSelection(index)}
-                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200 hover:scale-110"
+                                disabled={produto.pendenteAssociacao}
+                                checked={selectedProducts.includes(produto.index)}
+                                onChange={() => toggleProductSelection(produto.index)}
+                                className="mt-1 h-4 w-4"
                               />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                                  <span className="font-bold text-gray-900 dark:text-white text-sm">{produto.codigo}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h5 className="font-semibold text-gray-900 dark:text-white truncate">{produto.nome_sistema || produto.descricao_pdf}</h5>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded">
-                                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">QTD</span>
-                                  </div>
-                                  <span className="font-semibold text-gray-900 dark:text-white">{produto.quantidade}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded">
-                                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400">UNIT</span>
-                                  </div>
-                                  <span className="font-semibold text-gray-900 dark:text-white">R$ {produto.valor_unitario?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-green-100 dark:bg-green-900/50 rounded">
-                                    <span className="text-xs font-medium text-green-600 dark:text-green-400">TOTAL</span>
-                                  </div>
-                                  <span className="font-bold text-green-600 dark:text-green-400">R$ {produto.valor_total?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-orange-100 dark:bg-orange-900/50 rounded">
-                                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400">EST</span>
-                                  </div>
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    {produto.estoque_atual || 0} → {produto.estoque_projetado || 0}
-                                  </span>
-                                </div>
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-white">{produto.nome_sistema || produto.descricao_pdf}</p>
+                                <p className="text-xs text-gray-500">NF {produto.codigo || '—'} {produto.codigo_sistema && `• Sistema ${produto.codigo_sistema}`}</p>
                               </div>
                             </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${produto.status === 'ALERTAS' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' : produto.status === 'PENDENTES' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'}`}>
+                              {produto.status === 'ALERTAS' ? 'Alerta' : produto.status === 'PENDENTES' ? 'Pendente' : 'Pronto'}
+                            </span>
                           </div>
-                          {selectedProducts.includes(index) && (
-                            <div className="absolute top-3 right-3">
-                              <div className="p-1 bg-blue-500 rounded-full">
-                                <CheckCircleIcon className="h-4 w-4 text-white" />
-                              </div>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-4 text-sm">
+                            <label className="flex flex-col gap-1">
+                              Quantidade
+                              <input
+                                type="number"
+                                min="0"
+                                className="rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2"
+                                value={quantidadesEditadas[produto.index] ?? produto.quantidade}
+                                onChange={(event) => handleQuantidadeChange(produto.index, event.target.value)}
+                              />
+                            </label>
+                            <div>
+                              Estoque atual
+                              <p className="font-semibold">{produto.estoque_atual ?? 0}</p>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Lista de Produtos Não Encontrados Aprimorada */}
-                {previewData.produtos_nao_encontrados.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
-                        <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-gray-900 dark:text-white">Produtos Não Encontrados</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {previewData.produtos_nao_encontrados.length} produtos precisam de atenção
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid gap-4">
-                      {previewData.produtos_nao_encontrados.map((produto, index) => (
-                        <div key={index} className="group relative p-5 bg-gradient-to-r from-red-50/80 to-rose-50/80 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-200 dark:border-red-700 rounded-xl hover:shadow-lg transition-all duration-200">
-                          <div className="flex items-start gap-4">
-                            <div className="flex items-center pt-1">
-                              <div className="p-2 bg-red-200 dark:bg-red-800 rounded-full">
-                                <ExclamationTriangleIcon className="h-4 w-4 text-red-700 dark:text-red-300" />
-                              </div>
+                            <div>
+                              Valor estimado
+                              <p className="font-semibold">R$ {((produto.valor_unitario || 0) * produto.quantidadePlanejada).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="px-3 py-1 bg-red-200 dark:bg-red-800 rounded-lg">
-                                  <span className="font-bold text-red-800 dark:text-red-200 text-sm">{produto.codigo}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h5 className="font-semibold text-gray-900 dark:text-white truncate">{produto.descricao_pdf}</h5>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded">
-                                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">QTD</span>
-                                  </div>
-                                  <span className="font-semibold text-gray-900 dark:text-white">{produto.quantidade}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded">
-                                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400">UNIT</span>
-                                  </div>
-                                  <span className="font-semibold text-gray-900 dark:text-white">R$ {produto.valor_unitario?.toFixed(2) || '0.00'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-red-100 dark:bg-red-900/50 rounded">
-                                    <span className="text-xs font-medium text-red-600 dark:text-red-400">TOTAL</span>
-                                  </div>
-                                  <span className="font-bold text-red-600 dark:text-red-400">R$ {produto.valor_total?.toFixed(2) || '0.00'}</span>
-                                </div>
-                              </div>
-                              
-                              {/* Produtos Similares */}
-                              <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-700">
-                                <div className="flex items-center mb-3">
-                                  <div className="p-2 bg-yellow-100 dark:bg-yellow-800 rounded-lg mr-3">
-                                    <EyeIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                                  </div>
-                                  <h5 className="font-bold text-yellow-800 dark:text-yellow-200">
-                                    Produtos Similares
-                                  </h5>
-                                </div>
-                                
-                                {/* Campo de Busca */}
-                                <div className="mb-4">
-                                  <div className="relative">
-                                    <input
-                                      type="text"
-                                      placeholder="Buscar produto no seu estoque por nome ou código..."
-                                      value={searchTerms[index] || ''}
-                                      onChange={(e) => {
-                                        const termo = e.target.value;
-                                        setSearchTerms(prev => ({ ...prev, [index]: termo }));
-                                        if (termo.length >= 2) {
-                                          const timeoutId = setTimeout(() => {
-                                            handleBuscarProdutosSimilares(index, termo);
-                                          }, 500);
-                                          return () => clearTimeout(timeoutId);
-                                        } else {
-                                          setSearchResults(prev => {
-                                            const newResults = { ...prev };
-                                            delete newResults[index];
-                                            return newResults;
-                                          });
-                                        }
-                                      }}
-                                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                                    />
-                                    {isSearching[index] && (
-                                      <div className="absolute right-3 top-2.5">
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600"></div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Lista de Produtos Similares */}
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
-                                  {/* Produtos encontrados automaticamente */}
-                                  {produto.produtos_similares && produto.produtos_similares.length > 0 && (
-                                    <>
-                                      {produto.produtos_similares.map((similar, similarIndex) => (
-                                        <div key={`auto-${similarIndex}`} className="group p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-yellow-300 dark:hover:border-yellow-500 transition-all">
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-3">
-                                              <input
-                                                type="radio"
-                                                name={`similar-${index}`}
-                                                value={similar.produto_id}
-                                                checked={selectedSimilarProducts[index] === similar.produto_id}
-                                                onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
-                                                className="h-4 w-4 text-yellow-600 border-2 border-gray-300 focus:ring-yellow-500"
-                                              />
-                                              <div className="flex-1">
-                                                <div className="font-semibold text-gray-900 dark:text-gray-100">
-                                                  {similar.nome}
-                                                </div>
-                                                <div className="flex items-center space-x-3 mt-1 text-xs">
-                                                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">
-                                                    {similar.codigo}
-                                                  </span>
-                                                  <span className="text-gray-600 dark:text-gray-400">
-                                                    Estoque: {similar.estoque_atual}
-                                                  </span>
-                                                  <span className={`px-2 py-1 rounded font-bold ${
-                                                    similar.score_similaridade >= 80 
-                                                      ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300'
-                                                      : similar.score_similaridade >= 60
-                                                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-300'
-                                                      : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300'
-                                                  }`}>
-                                                    {Math.round(similar.score_similaridade)}%
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </>
-                                  )}
-                                  
-                                  {/* Resultados da busca */}
-                                  {searchResults[index] && searchResults[index].length > 0 && (
-                                    <>
-                                      {searchResults[index].map((similar, similarIndex) => {
-                                        // Verificar se já está na lista automática
-                                        const jaExiste = produto.produtos_similares?.some(p => p.produto_id === similar.produto_id);
-                                        if (jaExiste) return null;
-                                        
-                                        return (
-                                          <div key={`search-${similarIndex}`} className="group p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-500 transition-all">
-                                            <div className="flex items-center justify-between">
-                                              <div className="flex items-center space-x-3">
-                                                <input
-                                                  type="radio"
-                                                  name={`similar-${index}`}
-                                                  value={similar.produto_id}
-                                                  checked={selectedSimilarProducts[index] === similar.produto_id}
-                                                  onChange={() => handleSelectSimilarProduct(index, similar.produto_id)}
-                                                  className="h-4 w-4 text-blue-600 border-2 border-gray-300 focus:ring-blue-500"
-                                                />
-                                                <div className="flex-1">
-                                                  <div className="font-semibold text-gray-900 dark:text-gray-100">
-                                                    {similar.nome}
-                                                  </div>
-                                                  <div className="flex items-center space-x-3 mt-1 text-xs">
-                                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">
-                                                      {similar.codigo}
-                                                    </span>
-                                                    <span className="text-gray-600 dark:text-gray-400">
-                                                      Estoque: {similar.estoque_atual}
-                                                    </span>
-                                                    <span className={`px-2 py-1 rounded font-bold ${
-                                                      similar.score_similaridade >= 80 
-                                                        ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300'
-                                                        : similar.score_similaridade >= 60
-                                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-300'
-                                                        : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300'
-                                                    }`}>
-                                                      {Math.round(similar.score_similaridade)}%
-                                                    </span>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </>
-                                  )}
-                                  
-                                  {/* Mensagem quando não há resultados */}
-                                  {(!produto.produtos_similares || produto.produtos_similares.length === 0) && 
-                                   (!searchResults[index] || searchResults[index].length === 0) && 
-                                   (!searchTerms[index] || searchTerms[index].length < 2) && (
-                                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                                      Nenhum produto similar encontrado automaticamente. Use o campo de busca acima para pesquisar no seu estoque.
-                                    </div>
-                                  )}
-                                  
-                                  {searchTerms[index] && searchTerms[index].length >= 2 && 
-                                   (!searchResults[index] || searchResults[index].length === 0) && 
-                                   !isSearching[index] && (
-                                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                                      Nenhum produto encontrado no estoque para &quot;{searchTerms[index]}&quot;. Tente outro termo de busca.
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {selectedSimilarProducts[index] && (
-                                  <div className="mt-4 flex justify-end">
-                                    <Button
-                                      onClick={() => handleAssociarProdutoSimilar(index, selectedSimilarProducts[index])}
-                                      className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-md transition-all"
-                                    >
-                                      ✓ Associar Produto Selecionado
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
+                            <div>
+                              Alertas
+                              <p className={`text-xs ${(produto.estoqueInsuficiente || produto.divergenciaCodigo) ? 'text-red-600 dark:text-red-300' : 'text-gray-500'}`}>
+                                {produto.estoqueInsuficiente ? 'Estoque insuficiente' : produto.divergenciaCodigo ? 'Código divergente' : 'Nenhum'}
+                              </p>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-               </div>
-            </div>
 
-            {/* Rodapé do Modal Aprimorado */}
-            <div className="flex-shrink-0 px-6 py-5 bg-gradient-to-r from-gray-50 to-blue-50/30 dark:from-gray-800 dark:to-blue-900/20 border-t-2 border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                      <CheckCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="text-sm">
-                      <div className="font-semibold text-gray-900 dark:text-white">
-                        {selectedProducts.length} produtos selecionados
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
+                        <p>Itens selecionados: <strong>{selectedProducts.length}</strong></p>
+                        <p>Valor estimado: <strong>R$ {valorTotalSelecionado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></p>
                       </div>
-                      <div className="text-gray-600 dark:text-gray-400">
-                        de {previewData.produtos_encontrados.length} disponíveis
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <Button variant="secondary" onClick={handleVoltarParaAssociacao}>Voltar para associação</Button>
+                        <Button
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={handleConfirmProcessing}
+                          disabled={selectedProducts.length === 0 || isConfirming}
+                        >
+                          {isConfirming ? 'Confirmando...' : 'Confirmar movimentações'}
+                        </Button>
                       </div>
                     </div>
+                  </>
+                )}
+              </div>
+
+              <aside className="space-y-5 rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Detalhes da NF</h4>
+                  <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <p><strong>Arquivo:</strong> {previewData.arquivo}</p>
+                    <p><strong>Emissão:</strong> {previewData.data_emissao || '—'}</p>
+                    <p><strong>Total de itens:</strong> {previewData.total_produtos_pdf}</p>
+                    {previewData.valor_total && (
+                      <p><strong>Valor:</strong> R$ {previewData.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    )}
                   </div>
-                  {previewData.produtos_nao_encontrados.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
-                        <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                      </div>
-                      <div className="text-sm">
-                        <div className="font-semibold text-yellow-700 dark:text-yellow-300">
-                          {previewData.produtos_nao_encontrados.length} não encontrados
-                        </div>
-                        <div className="text-yellow-600 dark:text-yellow-400">
-                          precisam de atenção
-                        </div>
-                      </div>
-                    </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">KPIs rápidos</h4>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    <li className="flex items-center justify-between"><span>Encontrados</span><strong>{resumoKPIs.encontrados}</strong></li>
+                    <li className="flex items-center justify-between"><span>Pendentes</span><strong>{resumoKPIs.pendentes}</strong></li>
+                    <li className="flex items-center justify-between"><span>Alertas</span><strong>{resumoKPIs.alertas}</strong></li>
+                    <li className="flex items-center justify-between"><span>Total PDF</span><strong>{resumoKPIs.totalPdf}</strong></li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Alertas críticos</h4>
+                  {alertasCriticos.length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">Sem alertas no momento.</p>
+                  ) : (
+                    <ul className="mt-3 space-y-2 text-sm text-red-600 dark:text-red-300">
+                      {alertasCriticos.map(alerta => (
+                        <li key={`alerta-${alerta.index}`}>{alerta.nome_sistema || alerta.descricao_pdf} — verifique estoque/código.</li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-                <div className="flex gap-3 w-full sm:w-auto">
-                  <Button
-                    onClick={() => setShowModal(false)}
-                    variant="secondary"
-                    className="flex-1 sm:flex-none px-6 py-3 font-semibold border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 hover:scale-105"
-                  >
-                    ✗ Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleConfirmProcessing}
-                    disabled={selectedProducts.length === 0 || isConfirming}
-                    className="flex-1 sm:flex-none px-6 py-3 font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
-                  >
-                    {isConfirming ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                        Processando movimentações...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircleIcon className="h-5 w-5 mr-2" />
-                        Confirmar e Processar ({selectedProducts.length})
-                      </>
-                    )}
-                  </Button>
+
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-600 p-4 text-sm">
+                  <p className="text-gray-600 dark:text-gray-300">Resumo da seleção</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">R$ {valorTotalSelecionado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xs text-gray-500">{selectedProducts.length} itens preparados</p>
                 </div>
-              </div>
+              </aside>
             </div>
           </div>
-        </div>
+        </section>
       )}
+
     </>
   );
 }

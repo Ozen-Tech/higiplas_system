@@ -3,6 +3,7 @@
 # Adicionamos 'Body' às importações do FastAPI
 from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Dict, Any, Optional
 from ..db import models
 import json
@@ -472,10 +473,13 @@ async def confirmar_movimentacoes(
         
         movimentacoes_criadas = []
         produtos_atualizados = []
+        codigos_sincronizados = []
         
         for produto_data in produtos_confirmados:
             produto_id = produto_data.get('produto_id')
             quantidade = produto_data.get('quantidade', 0)
+            codigo_nf = (produto_data.get('codigo_nf') or "").strip()
+            descricao_nf = produto_data.get('descricao_nf')
             
             if not produto_id or quantidade <= 0:
                 continue
@@ -502,7 +506,40 @@ async def confirmar_movimentacoes(
                         detail=f"Estoque insuficiente para o produto {produto.nome}. Estoque atual: {estoque_atual}, Quantidade solicitada: {quantidade}"
                     )
 
+            codigo_atualizado = False
+            codigo_anterior = produto.codigo
+            if codigo_nf:
+                codigo_normalizado = codigo_nf.strip()
+                codigo_conflict = db.query(models.Produto).filter(
+                    models.Produto.empresa_id == current_user.empresa_id,
+                    func.lower(models.Produto.codigo) == codigo_normalizado.lower(),
+                    models.Produto.id != produto.id
+                ).first()
+
+                if codigo_conflict:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"O código {codigo_nf} já está vinculado ao produto {codigo_conflict.nome}. Ajuste a associação antes de confirmar."
+                    )
+
+                if (produto.codigo or "").strip() != codigo_normalizado.strip():
+                    produto.codigo = codigo_normalizado.strip()
+                    codigo_atualizado = True
+                    codigos_sincronizados.append({
+                        'produto_id': produto.id,
+                        'produto_nome': produto.nome,
+                        'codigo_anterior': codigo_anterior,
+                        'codigo_novo': produto.codigo
+                    })
+
             # Criar movimentação
+            observacao_base = f"Importação automática - NF: {nota_fiscal}"
+            if codigo_atualizado:
+                origem_codigo = codigo_anterior or "sem código"
+                observacao_base += f" | Código sincronizado ({origem_codigo} -> {produto.codigo})"
+            if descricao_nf:
+                observacao_base += f" | Produto NF: {descricao_nf}"
+
             movimentacao = models.MovimentacaoEstoque(
                 produto_id=produto.id,
                 tipo_movimentacao=tipo_movimentacao,
@@ -510,9 +547,13 @@ async def confirmar_movimentacoes(
                 quantidade_antes=quantidade_antes,
                 quantidade_depois=nova_quantidade,
                 origem='COMPRA' if tipo_movimentacao == 'ENTRADA' else 'VENDA',
-                observacao=f"Importação automática - NF: {nota_fiscal}",
+                observacao=observacao_base,
                 usuario_id=current_user.id
             )
+
+            if codigo_atualizado:
+                movimentacao.dados_antes_edicao = json.dumps({'codigo': codigo_anterior})
+                movimentacao.dados_depois_edicao = json.dumps({'codigo': produto.codigo})
 
             db.add(movimentacao)
 
@@ -525,7 +566,8 @@ async def confirmar_movimentacoes(
                 'tipo': tipo_movimentacao,
                 'quantidade': quantidade,
                 'estoque_anterior': quantidade_antes,
-                'estoque_novo': nova_quantidade
+                'estoque_novo': nova_quantidade,
+                'codigo_sincronizado': produto.codigo if codigo_atualizado else None
             })
 
             produtos_atualizados.append(produto.nome)
@@ -537,7 +579,8 @@ async def confirmar_movimentacoes(
             'mensagem': f'Processamento concluído com sucesso! {len(movimentacoes_criadas)} movimentações registradas.',
             'movimentacoes_criadas': len(movimentacoes_criadas),
             'produtos_atualizados': produtos_atualizados,
-            'detalhes': movimentacoes_criadas
+            'detalhes': movimentacoes_criadas,
+            'codigos_sincronizados': codigos_sincronizados
         }
         
     except HTTPException as he:

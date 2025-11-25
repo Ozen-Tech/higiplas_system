@@ -104,29 +104,29 @@ def generate_analysis_from_data(user_question: str, system_data: str, pdf_data: 
     
     # Mega prompt para análise assertiva de dados - Analista Inteligente Completo
     prompt_template = f"""Você é a "Rozana", ANALISTA INTELIGENTE COMPLETO da Higiplas.
-
+    
 MISSÃO: Fornecer análises ASSERTIVAS, PRECISAS e ACIONÁVEIS baseadas em TODOS os dados reais da empresa.
-
-PERGUNTA DO GESTOR: "{user_question}"
-
+    
+    PERGUNTA DO GESTOR: "{user_question}"
+    
 ═══════════════════════════════════════════════════════════════
 DADOS COMPLETOS DO SISTEMA DISPONÍVEIS PARA ANÁLISE:
 ═══════════════════════════════════════════════════════════════
 
-{system_data}
-
+    {system_data}
+    
 ═══════════════════════════════════════════════════════════════
 DADOS HISTÓRICOS DE VENDAS:
 ═══════════════════════════════════════════════════════════════
 
-{historical_data}
-
+    {historical_data}
+    
 ═══════════════════════════════════════════════════════════════
-DADOS ADICIONAIS DOS PDFs (MAIO-JULHO 2025):
+    DADOS ADICIONAIS DOS PDFs (MAIO-JULHO 2025):
 ═══════════════════════════════════════════════════════════════
 
-{pdf_data if pdf_data else 'Dados adicionais dos PDFs não disponíveis'}
-
+    {pdf_data if pdf_data else 'Dados adicionais dos PDFs não disponíveis'}
+    
 ═══════════════════════════════════════════════════════════════
 AUTONOMIA TOTAL DE ANÁLISE:
 ═══════════════════════════════════════════════════════════════
@@ -179,7 +179,7 @@ CAPACIDADES DE ANÁLISE:
 ✅ Detectar riscos e problemas potenciais
 
 INSTRUÇÕES PARA ANÁLISE INTELIGENTE E AUTÔNOMA:
-
+    
 1. AUTONOMIA TOTAL: Use QUALQUER dado disponível no sistema para responder a pergunta
 2. CRUZAMENTO DE DADOS: Sempre cruze informações de diferentes módulos (estoque + vendas + clientes + compras)
 3. ANÁLISE PROFUNDA: Não se limite apenas ao óbvio - explore correlações e insights ocultos
@@ -200,24 +200,24 @@ INSTRUÇÕES PARA ANÁLISE INTELIGENTE E AUTÔNOMA:
     - Utilize apenas os registros presentes nos arrays `resumo_vendas_nf_confirmadas` (saídas importadas de NF) e `resumo_vendas_vendedores_confirmadas` (vendas via aplicativo de vendedores).
     - Ignore completamente movimentações com observações vazias ou contendo “entrada manual”/“saída manual”.
     - Informe claramente qual fonte de dados foi usada (NF ou Vendedores) quando citar números.
-
-FORMATO DE RESPOSTA:
-- Seja DIRETO e OBJETIVO
-- Use bullet points para ações
-- Inclua NÚMEROS e DADOS concretos
-- Destaque URGÊNCIAS com emojis (🚨 Crítico, ⚠️ Atenção, ✅ OK)
-- Termine com próximos passos claros
-- Use Markdown para formatação
+    
+    FORMATO DE RESPOSTA:
+    - Seja DIRETO e OBJETIVO
+    - Use bullet points para ações
+    - Inclua NÚMEROS e DADOS concretos
+    - Destaque URGÊNCIAS com emojis (🚨 Crítico, ⚠️ Atenção, ✅ OK)
+    - Termine com próximos passos claros
+    - Use Markdown para formatação
 - Use tabelas quando apropriado
-
-EXEMPLOS DE ANÁLISES ASSERTIVAS:
-
-❌ RUIM: "O produto X está com estoque baixo"
-✅ BOM: "🚨 CRÍTICO: Produto X tem apenas 5 unidades (3 dias de cobertura). Demanda média: 1.7/dia. Sugestão: Comprar 25 unidades HOJE para 15 dias de cobertura."
-
-❌ RUIM: "Alguns produtos vendem bem"
-✅ BOM: "📈 TOP 3 Alta Rotatividade: Produto A (45 vendas/mês, R$ 2.340 receita), Produto B (38 vendas/mês, R$ 1.890), Produto C (32 vendas/mês, R$ 1.280). Mantenha estoque alto destes."
-
+    
+    EXEMPLOS DE ANÁLISES ASSERTIVAS:
+    
+    ❌ RUIM: "O produto X está com estoque baixo"
+    ✅ BOM: "🚨 CRÍTICO: Produto X tem apenas 5 unidades (3 dias de cobertura). Demanda média: 1.7/dia. Sugestão: Comprar 25 unidades HOJE para 15 dias de cobertura."
+    
+    ❌ RUIM: "Alguns produtos vendem bem"
+    ✅ BOM: "📈 TOP 3 Alta Rotatividade: Produto A (45 vendas/mês, R$ 2.340 receita), Produto B (38 vendas/mês, R$ 1.890), Produto C (32 vendas/mês, R$ 1.280). Mantenha estoque alto destes."
+    
 RESPONDA DE FORMA ASSERTIVA E ACIONÁVEL COMO UM ANALISTA DE ESTOQUE EXPERIENTE:"""
      
     attempt = 0
@@ -225,18 +225,18 @@ RESPONDA DE FORMA ASSERTIVA E ACIONÁVEL COMO UM ANALISTA DE ESTOQUE EXPERIENTE:
     delay_seconds = 2
 
     while attempt < max_attempts:
-        try:
+    try:
             print("[AI Service] Gerando análise com Gemini...")
-            response = model.generate_content(prompt_template)
-            
-            try:
-                print("[AI Service] Resposta da IA recebida.")
-                return response.text
-            except ValueError:
-                print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
-                return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
+        response = model.generate_content(prompt_template)
+        
+        try:
+            print("[AI Service] Resposta da IA recebida.")
+            return response.text
+        except ValueError:
+            print(f"❌ Resposta da IA bloqueada. Feedback do prompt: {response.prompt_feedback}")
+            return f"A resposta da IA foi bloqueada por razões de segurança. Verifique a pergunta ou os dados enviados. Motivo do bloqueio: {response.prompt_feedback}"
 
-        except Exception as e:
+    except Exception as e:
             error_message = str(e)
             print(f"❌ Erro na comunicação com a API do Gemini: {error_message}")
 
@@ -271,7 +271,7 @@ def extract_products_from_invoice_image(image_bytes: bytes) -> str:
     """
     if not model:
         raise Exception("Modelo de IA não inicializado.")
-
+    
     prompt = """
     Analise a imagem desta Nota Fiscal (DANFE) e extraia APENAS a tabela de produtos.
     Sua resposta deve ser um JSON contendo uma lista de objetos.

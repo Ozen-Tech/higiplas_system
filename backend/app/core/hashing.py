@@ -29,7 +29,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             logger.error(f"Hash de senha inválido: não começa com prefixo bcrypt válido")
             return False
         
-        return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
     except ValueError as e:
         # Erro específico do bcrypt (senha muito longa, hash inválido, etc)
         logger.error(f"Erro de validação ao verificar senha: {e}")
@@ -54,7 +54,7 @@ def get_password_hash(password: str) -> str:
                 logger.warning(f"Senha truncada de {len(password_bytes)} para 72 bytes ao criar hash")
                 password = password_bytes[:72].decode('utf-8', errors='ignore')
         
-        return pwd_context.hash(password)
+    return pwd_context.hash(password)
     except ValueError as e:
         logger.error(f"Erro de validação ao criar hash da senha: {e}")
         raise
