@@ -1,6 +1,6 @@
 # backend/app/db/models.py
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Date, Enum, Index
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Date, Enum, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -155,6 +155,34 @@ class HistoricoPagamento(Base):
     
     orcamento_id = Column(Integer, ForeignKey("orcamentos.id"), nullable=True)
     orcamento = relationship("Orcamento")
+
+class PrecoClienteProduto(Base):
+    """Armazena preços padrão e ranges calculados por cliente-produto"""
+    __tablename__ = "precos_cliente_produto"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id", ondelete="CASCADE"), nullable=False, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    preco_padrao = Column(Float, nullable=False)  # Preço padrão (último preço confirmado)
+    preco_minimo = Column(Float, nullable=True)  # Menor preço já vendido
+    preco_maximo = Column(Float, nullable=True)  # Maior preço já vendido
+    preco_medio = Column(Float, nullable=True)  # Preço médio calculado
+    
+    total_vendas = Column(Integer, default=0)  # Total de vendas confirmadas
+    data_ultima_venda = Column(DateTime(timezone=True), nullable=True)
+    
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    data_atualizacao = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    cliente = relationship("Cliente")
+    produto = relationship("Produto")
+    
+    __table_args__ = (
+        Index('idx_preco_cliente_produto', 'cliente_id', 'produto_id'),
+        Index('idx_preco_produto', 'produto_id'),
+        UniqueConstraint('cliente_id', 'produto_id', name='uq_cliente_produto'),
+    )
 
 class Orcamento(Base):
     __tablename__ = "orcamentos"
@@ -396,10 +424,76 @@ class PropostaDetalhada(Base):
     produto = relationship("Produto")
     ficha_tecnica = relationship("FichaTecnica")
     concorrente = relationship("ProdutoConcorrente")
+    itens = relationship(
+        "PropostaDetalhadaItem",
+        back_populates="proposta",
+        cascade="all, delete-orphan",
+        order_by="PropostaDetalhadaItem.id",
+    )
+    concorrentes_personalizados = relationship(
+        "PropostaConcorrenteManual",
+        back_populates="proposta",
+        cascade="all, delete-orphan",
+        order_by="PropostaConcorrenteManual.id",
+    )
     
     # Índices compostos
     __table_args__ = (
         Index('idx_proposta_vendedor_cliente', 'vendedor_id', 'cliente_id'),
         Index('idx_proposta_produto', 'produto_id'),
         Index('idx_proposta_data', 'data_criacao'),
+    )
+
+
+class PropostaDetalhadaItem(Base):
+    """Itens individuais vinculados a uma proposta detalhada"""
+    __tablename__ = "propostas_detalhadas_itens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    proposta_id = Column(Integer, ForeignKey("propostas_detalhadas.id", ondelete="CASCADE"), nullable=False, index=True)
+    produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False, index=True)
+    quantidade_produto = Column(Float, nullable=False)
+    dilucao_aplicada = Column(String, nullable=True)
+    dilucao_numerador = Column(Float, nullable=True)
+    dilucao_denominador = Column(Float, nullable=True)
+    rendimento_total_litros = Column(Float, nullable=True)
+    preco_produto = Column(Float, nullable=True)
+    custo_por_litro_final = Column(Float, nullable=True)
+    observacoes = Column(String, nullable=True)
+    ordem = Column(Integer, nullable=True)
+
+    concorrente_nome_manual = Column(String, nullable=True)
+    concorrente_rendimento_manual = Column(Float, nullable=True)
+    concorrente_custo_por_litro_manual = Column(Float, nullable=True)
+
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    data_atualizacao = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    proposta = relationship("PropostaDetalhada", back_populates="itens")
+    produto = relationship("Produto")
+
+    __table_args__ = (
+        Index('idx_proposta_item_produto', 'proposta_id', 'produto_id'),
+    )
+
+
+class PropostaConcorrenteManual(Base):
+    """Informações manuais de concorrentes adicionadas em uma proposta detalhada"""
+    __tablename__ = "propostas_detalhadas_concorrentes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    proposta_id = Column(Integer, ForeignKey("propostas_detalhadas.id", ondelete="CASCADE"), nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    rendimento_litro = Column(Float, nullable=True)
+    custo_por_litro = Column(Float, nullable=True)
+    observacoes = Column(String, nullable=True)
+    ordem = Column(Integer, nullable=True)
+
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    data_atualizacao = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    proposta = relationship("PropostaDetalhada", back_populates="concorrentes_personalizados")
+
+    __table_args__ = (
+        Index('idx_proposta_concorrente_manual', 'proposta_id', 'nome'),
     )

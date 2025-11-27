@@ -10,6 +10,114 @@ from ..core.logger import app_logger
 logger = app_logger
 
 
+def _resolver_itens_entrada(
+    proposta_in: schemas.PropostaDetalhadaBase,
+) -> List[schemas.PropostaDetalhadaItemCreate]:
+    """Garante que exista ao menos um item, convertendo dados legados quando necessário."""
+    itens = getattr(proposta_in, "itens", None)
+    if itens:
+        return list(itens)
+
+    if (
+        getattr(proposta_in, "produto_id", None) is None
+        or getattr(proposta_in, "quantidade_produto", None) is None
+    ):
+        raise ValueError("É necessário informar ao menos um produto para a proposta detalhada.")
+
+    logger.warning("Usando modo legado de criação de proposta detalhada (um único item).")
+    item_legado = schemas.PropostaDetalhadaItemCreate(
+        produto_id=proposta_in.produto_id,  # type: ignore[arg-type]
+        quantidade_produto=proposta_in.quantidade_produto,  # type: ignore[arg-type]
+        dilucao_aplicada=proposta_in.dilucao_aplicada,
+        dilucao_numerador=proposta_in.dilucao_numerador,
+        dilucao_denominador=proposta_in.dilucao_denominador,
+    )
+    return [item_legado]
+
+
+def _montar_itens_calculados(
+    db: Session,
+    itens_input: List[schemas.PropostaDetalhadaItemCreate],
+) -> dict:
+    """Calcula rendimentos/custos dos itens e retorna contexto para persistência."""
+    if not itens_input:
+        raise ValueError("Envie ao menos um item para montar a proposta detalhada.")
+
+    produto_ids = {item.produto_id for item in itens_input}
+    produtos = db.query(models.Produto).filter(models.Produto.id.in_(produto_ids)).all()
+    produtos_map = {produto.id: produto for produto in produtos}
+
+    if len(produtos_map) != len(produto_ids):
+        ids_encontrados = set(produtos_map.keys())
+        ids_faltantes = produto_ids - ids_encontrados
+        raise ValueError(f"Produtos não encontrados: {', '.join(map(str, ids_faltantes))}")
+
+    itens_payload = []
+    primeiro_item_resumo = None
+    primeiro_produto = None
+    ficha_tecnica_id = None
+
+    for ordem, item in enumerate(itens_input, start=1):
+        produto = produtos_map[item.produto_id]
+
+        ficha_tecnica = (
+            db.query(models.FichaTecnica)
+            .filter(models.FichaTecnica.produto_id == item.produto_id)
+            .first()
+        )
+
+        if ordem == 1:
+            primeiro_produto = produto
+            if ficha_tecnica:
+                ficha_tecnica_id = ficha_tecnica.id
+
+        dilucao_num = item.dilucao_numerador or (ficha_tecnica.dilucao_numerador if ficha_tecnica else None)
+        dilucao_den = item.dilucao_denominador or (ficha_tecnica.dilucao_denominador if ficha_tecnica else None)
+        dilucao_aplicada = item.dilucao_aplicada
+        if not dilucao_aplicada and dilucao_num and dilucao_den:
+            dilucao_aplicada = f"{dilucao_num:g}:{dilucao_den:g}"
+
+        rendimento = calcular_rendimento(
+            item.quantidade_produto,
+            dilucao_num,
+            dilucao_den,
+        )
+        custo = calcular_custo_por_litro(
+            produto.preco_venda if produto.preco_venda is not None else 0,
+            item.quantidade_produto,
+            rendimento,
+        )
+
+        item_payload = {
+            "produto_id": item.produto_id,
+            "quantidade_produto": item.quantidade_produto,
+            "dilucao_aplicada": dilucao_aplicada,
+            "dilucao_numerador": dilucao_num,
+            "dilucao_denominador": dilucao_den,
+            "rendimento_total_litros": rendimento,
+            "preco_produto": produto.preco_venda,
+            "custo_por_litro_final": custo,
+            "observacoes": item.observacoes,
+            "ordem": item.ordem or ordem,
+            "concorrente_nome_manual": item.concorrente_nome_manual,
+            "concorrente_rendimento_manual": item.concorrente_rendimento_manual,
+            "concorrente_custo_por_litro_manual": item.concorrente_custo_por_litro_manual,
+        }
+
+        if primeiro_item_resumo is None:
+            primeiro_item_resumo = item_payload
+
+        itens_payload.append(item_payload)
+
+    return {
+        "itens": itens_payload,
+        "primeiro_item": primeiro_item_resumo,
+        "primeiro_produto": primeiro_produto,
+        "ficha_tecnica_id": ficha_tecnica_id,
+        "produtos_map": produtos_map,
+    }
+
+
 def calcular_rendimento(
     quantidade_produto: float,
     dilucao_numerador: Optional[float],
@@ -109,79 +217,83 @@ def create_proposta_detalhada(
     """
     Cria uma proposta detalhada com cálculos automáticos.
     """
-    # Buscar produto para obter preço
-    produto = db.query(models.Produto).filter(models.Produto.id == proposta_in.produto_id).first()
-    if not produto:
-        raise ValueError(f"Produto {proposta_in.produto_id} não encontrado")
-    
-    # Buscar ficha técnica do produto
-    ficha_tecnica = db.query(models.FichaTecnica).filter(
-        models.FichaTecnica.produto_id == proposta_in.produto_id
-    ).first()
-    
-    # Se não tem ficha técnica vinculada ao produto, usar dados da proposta
-    dilucao_num = proposta_in.dilucao_numerador
-    dilucao_den = proposta_in.dilucao_denominador
-    
-    if ficha_tecnica:
-        if not dilucao_num:
-            dilucao_num = ficha_tecnica.dilucao_numerador
-        if not dilucao_den:
-            dilucao_den = ficha_tecnica.dilucao_denominador
-    
-    # Calcular rendimento
-    rendimento_total = calcular_rendimento(
-        proposta_in.quantidade_produto,
-        dilucao_num,
-        dilucao_den
-    )
-    
-    # Calcular custo por litro
-    custo_por_litro = calcular_custo_por_litro(
-        produto.preco_venda,
-        proposta_in.quantidade_produto,
-        rendimento_total
-    )
-    
-    # Comparar com concorrentes
+    itens_input = _resolver_itens_entrada(proposta_in)
+    contexto_itens = _montar_itens_calculados(db, itens_input)
+    primeiro_item = contexto_itens["primeiro_item"]
+    produto_principal: models.Produto = contexto_itens["primeiro_produto"]
+
+    rendimento_total = primeiro_item.get("rendimento_total_litros")
+    custo_por_litro = primeiro_item.get("custo_por_litro_final")
+
     comparacoes = []
     if rendimento_total and custo_por_litro:
         comparacoes = comparar_com_concorrentes(
             db,
-            proposta_in.produto_id,
+            primeiro_item["produto_id"],
             rendimento_total,
             custo_por_litro,
-            produto.categoria
+            produto_principal.categoria if produto_principal else None,
         )
-    
-    # Pegar melhor comparação (maior economia)
+
     melhor_comparacao = comparacoes[0] if comparacoes else None
-    
-    # Criar proposta
-    proposta_data = proposta_in.model_dump()
-    proposta_data['vendedor_id'] = vendedor_id
-    proposta_data['ficha_tecnica_id'] = ficha_tecnica.id if ficha_tecnica else None
-    proposta_data['rendimento_total_litros'] = rendimento_total
-    proposta_data['preco_produto'] = produto.preco_venda
-    proposta_data['custo_por_litro_final'] = custo_por_litro
-    proposta_data['dilucao_numerador'] = dilucao_num
-    proposta_data['dilucao_denominador'] = dilucao_den
-    
+
+    proposta_data = {
+        "orcamento_id": proposta_in.orcamento_id,
+        "cliente_id": proposta_in.cliente_id,
+        "vendedor_id": vendedor_id,
+        "observacoes": proposta_in.observacoes,
+        "compartilhavel": proposta_in.compartilhavel,
+        "token_compartilhamento": secrets.token_urlsafe(32)
+        if proposta_in.compartilhavel
+        else None,
+        "produto_id": primeiro_item["produto_id"],
+        "quantidade_produto": primeiro_item["quantidade_produto"],
+        "dilucao_aplicada": primeiro_item["dilucao_aplicada"],
+        "dilucao_numerador": primeiro_item["dilucao_numerador"],
+        "dilucao_denominador": primeiro_item["dilucao_denominador"],
+        "rendimento_total_litros": rendimento_total,
+        "preco_produto": primeiro_item.get("preco_produto"),
+        "custo_por_litro_final": custo_por_litro,
+        "ficha_tecnica_id": contexto_itens["ficha_tecnica_id"],
+    }
+
     if melhor_comparacao:
-        proposta_data['concorrente_id'] = melhor_comparacao.concorrente_id
-        proposta_data['economia_percentual'] = melhor_comparacao.economia_percentual
-        proposta_data['economia_valor'] = melhor_comparacao.economia_valor
-        proposta_data['economia_vs_concorrente'] = melhor_comparacao.economia_percentual
-    
-    # Gerar token de compartilhamento se solicitado
-    if proposta_data.get('compartilhavel'):
-        proposta_data['token_compartilhamento'] = secrets.token_urlsafe(32)
-    
-    db_proposta = models.PropostaDetalhada(**proposta_data)
+        proposta_data["concorrente_id"] = melhor_comparacao.concorrente_id
+        proposta_data["economia_percentual"] = melhor_comparacao.economia_percentual
+        proposta_data["economia_valor"] = melhor_comparacao.economia_valor
+        proposta_data["economia_vs_concorrente"] = melhor_comparacao.economia_percentual
+
+    db_proposta = models.PropostaDetalhada(
+        **{k: v for k, v in proposta_data.items() if v is not None}
+    )
     db.add(db_proposta)
+    db.flush()  # Garante ID para relacionamentos
+
+    # Persistir itens
+    for item_payload in contexto_itens["itens"]:
+        db.add(
+            models.PropostaDetalhadaItem(
+                proposta_id=db_proposta.id,
+                **item_payload,
+            )
+        )
+
+    # Comparações manuais
+    if proposta_in.comparacoes_personalizadas:
+        for ordem, comp in enumerate(proposta_in.comparacoes_personalizadas, start=1):
+            db.add(
+                models.PropostaConcorrenteManual(
+                    proposta_id=db_proposta.id,
+                    nome=comp.nome,
+                    rendimento_litro=comp.rendimento_litro,
+                    custo_por_litro=comp.custo_por_litro,
+                    observacoes=comp.observacoes,
+                    ordem=comp.ordem or ordem,
+                )
+            )
+
     db.commit()
     db.refresh(db_proposta)
-    
     return db_proposta
 
 
@@ -199,7 +311,9 @@ def get_proposta_by_id(
             joinedload(models.PropostaDetalhada.cliente),
             joinedload(models.PropostaDetalhada.vendedor),
             joinedload(models.PropostaDetalhada.ficha_tecnica),
-            joinedload(models.PropostaDetalhada.concorrente)
+            joinedload(models.PropostaDetalhada.concorrente),
+            joinedload(models.PropostaDetalhada.itens).joinedload(models.PropostaDetalhadaItem.produto),
+            joinedload(models.PropostaDetalhada.concorrentes_personalizados),
         )
     
     return query.filter(models.PropostaDetalhada.id == proposta_id).first()
@@ -264,28 +378,76 @@ def update_proposta_detalhada(
     if not db_proposta:
         return None
     
-    update_data = proposta_update.model_dump(exclude_unset=True)
-    
-    # Recalcular se quantidade ou diluição mudaram
-    if 'quantidade_produto' in update_data or 'dilucao_numerador' in update_data or 'dilucao_denominador' in update_data:
-        quantidade = update_data.get('quantidade_produto', db_proposta.quantidade_produto)
-        dilucao_num = update_data.get('dilucao_numerador', db_proposta.dilucao_numerador)
-        dilucao_den = update_data.get('dilucao_denominador', db_proposta.dilucao_denominador)
-        
-        rendimento = calcular_rendimento(quantidade, dilucao_num, dilucao_den)
-        update_data['rendimento_total_litros'] = rendimento
-        
-        if db_proposta.preco_produto:
-            custo = calcular_custo_por_litro(
-                db_proposta.preco_produto,
-                quantidade,
-                rendimento
+    itens_atualizados = getattr(proposta_update, "itens", None)
+    if itens_atualizados is not None:
+        contexto_itens = _montar_itens_calculados(db, itens_atualizados)
+        primeiro_item = contexto_itens["primeiro_item"]
+        produto_principal: models.Produto = contexto_itens["primeiro_produto"]
+
+        # Limpa itens atuais e adiciona novos
+        db_proposta.itens.clear()
+        for item_payload in contexto_itens["itens"]:
+            db_proposta.itens.append(models.PropostaDetalhadaItem(**item_payload))
+
+        db_proposta.produto_id = primeiro_item["produto_id"]
+        db_proposta.quantidade_produto = primeiro_item["quantidade_produto"]
+        db_proposta.dilucao_aplicada = primeiro_item["dilucao_aplicada"]
+        db_proposta.dilucao_numerador = primeiro_item["dilucao_numerador"]
+        db_proposta.dilucao_denominador = primeiro_item["dilucao_denominador"]
+        db_proposta.rendimento_total_litros = primeiro_item.get("rendimento_total_litros")
+        db_proposta.preco_produto = primeiro_item.get("preco_produto")
+        db_proposta.custo_por_litro_final = primeiro_item.get("custo_por_litro_final")
+        db_proposta.ficha_tecnica_id = contexto_itens["ficha_tecnica_id"]
+
+        rendimento_total = primeiro_item.get("rendimento_total_litros")
+        custo_por_litro = primeiro_item.get("custo_por_litro_final")
+        if rendimento_total and custo_por_litro:
+            comparacoes = comparar_com_concorrentes(
+                db,
+                primeiro_item["produto_id"],
+                rendimento_total,
+                custo_por_litro,
+                produto_principal.categoria if produto_principal else None,
             )
-            update_data['custo_por_litro_final'] = custo
-    
-    for key, value in update_data.items():
+            melhor_comparacao = comparacoes[0] if comparacoes else None
+        else:
+            melhor_comparacao = None
+
+        if melhor_comparacao:
+            db_proposta.concorrente_id = melhor_comparacao.concorrente_id
+            db_proposta.economia_percentual = melhor_comparacao.economia_percentual
+            db_proposta.economia_valor = melhor_comparacao.economia_valor
+            db_proposta.economia_vs_concorrente = melhor_comparacao.economia_percentual
+        else:
+            db_proposta.concorrente_id = None
+            db_proposta.economia_percentual = None
+            db_proposta.economia_valor = None
+            db_proposta.economia_vs_concorrente = None
+
+    # Atualizar comparações manuais
+    if proposta_update.comparacoes_personalizadas is not None:
+        db.query(models.PropostaConcorrenteManual).filter(
+            models.PropostaConcorrenteManual.proposta_id == db_proposta.id
+        ).delete(synchronize_session=False)
+        for ordem, comp in enumerate(proposta_update.comparacoes_personalizadas, start=1):
+            db.add(
+                models.PropostaConcorrenteManual(
+                    proposta_id=db_proposta.id,
+                    nome=comp.nome,
+                    rendimento_litro=comp.rendimento_litro,
+                    custo_por_litro=comp.custo_por_litro,
+                    observacoes=comp.observacoes,
+                    ordem=comp.ordem or ordem,
+                )
+            )
+
+    campos_simples = proposta_update.model_dump(
+        exclude_unset=True,
+        exclude={"itens", "comparacoes_personalizadas"},
+    )
+    for key, value in campos_simples.items():
         setattr(db_proposta, key, value)
-    
+
     db.commit()
     db.refresh(db_proposta)
     return db_proposta

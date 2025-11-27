@@ -25,7 +25,8 @@ export function OrcamentoBuilder() {
   const [etapa, setEtapa] = useState<Etapa>('cliente');
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [carrinho, setCarrinho] = useState<ItemCarrinhoOrcamento[]>([]);
-  const [condicaoPagamento, setCondicaoPagamento] = useState<string>('À vista');
+  const [condicaoPagamento, setCondicaoPagamento] = useState<string>('5 dias');
+  const [condicaoPersonalizada, setCondicaoPersonalizada] = useState<string>('');
   const [orcamentoId, setOrcamentoId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -76,9 +77,18 @@ export function OrcamentoBuilder() {
       return;
     }
 
+    if (condicaoPagamento === 'personalizado' && !condicaoPersonalizada.trim()) {
+      toast.error('Informe a condição de pagamento personalizada');
+      return;
+    }
+
+    const condicaoFinal = condicaoPagamento === 'personalizado' 
+      ? condicaoPersonalizada.trim() 
+      : condicaoPagamento;
+
     const payload: OrcamentoCreatePayload = {
       cliente_id: clienteSelecionado.id,
-      condicao_pagamento: condicaoPagamento,
+      condicao_pagamento: condicaoFinal,
       status: 'ENVIADO',
       itens: carrinho.map(item => ({
         produto_id: item.produto_id,
@@ -271,17 +281,30 @@ export function OrcamentoBuilder() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base sm:text-lg">Condição de Pagamento</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Select value={condicaoPagamento} onValueChange={setCondicaoPagamento}>
+              <CardContent className="space-y-3">
+                <Select value={condicaoPagamento} onValueChange={(value) => {
+                  setCondicaoPagamento(value);
+                  if (value !== 'personalizado') {
+                    setCondicaoPersonalizada('');
+                  }
+                }}>
                   <SelectTrigger className="h-11 sm:h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="À vista">À vista</SelectItem>
-                    <SelectItem value="30 dias">30 dias</SelectItem>
-                    <SelectItem value="30/60 dias">30/60 dias</SelectItem>
+                    <SelectItem value="5 dias">5 dias</SelectItem>
+                    <SelectItem value="7 dias">7 dias</SelectItem>
+                    <SelectItem value="personalizado">Personalizado</SelectItem>
                   </SelectContent>
                 </Select>
+                {condicaoPagamento === 'personalizado' && (
+                  <Input
+                    placeholder="Ex: 15 dias, 30 dias, À vista..."
+                    value={condicaoPersonalizada}
+                    onChange={(e) => setCondicaoPersonalizada(e.target.value)}
+                    className="h-11 sm:h-10"
+                  />
+                )}
               </CardContent>
             </Card>
           </div>

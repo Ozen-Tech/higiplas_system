@@ -44,6 +44,55 @@ export interface ComparacaoConcorrente {
   economia_valor?: number;
 }
 
+export interface ComparacaoConcorrenteManual {
+  id: number;
+  nome: string;
+  rendimento_litro?: number;
+  custo_por_litro?: number;
+  observacoes?: string;
+  ordem?: number;
+}
+
+export interface PropostaDetalhadaItem {
+  id: number;
+  proposta_id: number;
+  produto_id: number;
+  quantidade_produto: number;
+  dilucao_aplicada?: string;
+  dilucao_numerador?: number;
+  dilucao_denominador?: number;
+  rendimento_total_litros?: number;
+  preco_produto?: number;
+  custo_por_litro_final?: number;
+  observacoes?: string;
+  ordem?: number;
+  concorrente_nome_manual?: string;
+  concorrente_rendimento_manual?: number;
+  concorrente_custo_por_litro_manual?: number;
+  produto_nome?: string;
+}
+
+export interface PropostaDetalhadaItemCreatePayload {
+  produto_id: number;
+  quantidade_produto: number;
+  dilucao_aplicada?: string;
+  dilucao_numerador?: number;
+  dilucao_denominador?: number;
+  observacoes?: string;
+  ordem?: number;
+  concorrente_nome_manual?: string;
+  concorrente_rendimento_manual?: number;
+  concorrente_custo_por_litro_manual?: number;
+}
+
+export interface ComparacaoConcorrenteManualCreate {
+  nome: string;
+  rendimento_litro?: number;
+  custo_por_litro?: number;
+  observacoes?: string;
+  ordem?: number;
+}
+
 export interface PropostaDetalhada {
   id: number;
   orcamento_id?: number;
@@ -73,19 +122,17 @@ export interface PropostaDetalhada {
   ficha_tecnica?: FichaTecnica;
   concorrente?: ProdutoConcorrente;
   comparacoes?: ComparacaoConcorrente[];
+  itens: PropostaDetalhadaItem[];
+  comparacoes_personalizadas?: ComparacaoConcorrenteManual[];
 }
 
 export interface PropostaDetalhadaCreate {
   orcamento_id?: number;
   cliente_id: number;
-  produto_id: number;
-  quantidade_produto: number;
-  dilucao_aplicada?: string;
-  dilucao_numerador?: number;
-  dilucao_denominador?: number;
-  concorrente_id?: number;
   observacoes?: string;
   compartilhavel?: boolean;
+  itens: PropostaDetalhadaItemCreatePayload[];
+  comparacoes_personalizadas?: ComparacaoConcorrenteManualCreate[];
 }
 
 // ============= FICHAS TÉCNICAS =============

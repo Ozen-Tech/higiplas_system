@@ -85,32 +85,77 @@ class ProdutoConcorrente(ProdutoConcorrenteBase):
 
 # ============= PROPOSTA DETALHADA =============
 
-class PropostaDetalhadaBase(BaseModel):
-    orcamento_id: Optional[int] = None
-    cliente_id: int
+class PropostaDetalhadaItemBase(BaseModel):
     produto_id: int
     quantidade_produto: float
     dilucao_aplicada: Optional[str] = None
     dilucao_numerador: Optional[float] = None
     dilucao_denominador: Optional[float] = None
-    concorrente_id: Optional[int] = None
+    observacoes: Optional[str] = None
+    concorrente_nome_manual: Optional[str] = None
+    concorrente_rendimento_manual: Optional[float] = None
+    concorrente_custo_por_litro_manual: Optional[float] = None
+
+
+class PropostaDetalhadaItemCreate(PropostaDetalhadaItemBase):
+    ordem: Optional[int] = None
+
+
+class PropostaDetalhadaItem(PropostaDetalhadaItemBase):
+    id: int
+    proposta_id: int
+    rendimento_total_litros: Optional[float] = None
+    preco_produto: Optional[float] = None
+    custo_por_litro_final: Optional[float] = None
+    produto_nome: Optional[str] = None
+    ordem: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ComparacaoConcorrenteManualBase(BaseModel):
+    nome: str
+    rendimento_litro: Optional[float] = None
+    custo_por_litro: Optional[float] = None
+    observacoes: Optional[str] = None
+    ordem: Optional[int] = None
+
+
+class ComparacaoConcorrenteManualCreate(ComparacaoConcorrenteManualBase):
+    pass
+
+
+class ComparacaoConcorrenteManual(ComparacaoConcorrenteManualBase):
+    id: int
+    proposta_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PropostaDetalhadaBase(BaseModel):
+    orcamento_id: Optional[int] = None
+    cliente_id: int
     observacoes: Optional[str] = None
     compartilhavel: bool = False
+    concorrente_id: Optional[int] = None  # legado
+    produto_id: Optional[int] = None  # legado para retrocompatibilidade
+    quantidade_produto: Optional[float] = None  # legado
+    dilucao_aplicada: Optional[str] = None  # legado
+    dilucao_numerador: Optional[float] = None  # legado
+    dilucao_denominador: Optional[float] = None  # legado
 
 
 class PropostaDetalhadaCreate(PropostaDetalhadaBase):
-    pass
+    itens: Optional[List[PropostaDetalhadaItemCreate]] = Field(default=None, min_length=1)
+    comparacoes_personalizadas: Optional[List[ComparacaoConcorrenteManualCreate]] = None
 
 
 class PropostaDetalhadaUpdate(BaseModel):
     orcamento_id: Optional[int] = None
-    quantidade_produto: Optional[float] = None
-    dilucao_aplicada: Optional[str] = None
-    dilucao_numerador: Optional[float] = None
-    dilucao_denominador: Optional[float] = None
-    concorrente_id: Optional[int] = None
     observacoes: Optional[str] = None
     compartilhavel: Optional[bool] = None
+    itens: Optional[List[PropostaDetalhadaItemCreate]] = None
+    comparacoes_personalizadas: Optional[List[ComparacaoConcorrenteManualCreate]] = None
 
 
 class ComparacaoConcorrente(BaseModel):
@@ -123,6 +168,7 @@ class ComparacaoConcorrente(BaseModel):
     custo_por_litro_concorrente: Optional[float] = None
     economia_percentual: Optional[float] = None
     economia_valor: Optional[float] = None
+    item_id: Optional[int] = None
 
 
 class PropostaDetalhadaResponse(PropostaDetalhadaBase):
@@ -146,6 +192,8 @@ class PropostaDetalhadaResponse(PropostaDetalhadaBase):
     ficha_tecnica: Optional[FichaTecnica] = None
     concorrente: Optional[ProdutoConcorrente] = None
     comparacoes: Optional[List[ComparacaoConcorrente]] = None
+    itens: List[PropostaDetalhadaItem]
+    comparacoes_personalizadas: Optional[List[ComparacaoConcorrenteManual]] = None
 
     model_config = ConfigDict(from_attributes=True)
 

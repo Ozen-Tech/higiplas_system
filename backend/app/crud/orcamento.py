@@ -372,6 +372,81 @@ def _processar_baixa_estoque(
         )
 
 
+def _atualizar_precos_cliente_produto(
+    db: Session,
+    orcamento: models.Orcamento,
+    empresa_id: int
+) -> None:
+    """
+    Atualiza preços padrão e calcula ranges (min, max, médio) para cada produto do orçamento.
+    Quando um orçamento é confirmado, o preço é salvo como padrão para o cliente.
+    Se houver histórico suficiente, calcula ranges de preços.
+    
+    Args:
+        db: Sessão do banco de dados
+        orcamento: Orçamento confirmado
+        empresa_id: ID da empresa
+    """
+    for item in orcamento.itens:
+        preco_vendido = item.preco_unitario_congelado
+        cliente_id = orcamento.cliente_id
+        produto_id = item.produto_id
+        
+        # Salvar no histórico de preços primeiro
+        historico_preco = models.HistoricoPrecoProduto(
+            produto_id=produto_id,
+            preco_unitario=preco_vendido,
+            quantidade=item.quantidade,
+            valor_total=item.quantidade * preco_vendido,
+            empresa_id=empresa_id,
+            cliente_id=cliente_id,
+            nota_fiscal=orcamento.numero_nf
+        )
+        db.add(historico_preco)
+        db.flush()
+        
+        # Buscar ou criar registro de preço cliente-produto
+        preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+            models.PrecoClienteProduto.cliente_id == cliente_id,
+            models.PrecoClienteProduto.produto_id == produto_id
+        ).first()
+        
+        if not preco_cliente_produto:
+            # Criar novo registro
+            preco_cliente_produto = models.PrecoClienteProduto(
+                cliente_id=cliente_id,
+                produto_id=produto_id,
+                preco_padrao=preco_vendido,
+                preco_minimo=preco_vendido,
+                preco_maximo=preco_vendido,
+                preco_medio=preco_vendido,
+                total_vendas=1,
+                data_ultima_venda=orcamento.data_criacao
+            )
+            db.add(preco_cliente_produto)
+        else:
+            # Atualizar registro existente
+            preco_cliente_produto.preco_padrao = preco_vendido  # Último preço confirmado vira padrão
+            preco_cliente_produto.total_vendas += 1
+            preco_cliente_produto.data_ultima_venda = orcamento.data_criacao
+            
+            # Buscar histórico de preços deste cliente-produto para calcular ranges
+            historicos = db.query(models.HistoricoPrecoProduto).filter(
+                models.HistoricoPrecoProduto.produto_id == produto_id,
+                models.HistoricoPrecoProduto.cliente_id == cliente_id
+            ).all()
+            
+            # Calcular ranges
+            precos = [h.preco_unitario for h in historicos]
+            
+            if len(precos) >= 1:
+                preco_cliente_produto.preco_minimo = min(precos)
+                preco_cliente_produto.preco_maximo = max(precos)
+                preco_cliente_produto.preco_medio = sum(precos) / len(precos)
+        
+        db.flush()
+
+
 def _salvar_historico_vendas(
     db: Session,
     orcamento: models.Orcamento,
@@ -486,6 +561,9 @@ def confirmar_orcamento(
         
         # 3.5. Salvar histórico de vendas para sugestões e KPIs
         _salvar_historico_vendas(db, orcamento, usuario_id, empresa_id)
+        
+        # 3.6. Atualizar preços padrão e calcular ranges por cliente-produto
+        _atualizar_precos_cliente_produto(db, orcamento, empresa_id)
         
         # 4. Atualizar status para FINALIZADO
         _atualizar_status_finalizado(db, orcamento)

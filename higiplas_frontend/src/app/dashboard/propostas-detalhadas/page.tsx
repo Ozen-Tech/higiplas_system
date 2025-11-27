@@ -30,6 +30,7 @@ export default function PropostasDetalhadasPage() {
     const filtroLower = filtro.toLowerCase();
     return (
       p.produto_nome?.toLowerCase().includes(filtroLower) ||
+      p.itens?.some((item) => item.produto_nome?.toLowerCase().includes(filtroLower)) ||
       p.cliente_nome?.toLowerCase().includes(filtroLower) ||
       p.vendedor_nome?.toLowerCase().includes(filtroLower)
     );
@@ -176,8 +177,13 @@ export default function PropostasDetalhadasPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                       <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Produto</p>
-                        <p className="font-medium">{proposta.produto_nome || 'N/A'}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Produtos</p>
+                        <p className="font-medium">
+                          {proposta.itens?.[0]?.produto_nome || proposta.produto_nome || 'N/A'}
+                          {proposta.itens.length > 1 && (
+                            <span className="text-xs text-gray-500"> + {proposta.itens.length - 1} itens</span>
+                          )}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">Cliente</p>
@@ -188,11 +194,13 @@ export default function PropostasDetalhadasPage() {
                         <p className="font-medium">{proposta.vendedor_nome || 'N/A'}</p>
                       </div>
                     </div>
-                    {proposta.rendimento_total_litros && (
+                    {proposta.itens.length > 0 && (
                       <div className="mt-4">
                         <p className="text-sm text-gray-600 dark:text-gray-400">Rendimento Total</p>
                         <p className="text-xl font-bold text-green-600">
-                          {proposta.rendimento_total_litros.toFixed(2)} litros
+                          {proposta.itens
+                            .reduce((acc, item) => acc + (item.rendimento_total_litros || 0), 0)
+                            .toFixed(2)} litros
                         </p>
                       </div>
                     )}

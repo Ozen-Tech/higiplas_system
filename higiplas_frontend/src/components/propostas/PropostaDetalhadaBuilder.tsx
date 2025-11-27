@@ -13,8 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ClienteSelector } from '@/components/vendedor/ClienteSelector';
 import { Cliente, Produto } from '@/types/vendas';
-import { FichaTecnica } from '@/services/propostaService';
-import { Calculator, Save, Loader2 } from 'lucide-react';
+import { FichaTecnica, PropostaDetalhadaItemCreatePayload, ComparacaoConcorrenteManualCreate } from '@/services/propostaService';
+import { Calculator, Save, Loader2, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function PropostaDetalhadaBuilder() {
@@ -22,129 +22,195 @@ export function PropostaDetalhadaBuilder() {
   const { createProposta, calcularRendimento, calcularCustoPorLitro, loading } = usePropostaDetalhada();
   const { getFichaByProduto } = useFichasTecnicas();
 
+  type ItemFormState = {
+    produto: Produto | null;
+    quantidade: string;
+    dilucaoNumerador: string;
+    dilucaoDenominador: string;
+    observacoes: string;
+    fichaTecnica: FichaTecnica | null;
+    rendimentoCalculado: number | null;
+    custoPorLitro: number | null;
+    concorrenteNomeManual: string;
+    concorrenteRendimentoManual: string;
+    concorrenteCustoPorLitroManual: string;
+  };
+
+  const criarItemVazio = (): ItemFormState => ({
+    produto: null,
+    quantidade: '1',
+    dilucaoNumerador: '',
+    dilucaoDenominador: '',
+    observacoes: '',
+    fichaTecnica: null,
+    rendimentoCalculado: null,
+    custoPorLitro: null,
+    concorrenteNomeManual: '',
+    concorrenteRendimentoManual: '',
+    concorrenteCustoPorLitroManual: '',
+  });
+
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
-  const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
-  const [fichaTecnica, setFichaTecnica] = useState<FichaTecnica | null>(null);
-  const [quantidade, setQuantidade] = useState<string>('1');
-  const [dilucaoNumerador, setDilucaoNumerador] = useState<string>('');
-  const [dilucaoDenominador, setDilucaoDenominador] = useState<string>('');
-  const [rendimentoCalculado, setRendimentoCalculado] = useState<number | null>(null);
-  const [custoPorLitro, setCustoPorLitro] = useState<number | null>(null);
+  const [itens, setItens] = useState<ItemFormState[]>([criarItemVazio()]);
   const [observacoes, setObservacoes] = useState<string>('');
-  const [termoBuscaProduto, setTermoBuscaProduto] = useState<string>('');
+  const [mostrarComparacaoManual, setMostrarComparacaoManual] = useState(false);
+  const [comparacoesManuais, setComparacoesManuais] = useState<ComparacaoConcorrenteManualCreate[]>([
+    { nome: '', rendimento_litro: undefined, custo_por_litro: undefined, observacoes: '' },
+  ]);
 
   useEffect(() => {
     buscarClientes();
     buscarProdutos();
   }, [buscarClientes, buscarProdutos]);
 
-  const produtosFiltrados = produtos.filter(p =>
-    p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase()) ||
-    p.codigo?.toLowerCase().includes(termoBuscaProduto.toLowerCase())
-  );
+  const atualizarItem = (index: number, updates: Partial<ItemFormState>) => {
+    setItens((prev) => {
+      const novos = [...prev];
+      const atualizado = { ...novos[index], ...updates };
 
-  useEffect(() => {
-    const carregarFichaTecnica = async () => {
-      if (produtoSelecionado) {
-        const ficha = await getFichaByProduto(produtoSelecionado.id);
-        setFichaTecnica(ficha);
-        
-        // Preencher diluição da ficha técnica se disponível
-        if (ficha?.dilucao_numerador && ficha?.dilucao_denominador) {
-          setDilucaoNumerador(ficha.dilucao_numerador.toString());
-          setDilucaoDenominador(ficha.dilucao_denominador.toString());
+      const qtd = parseFloat(atualizado.quantidade) || 0;
+      const num = parseFloat(atualizado.dilucaoNumerador) || undefined;
+      const den = parseFloat(atualizado.dilucaoDenominador) || undefined;
+
+      if (atualizado.produto && qtd > 0 && num && den) {
+        const rendimento = calcularRendimento(qtd, num, den);
+        atualizado.rendimentoCalculado = rendimento ?? null;
+        if (atualizado.produto.preco && rendimento) {
+          atualizado.custoPorLitro = calcularCustoPorLitro(
+            atualizado.produto.preco,
+            qtd,
+            rendimento
+          ) ?? null;
+        } else {
+          atualizado.custoPorLitro = null;
         }
       } else {
-        setFichaTecnica(null);
+        atualizado.rendimentoCalculado = null;
+        atualizado.custoPorLitro = null;
       }
-    };
 
-    carregarFichaTecnica();
-  }, [produtoSelecionado, getFichaByProduto]);
+      novos[index] = atualizado;
+      return novos;
+    });
+  };
 
-  useEffect(() => {
-    // Recalcular rendimento quando quantidade ou diluição mudar
-    const qtd = parseFloat(quantidade) || 0;
-    const num = parseFloat(dilucaoNumerador) || null;
-    const den = parseFloat(dilucaoDenominador) || null;
+  const selecionarProduto = async (index: number, produtoId: string) => {
+    const produto = produtos.find((p) => p.id === Number(produtoId)) || null;
+    atualizarItem(index, { produto });
 
-    if (qtd > 0 && num && den) {
-      const rendimento = calcularRendimento(qtd, num, den);
-      setRendimentoCalculado(rendimento);
-
-      // Calcular custo por litro
-      if (produtoSelecionado?.preco && rendimento) {
-        const custo = calcularCustoPorLitro(produtoSelecionado.preco, qtd, rendimento);
-        setCustoPorLitro(custo);
-      }
+    if (produto) {
+      const ficha = await getFichaByProduto(produto.id);
+      atualizarItem(index, {
+        fichaTecnica: ficha,
+        dilucaoNumerador: ficha?.dilucao_numerador ? ficha.dilucao_numerador.toString() : '',
+        dilucaoDenominador: ficha?.dilucao_denominador ? ficha.dilucao_denominador.toString() : '',
+      });
     } else {
-      setRendimentoCalculado(null);
-      setCustoPorLitro(null);
+      atualizarItem(index, { fichaTecnica: null });
     }
-  }, [quantidade, dilucaoNumerador, dilucaoDenominador, produtoSelecionado, calcularRendimento, calcularCustoPorLitro]);
+  };
+
+  const adicionarItem = () => {
+    setItens((prev) => [...prev, criarItemVazio()]);
+  };
+
+  const removerItem = (index: number) => {
+    setItens((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleComparacaoManualChange = (index: number, campo: keyof ComparacaoConcorrenteManualCreate, valor: string) => {
+    setComparacoesManuais((prev) => {
+      const copia = [...prev];
+      const atualizado = { ...copia[index] };
+      
+      // Campos numéricos
+      if (campo === 'rendimento_litro') {
+        atualizado.rendimento_litro = valor ? Number(valor) : undefined;
+      } else if (campo === 'custo_por_litro') {
+        atualizado.custo_por_litro = valor ? Number(valor) : undefined;
+      } else if (campo === 'ordem') {
+        atualizado.ordem = valor ? Number(valor) : undefined;
+      } 
+      // Campos string
+      else if (campo === 'nome') {
+        atualizado.nome = valor;
+      } else if (campo === 'observacoes') {
+        atualizado.observacoes = valor;
+      }
+      
+      copia[index] = atualizado;
+      return copia;
+    });
+  };
+
+  const adicionarComparacaoManual = () => {
+    setComparacoesManuais((prev) => [...prev, { nome: '', rendimento_litro: undefined, custo_por_litro: undefined, observacoes: '' }]);
+  };
+
+  const removerComparacaoManual = (index: number) => {
+    setComparacoesManuais((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const itensValidos = itens.every((item) => {
+    const qtd = parseFloat(item.quantidade);
+    const num = parseFloat(item.dilucaoNumerador);
+    const den = parseFloat(item.dilucaoDenominador);
+    return item.produto && qtd > 0 && num > 0 && den > 0;
+  });
 
   const handleCriarProposta = async () => {
-    if (!clienteSelecionado || !produtoSelecionado) {
-      toast.error('Selecione um cliente e um produto');
+    if (!clienteSelecionado) {
+      toast.error('Selecione um cliente');
       return;
     }
 
-    const qtd = parseFloat(quantidade);
-    if (!qtd || qtd <= 0) {
-      toast.error('Informe uma quantidade válida');
+    if (!itensValidos) {
+      toast.error('Preencha todos os itens com produto, quantidade e diluição válidos');
       return;
     }
 
-    const num = parseFloat(dilucaoNumerador);
-    const den = parseFloat(dilucaoDenominador);
-    
-    if (!num || !den) {
-      toast.error('Informe a diluição (ex: 1:10)');
-      return;
-    }
+    const payloadItens: PropostaDetalhadaItemCreatePayload[] = itens.map((item, index) => {
+      const quantidade = parseFloat(item.quantidade);
+      const num = parseFloat(item.dilucaoNumerador);
+      const den = parseFloat(item.dilucaoDenominador);
+
+      return {
+        produto_id: item.produto!.id,
+        quantidade_produto: quantidade,
+        dilucao_aplicada: `${num}:${den}`,
+        dilucao_numerador: num,
+        dilucao_denominador: den,
+        observacoes: item.observacoes || undefined,
+        ordem: index + 1,
+        concorrente_nome_manual: item.concorrenteNomeManual || undefined,
+        concorrente_rendimento_manual: item.concorrenteRendimentoManual ? Number(item.concorrenteRendimentoManual) : undefined,
+        concorrente_custo_por_litro_manual: item.concorrenteCustoPorLitroManual ? Number(item.concorrenteCustoPorLitroManual) : undefined,
+      };
+    });
 
     try {
       await createProposta({
         cliente_id: clienteSelecionado.id,
-        produto_id: produtoSelecionado.id,
-        quantidade_produto: qtd,
-        dilucao_aplicada: `${num}:${den}`,
-        dilucao_numerador: num,
-        dilucao_denominador: den,
         observacoes: observacoes || undefined,
         compartilhavel: false,
+        itens: payloadItens,
+        comparacoes_personalizadas: mostrarComparacaoManual
+          ? comparacoesManuais.filter((comp) => comp.nome?.trim())
+          : undefined,
       });
 
       toast.success('Proposta detalhada criada com sucesso!');
-      
-      // Limpar formulário
       setClienteSelecionado(null);
-      setProdutoSelecionado(null);
-      setQuantidade('1');
-      setDilucaoNumerador('');
-      setDilucaoDenominador('');
+      setItens([criarItemVazio()]);
       setObservacoes('');
-      setRendimentoCalculado(null);
-      setCustoPorLitro(null);
+      setMostrarComparacaoManual(false);
+      setComparacoesManuais([{ nome: '', rendimento_litro: undefined, custo_por_litro: undefined, observacoes: '' }]);
     } catch (error) {
       console.error('Erro ao criar proposta:', error);
       let errorMessage = 'Erro ao criar proposta';
-      
       if (error instanceof Error) {
         errorMessage = error.message;
-        // Extrair mensagem de erro da API se disponível
-        if (error.message.includes('[') && error.message.includes(']')) {
-          try {
-            const match = error.message.match(/\[(\d+)\]\s*(.+)/);
-            if (match) {
-              errorMessage = match[2];
-            }
-          } catch {
-            // Se não conseguir extrair, usar a mensagem original
-          }
-        }
       }
-      
       toast.error(errorMessage);
     }
   };
@@ -153,10 +219,9 @@ export function PropostaDetalhadaBuilder() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Nova Proposta Detalhada</CardTitle>
+          <CardTitle>Dados gerais</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Seleção de Cliente */}
           <div>
             <Label>Cliente</Label>
             <ClienteSelector
@@ -168,182 +233,279 @@ export function PropostaDetalhadaBuilder() {
             />
           </div>
 
-          {/* Seleção de Produto */}
           <div>
-            <Label>Produto Girassol</Label>
-            {produtoSelecionado ? (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{produtoSelecionado.nome}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Cód: {produtoSelecionado.codigo || 'N/A'} | 
-                        Estoque: {produtoSelecionado.estoque_disponivel} | 
-                        Preço: R$ {produtoSelecionado.preco.toFixed(2)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setProdutoSelecionado(null);
-                        setTermoBuscaProduto('');
-                      }}
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  placeholder="Buscar produto por nome ou código..."
-                  value={termoBuscaProduto}
-                  onChange={(e) => setTermoBuscaProduto(e.target.value)}
-                />
-                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
-                  {produtosFiltrados.length === 0 ? (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
-                      {termoBuscaProduto ? 'Nenhum produto encontrado' : 'Digite para buscar produtos'}
-                    </p>
-                  ) : (
-                    produtosFiltrados.slice(0, 20).map((produto) => (
-                      <div
-                        key={produto.id}
-                        onClick={() => {
-                          setProdutoSelecionado(produto);
-                          setTermoBuscaProduto('');
-                        }}
-                        className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                      >
-                        <p className="font-medium">{produto.nome}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Cód: {produto.codigo || 'N/A'} | 
-                          Estoque: {produto.estoque_disponivel} | 
-                          R$ {produto.preco.toFixed(2)}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Ficha Técnica */}
-          {produtoSelecionado && (
-            <FichaTecnicaCard ficha={fichaTecnica} />
-          )}
-
-          {/* Quantidade e Diluição */}
-          {produtoSelecionado && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="quantidade">Quantidade do Produto</Label>
-                <Input
-                  id="quantidade"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  value={quantidade}
-                  onChange={(e) => setQuantidade(e.target.value)}
-                  placeholder="Ex: 1"
-                />
-                <p className="text-xs text-gray-500 mt-1">Em litros ou unidades</p>
-              </div>
-
-              <div>
-                <Label htmlFor="dilucao-num">Diluição - Parte 1</Label>
-                <Input
-                  id="dilucao-num"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  value={dilucaoNumerador}
-                  onChange={(e) => setDilucaoNumerador(e.target.value)}
-                  placeholder="Ex: 1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="dilucao-den">Diluição - Parte 2</Label>
-                <Input
-                  id="dilucao-den"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  value={dilucaoDenominador}
-                  onChange={(e) => setDilucaoDenominador(e.target.value)}
-                  placeholder="Ex: 10"
-                />
-                <p className="text-xs text-gray-500 mt-1">Ex: 1:10 significa 1 parte para 10 partes</p>
-              </div>
-            </div>
-          )}
-
-          {/* Resultados do Cálculo */}
-          {rendimentoCalculado !== null && (
-            <Card className="bg-blue-50 dark:bg-blue-900/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calculator className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold">Resultados do Cálculo</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Rendimento Total</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {rendimentoCalculado.toFixed(2)} litros
-                    </p>
-                  </div>
-                  {custoPorLitro !== null && (
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Custo por Litro Final</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        R$ {custoPorLitro.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Observações */}
-          <div>
-            <Label htmlFor="observacoes">Observações (opcional)</Label>
+            <Label htmlFor="observacoes">Observações gerais</Label>
             <textarea
               id="observacoes"
-              className="w-full min-h-[100px] px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
+              className="w-full min-h-[80px] px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Observações adicionais sobre a proposta..."
+              placeholder="Destacar benefícios, instruções de aplicação ou condições especiais."
             />
           </div>
-
-          {/* Botão Criar */}
-          <Button
-            onClick={handleCriarProposta}
-            disabled={loading || !clienteSelecionado || !produtoSelecionado || !rendimentoCalculado}
-            className="w-full"
-            size="lg"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Criar Proposta Detalhada
-              </>
-            )}
-          </Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <CardTitle>Produtos Higiplas incluídos</CardTitle>
+          <Button variant="outline" onClick={adicionarItem}>
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar produto
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {itens.map((item, index) => (
+            <Card key={index} className="border-blue-100 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 py-4">
+                <div>
+                  <p className="font-semibold">
+                    Produto #{index + 1}{' '}
+                    {item.produto ? `- ${item.produto.nome}` : ''}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Informe o produto, diluição e rendimento para gerar a proposta.
+                  </p>
+                </div>
+                {itens.length > 1 && (
+                  <Button variant="ghost" size="sm" onClick={() => removerItem(index)}>
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <span className="sr-only">Remover item</span>
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Produto</Label>
+                    <select
+                      className="w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700"
+                      value={item.produto?.id ?? ''}
+                      onChange={(e) => selecionarProduto(index, e.target.value)}
+                    >
+                      <option value="">Selecione um produto</option>
+                      {produtos.map((produto) => (
+                        <option key={produto.id} value={produto.id}>
+                          {produto.nome} (R$ {produto.preco.toFixed(2)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Observações do item (opcional)</Label>
+                    <Input
+                      value={item.observacoes}
+                      onChange={(e) => atualizarItem(index, { observacoes: e.target.value })}
+                      placeholder="Ex: Limpeza pesada, cozinha industrial"
+                    />
+                  </div>
+                </div>
+
+                {item.fichaTecnica && <FichaTecnicaCard ficha={item.fichaTecnica} />}
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label>Quantidade</Label>
+                    <Input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={item.quantidade}
+                      onChange={(e) => atualizarItem(index, { quantidade: e.target.value })}
+                      placeholder="Ex: 2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Litros ou unidades</p>
+                  </div>
+                  <div>
+                    <Label>Diluição - parte 1</Label>
+                    <Input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={item.dilucaoNumerador}
+                      onChange={(e) => atualizarItem(index, { dilucaoNumerador: e.target.value })}
+                      placeholder="Ex: 1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Diluição - parte 2</Label>
+                    <Input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={item.dilucaoDenominador}
+                      onChange={(e) => atualizarItem(index, { dilucaoDenominador: e.target.value })}
+                      placeholder="Ex: 10"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">1:10 = 1 parte para 10 partes</p>
+                  </div>
+                  <div>
+                    <Label>Concorrente (nome)</Label>
+                    <Input
+                      value={item.concorrenteNomeManual}
+                      onChange={(e) => atualizarItem(index, { concorrenteNomeManual: e.target.value })}
+                      placeholder="Produto do cliente"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Opcional por item</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Rendimento concorrente (L)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={item.concorrenteRendimentoManual}
+                      onChange={(e) => atualizarItem(index, { concorrenteRendimentoManual: e.target.value })}
+                      placeholder="Ex: 30"
+                    />
+                  </div>
+                  <div>
+                    <Label>Custo concorrente por litro</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={item.concorrenteCustoPorLitroManual}
+                      onChange={(e) => atualizarItem(index, { concorrenteCustoPorLitroManual: e.target.value })}
+                      placeholder="Ex: 2.5"
+                    />
+                  </div>
+                </div>
+
+                {item.rendimentoCalculado !== null && (
+                  <Card className="bg-blue-50 dark:bg-blue-900/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Calculator className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold">Resultados do item</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Rendimento total</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {item.rendimentoCalculado.toFixed(2)} litros
+                          </p>
+                        </div>
+                        {item.custoPorLitro !== null && (
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Custo final por litro</p>
+                            <p className="text-2xl font-bold text-green-600">
+                              R$ {item.custoPorLitro.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Comparação rápida com concorrentes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={mostrarComparacaoManual}
+              onChange={(e) => setMostrarComparacaoManual(e.target.checked)}
+            />
+            Incluir tabela de produtos concorrentes do cliente
+          </label>
+
+          {mostrarComparacaoManual && (
+            <div className="space-y-4">
+              {comparacoesManuais.map((comparacao, index) => (
+                <Card key={index}>
+                  <CardHeader className="flex flex-row items-center justify-between py-3">
+                    <p className="font-semibold">Concorrente #{index + 1}</p>
+                    {comparacoesManuais.length > 1 && (
+                      <Button variant="ghost" size="sm" onClick={() => removerComparacaoManual(index)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <span className="sr-only">Remover concorrente</span>
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <Label>Nome do produto</Label>
+                        <Input
+                          value={comparacao.nome}
+                          onChange={(e) => handleComparacaoManualChange(index, 'nome', e.target.value)}
+                          placeholder="Produto que o cliente utiliza"
+                        />
+                      </div>
+                      <div>
+                        <Label>Rendimento (L)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={comparacao.rendimento_litro ?? ''}
+                          onChange={(e) => handleComparacaoManualChange(index, 'rendimento_litro', e.target.value)}
+                          placeholder="Ex: 30"
+                        />
+                      </div>
+                      <div>
+                        <Label>Custo por litro</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={comparacao.custo_por_litro ?? ''}
+                          onChange={(e) => handleComparacaoManualChange(index, 'custo_por_litro', e.target.value)}
+                          placeholder="Ex: 2.40"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Observações (opcional)</Label>
+                      <Input
+                        value={comparacao.observacoes ?? ''}
+                        onChange={(e) => handleComparacaoManualChange(index, 'observacoes', e.target.value)}
+                        placeholder="Diferenciais ou alertas"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button variant="outline" onClick={adicionarComparacaoManual}>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar concorrente
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Button
+        onClick={handleCriarProposta}
+        disabled={loading || !clienteSelecionado || !itensValidos}
+        className="w-full"
+        size="lg"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Gerando proposta...
+          </>
+        ) : (
+          <>
+            <Save className="mr-2 h-4 w-4" />
+            Gerar proposta detalhada em PDF
+          </>
+        )}
+      </Button>
     </div>
   );
 }
