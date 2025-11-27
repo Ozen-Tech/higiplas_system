@@ -106,9 +106,9 @@ class PropostaDetalhadaPDF(FPDF):
         self.cell(0, 8, 'DADOS DO CLIENTE', 0, 1, 'L', True)
         self.set_text_color(0, 0, 0)
 
-        # Box com informações do cliente
+        # Box com informações do cliente (ajustado para modo paisagem: 277mm útil)
         self.set_fill_color(245, 245, 245)  # Cinza claro
-        self.rect(10, self.get_y(), 190, 20, 'F')
+        self.rect(10, self.get_y(), 277, 20, 'F')
 
         y_start = self.get_y() + 3
         self.set_y(y_start)
@@ -136,7 +136,7 @@ class PropostaDetalhadaPDF(FPDF):
         self.set_font('Arial', 'B', 11)
         self.cell(0, 8, 'RESUMO DA PROPOSTA', 0, 1, 'L', True)
         self.set_text_color(0, 0, 0)
-
+        
         self.set_fill_color(245, 245, 245)
         self.rect(10, self.get_y(), 267, 30, 'F')
         self.set_y(self.get_y() + 4)
@@ -146,27 +146,35 @@ class PropostaDetalhadaPDF(FPDF):
         self.cell(65, 6, 'Produtos Higiplas incluídos:', 0, 0)
         self.set_font('Arial', '', 9)
         self.cell(60, 6, f'{total_itens} item(ns)', 0, 0)
-
+        
         self.set_font('Arial', 'B', 9)
         self.cell(65, 6, 'Rendimento total estimado:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(60, 6, f'{total_rendimento:,.2f} litros', 0, 1)
-
+        try:
+            rendimento_str = f'{float(total_rendimento):,.2f} litros' if total_rendimento and float(total_rendimento) > 0 else 'N/A'
+        except (TypeError, ValueError):
+            rendimento_str = 'N/A'
+        self.cell(60, 6, rendimento_str, 0, 1)
+        
         self.set_x(12)
         self.set_font('Arial', 'B', 9)
         self.cell(65, 6, 'Custo médio final por litro:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(60, 6, 'R$ {:.2f}'.format(custo_medio) if custo_medio else 'N/A', 0, 0)
-
+        try:
+            custo_str = f'R$ {custo_medio:,.2f}' if custo_medio and custo_medio > 0 else 'N/A'
+        except (TypeError, ValueError):
+            custo_str = 'N/A'
+        self.cell(60, 6, custo_str, 0, 0)
+        
         self.set_font('Arial', 'B', 9)
         self.cell(65, 6, 'Consultor responsável:', 0, 0)
         self.set_font('Arial', '', 9)
         self.cell(0, 6, vendedor, 0, 1)
-
+        
         self.ln(5)
-
+    
     def secao_tabela_produtos(self):
-        """Tabela comparativa entre Higiplas e produtos do cliente"""
+        """Tabela comparativa entre Higiplas e produtos do cliente em modo paisagem"""
         itens = self.proposta_data.get('itens', [])
         if not itens:
             return
@@ -176,8 +184,11 @@ class PropostaDetalhadaPDF(FPDF):
         self.set_font('Arial', 'B', 11)
         self.cell(0, 8, 'COMPARATIVO DE PRODUTOS', 0, 1, 'L', True)
         self.set_text_color(0, 0, 0)
+        self.ln(2)
 
-        colunas = [60, 30, 30, 60, 45, 30]
+        # Larguras ajustadas para modo paisagem (277mm útil - 20mm margens = 257mm)
+        # Distribuindo: 70, 35, 35, 70, 35, 32 = 277mm total
+        colunas = [70, 35, 35, 70, 35, 32]
         headers = [
             'PRODUTO HIGIPLAS',
             'RENDIMENTO',
@@ -187,27 +198,60 @@ class PropostaDetalhadaPDF(FPDF):
             'CUSTO/L',
         ]
 
-        self.set_font('Arial', 'B', 8)
+        # Cabeçalho da tabela
+        self.set_fill_color(220, 220, 220)
+        self.set_font('Arial', 'B', 9)
         for largura, titulo in zip(colunas, headers):
-            self.cell(largura, 7, titulo, 1, 0, 'C', True)
+            self.cell(largura, 8, titulo, 1, 0, 'C', True)
         self.ln()
 
+        # Linhas da tabela
         self.set_font('Arial', '', 8)
-        for item in itens:
-            produto_nome = item.get('produto_nome') or self.proposta_data.get('produto_nome') or 'Produto Higiplas'
-            self.cell(colunas[0], 7, produto_nome[:40], 1)
+        for idx, item in enumerate(itens):
+            # Alternar cores das linhas
+            if idx % 2 == 0:
+                self.set_fill_color(255, 255, 255)
+            else:
+                self.set_fill_color(250, 250, 250)
+            
+            produto_nome = str(item.get('produto_nome') or self.proposta_data.get('produto_nome') or 'Produto Higiplas')
+            # Truncar nome se muito longo
+            produto_nome = produto_nome[:45] if len(produto_nome) > 45 else produto_nome
+            self.cell(colunas[0], 7, produto_nome, 1, 0, 'L', True)
+            
             rendimento = item.get('rendimento_total_litros')
-            self.cell(colunas[1], 7, f"{rendimento:,.2f} L" if rendimento else 'N/A', 1, 0, 'C')
+            try:
+                rendimento_str = f"{float(rendimento):,.2f} L" if rendimento and float(rendimento) > 0 else 'N/A'
+            except (TypeError, ValueError):
+                rendimento_str = 'N/A'
+            self.cell(colunas[1], 7, rendimento_str, 1, 0, 'C', True)
+            
             custo = item.get('custo_por_litro_final')
-            self.cell(colunas[2], 7, f"R$ {custo:,.2f}" if custo else 'N/A', 1, 0, 'C')
-            concorrente_nome = item.get('concorrente_nome_manual') or 'Não informado'
-            self.cell(colunas[3], 7, concorrente_nome[:35], 1)
+            try:
+                custo_str = f"R$ {float(custo):,.2f}" if custo and float(custo) > 0 else 'N/A'
+            except (TypeError, ValueError):
+                custo_str = 'N/A'
+            self.cell(colunas[2], 7, custo_str, 1, 0, 'C', True)
+            
+            concorrente_nome = str(item.get('concorrente_nome_manual') or 'Não informado')
+            concorrente_nome = concorrente_nome[:40] if len(concorrente_nome) > 40 else concorrente_nome
+            self.cell(colunas[3], 7, concorrente_nome, 1, 0, 'L', True)
+            
             conc_rendimento = item.get('concorrente_rendimento_manual')
-            self.cell(colunas[4], 7, f"{conc_rendimento:,.2f} L" if conc_rendimento else 'N/A', 1, 0, 'C')
+            try:
+                conc_rendimento_str = f"{float(conc_rendimento):,.2f} L" if conc_rendimento and float(conc_rendimento) > 0 else 'N/A'
+            except (TypeError, ValueError):
+                conc_rendimento_str = 'N/A'
+            self.cell(colunas[4], 7, conc_rendimento_str, 1, 0, 'C', True)
+            
             conc_custo = item.get('concorrente_custo_por_litro_manual')
-            self.cell(colunas[5], 7, f"R$ {conc_custo:,.2f}" if conc_custo else 'N/A', 1, 0, 'C')
+            try:
+                conc_custo_str = f"R$ {float(conc_custo):,.2f}" if conc_custo and float(conc_custo) > 0 else 'N/A'
+            except (TypeError, ValueError):
+                conc_custo_str = 'N/A'
+            self.cell(colunas[5], 7, conc_custo_str, 1, 0, 'C', True)
             self.ln()
-
+        
         self.ln(5)
     
     def secao_comparacao(self):
@@ -241,15 +285,30 @@ class PropostaDetalhadaPDF(FPDF):
             else:
                 self.set_fill_color(255, 255, 255)
             
-            nome = comp.get('concorrente_nome', 'N/A')[:30]
-            preco = comp.get('custo_por_litro_concorrente', 0)
-            economia_valor = comp.get('economia_valor', 0)
-            economia_pct = comp.get('economia_percentual', 0)
+            nome = str(comp.get('concorrente_nome', 'N/A'))[:30]
+            preco = comp.get('custo_por_litro_concorrente') or 0
+            economia_valor = comp.get('economia_valor') or 0
+            economia_pct = comp.get('economia_percentual') or 0
+            
+            try:
+                preco_str = f'R$ {float(preco):,.2f}' if preco and float(preco) > 0 else 'N/A'
+            except (TypeError, ValueError):
+                preco_str = 'N/A'
+            
+            try:
+                economia_valor_str = f'R$ {float(economia_valor):,.2f}' if economia_valor and float(economia_valor) != 0 else 'N/A'
+            except (TypeError, ValueError):
+                economia_valor_str = 'N/A'
+            
+            try:
+                economia_pct_str = f'{float(economia_pct):.1f}%' if economia_pct and float(economia_pct) != 0 else 'N/A'
+            except (TypeError, ValueError):
+                economia_pct_str = 'N/A'
             
             self.cell(60, 7, nome, 1, 0, 'L', True)
-            self.cell(40, 7, f'R$ {preco:,.2f}' if preco else 'N/A', 1, 0, 'R', True)
-            self.cell(40, 7, f'R$ {economia_valor:,.2f}' if economia_valor else 'N/A', 1, 0, 'R', True)
-            self.cell(50, 7, f'{economia_pct:.1f}%' if economia_pct else 'N/A', 1, 1, 'C', True)
+            self.cell(40, 7, preco_str, 1, 0, 'R', True)
+            self.cell(40, 7, economia_valor_str, 1, 0, 'R', True)
+            self.cell(50, 7, economia_pct_str, 1, 1, 'C', True)
         
         self.ln(5)
 
@@ -268,19 +327,32 @@ class PropostaDetalhadaPDF(FPDF):
         self.set_font('Arial', '', 9)
         for comp in comparacoes_personalizadas:
             self.set_fill_color(245, 245, 245)
-            self.rect(10, self.get_y(), 267, 12, 'F')
+            self.rect(10, self.get_y(), 277, 12, 'F')
             self.set_y(self.get_y() + 2)
             self.set_x(12)
-            self.cell(80, 6, comp.get('nome', 'Concorrente'), 0, 0)
+            nome = str(comp.get('nome', 'Concorrente'))[:50]
+            self.cell(90, 6, nome, 0, 0)
+            
             rendimento = comp.get('rendimento_litro')
+            try:
+                rendimento_str = f"Rendimento: {float(rendimento):,.2f} L" if rendimento and float(rendimento) > 0 else "Rendimento: N/A"
+            except (TypeError, ValueError):
+                rendimento_str = "Rendimento: N/A"
+            self.cell(90, 6, rendimento_str, 0, 0)
+            
             custo = comp.get('custo_por_litro')
-            self.cell(80, 6, f"Rendimento: {rendimento:,.2f} L" if rendimento else "Rendimento: N/A", 0, 0)
-            self.cell(60, 6, f"Custo/L: R$ {custo:,.2f}" if custo else "Custo/L: N/A", 0, 1)
+            try:
+                custo_str = f"Custo/L: R$ {float(custo):,.2f}" if custo and float(custo) > 0 else "Custo/L: N/A"
+            except (TypeError, ValueError):
+                custo_str = "Custo/L: N/A"
+            self.cell(0, 6, custo_str, 0, 1)
+            
             observacoes = comp.get('observacoes')
-            if observacoes:
+            if observacoes and str(observacoes).strip():
                 self.set_x(12)
                 self.set_font('Arial', 'I', 8)
-                self.cell(0, 5, f"Notas: {observacoes}", 0, 1)
+                obs_text = str(observacoes)[:200]  # Limitar tamanho
+                self.multi_cell(0, 5, f"Notas: {obs_text}", 0, 1)
                 self.set_font('Arial', '', 9)
             self.ln(2)
     
@@ -685,21 +757,40 @@ def gerar_proposta_pdf(
         )
     
     # Preparar dados para o PDF
-    itens_data = [
-        {
-            'produto_nome': item.produto.nome if item.produto else None,
-            'rendimento_total_litros': item.rendimento_total_litros,
-            'custo_por_litro_final': item.custo_por_litro_final,
-            'dilucao_aplicada': item.dilucao_aplicada,
-            'concorrente_nome_manual': item.concorrente_nome_manual,
-            'concorrente_rendimento_manual': item.concorrente_rendimento_manual,
-            'concorrente_custo_por_litro_manual': item.concorrente_custo_por_litro_manual,
-        }
-        for item in proposta.itens
-    ]
-    total_rendimento = sum(item.get('rendimento_total_litros') or 0 for item in itens_data)
-    custos_validos = [item.get('custo_por_litro_final') for item in itens_data if item.get('custo_por_litro_final')]
-    custo_medio = sum(custos_validos) / len(custos_validos) if custos_validos else None
+    itens_data = []
+    if proposta.itens:
+        for item in proposta.itens:
+            try:
+                itens_data.append({
+                    'produto_nome': item.produto.nome if item.produto else 'Produto não encontrado',
+                    'rendimento_total_litros': item.rendimento_total_litros or 0,
+                    'custo_por_litro_final': item.custo_por_litro_final or 0,
+                    'dilucao_aplicada': item.dilucao_aplicada or 'N/A',
+                    'concorrente_nome_manual': item.concorrente_nome_manual or None,
+                    'concorrente_rendimento_manual': item.concorrente_rendimento_manual or None,
+                    'concorrente_custo_por_litro_manual': item.concorrente_custo_por_litro_manual or None,
+                })
+            except Exception as e:
+                # Se houver erro ao processar um item, pular e continuar
+                from app.core.logger import app_logger
+                app_logger.error(f"Erro ao processar item da proposta {proposta.id}: {str(e)}")
+                continue
+    
+    # Se não houver itens, usar dados da proposta principal (compatibilidade com propostas antigas)
+    if not itens_data:
+        itens_data = [{
+            'produto_nome': proposta.produto.nome if proposta.produto else 'Produto não encontrado',
+            'rendimento_total_litros': proposta.rendimento_total_litros or 0,
+            'custo_por_litro_final': proposta.custo_por_litro_final or 0,
+            'dilucao_aplicada': proposta.dilucao_aplicada or 'N/A',
+            'concorrente_nome_manual': None,
+            'concorrente_rendimento_manual': None,
+            'concorrente_custo_por_litro_manual': None,
+        }]
+    
+    total_rendimento = sum(float(item.get('rendimento_total_litros') or 0) for item in itens_data)
+    custos_validos = [float(item.get('custo_por_litro_final') or 0) for item in itens_data if item.get('custo_por_litro_final')]
+    custo_medio = sum(custos_validos) / len(custos_validos) if custos_validos and len(custos_validos) > 0 else None
 
     proposta_data = {
         'id': proposta.id,
@@ -720,12 +811,12 @@ def gerar_proposta_pdf(
         'custo_medio': custo_medio,
         'concorrentes_personalizados': [
             {
-                'nome': comp.nome,
-                'rendimento_litro': comp.rendimento_litro,
-                'custo_por_litro': comp.custo_por_litro,
-                'observacoes': comp.observacoes,
+                'nome': str(comp.nome) if comp.nome else 'Concorrente',
+                'rendimento_litro': float(comp.rendimento_litro) if comp.rendimento_litro else None,
+                'custo_por_litro': float(comp.custo_por_litro) if comp.custo_por_litro else None,
+                'observacoes': str(comp.observacoes) if comp.observacoes else None,
             }
-            for comp in proposta.concorrentes_personalizados
+            for comp in (proposta.concorrentes_personalizados or [])
         ],
         'comparacoes': [
             {
