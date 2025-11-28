@@ -195,6 +195,7 @@ class Orcamento(Base):
     preco_minimo = Column(Float, nullable=True)
     preco_maximo = Column(Float, nullable=True)
     numero_nf = Column(String, nullable=True)  # NF para dar baixa no orçamento
+    token_compartilhamento = Column(String, unique=True, nullable=True, index=True)  # Token para link compartilhável do PDF
     
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     usuario = relationship("Usuario")

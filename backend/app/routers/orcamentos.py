@@ -242,19 +242,28 @@ class OrcamentoPDF(FPDF):
 
         self.ln(2)
 
-        # Observacoes
+        # Observacoes principais
         self.set_font('Arial', '', 9)
-        observacoes = [
-            '- Este orcamento tem validade de 30 dias a partir da data de emissao.',
-            '- Os precos estao sujeitos a alteracao sem aviso previo.',
-            '- O prazo de entrega sera informado apos confirmacao do pedido.',
-            '- Frete nao incluso no valor do orcamento.',
-            '- Pagamento conforme condicao especificada acima.',
+        observacoes_principais = [
+            '- Validade da proposta: 5 dias',
+            '- Entrega: 24 horas',
         ]
 
-        for obs in observacoes:
+        for obs in observacoes_principais:
             self.set_x(10)  # Resetar X antes de cada linha
             self.multi_cell(0, 5, obs)
+
+        self.ln(3)
+
+        # Seção de observações sazonais
+        self.set_font('Arial', 'B', 9)
+        self.set_x(10)
+        self.cell(0, 5, 'OBSERVAÇÕES SAZONAIS:', 0, 1, 'L')
+        
+        self.set_font('Arial', '', 9)
+        self.set_x(10)
+        # Espaço reservado para observações sazonais (pode ser preenchido dinamicamente no futuro)
+        self.multi_cell(0, 5, '(Espaço reservado para observações sazonais)')
 
         self.ln(5)
 
@@ -349,6 +358,69 @@ def gerar_orcamento_pdf(
         BytesIO(pdf_bytes),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento.id:05d}.pdf"}
+    )
+
+@router.get("/{orcamento_id}/pdf/public/{token}", summary="Acessa PDF do orçamento via token público (sem autenticação)")
+def gerar_orcamento_pdf_publico(
+    orcamento_id: int,
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Endpoint público para acessar o PDF do orçamento usando token de compartilhamento"""
+    orcamento = db.query(models.Orcamento).options(
+        joinedload(models.Orcamento.cliente),
+        joinedload(models.Orcamento.usuario),
+        joinedload(models.Orcamento.itens).joinedload(models.OrcamentoItem.produto)
+    ).filter(
+        models.Orcamento.id == orcamento_id,
+        models.Orcamento.token_compartilhamento == token
+    ).first()
+
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado ou token inválido")
+
+    # Preparar dados para o PDF
+    orcamento_data = {
+        'id': orcamento.id,
+        'data': orcamento.data_criacao.strftime("%d/%m/%Y"),
+        'cliente': {
+            'razao_social': orcamento.cliente.razao_social,
+            'cnpj': getattr(orcamento.cliente, 'cnpj', 'N/A'),
+            'telefone': orcamento.cliente.telefone or 'N/A',
+            'email': getattr(orcamento.cliente, 'email', 'N/A'),
+            'endereco': getattr(orcamento.cliente, 'endereco', 'N/A'),
+        },
+        'vendedor': orcamento.usuario.nome,
+        'condicao_pagamento': orcamento.condicao_pagamento,
+        'itens': [
+            {
+                'produto_nome': item.produto.nome,
+                'quantidade': item.quantidade,
+                'preco_unitario': float(item.preco_unitario_congelado),
+            }
+            for item in orcamento.itens
+        ]
+    }
+
+    # Criar PDF profissional
+    pdf = OrcamentoPDF(orcamento_data)
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    
+    # Adicionar seções
+    pdf.titulo_orcamento()
+    pdf.secao_cliente()
+    pdf.secao_vendedor()
+    pdf.tabela_produtos()
+    pdf.secao_observacoes()
+
+    # Gerar bytes do PDF
+    pdf_bytes = pdf.output(dest='S')
+    
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=orcamento_{orcamento.id:05d}.pdf"}
     )
 
 # ============= ROTAS ADMIN =============

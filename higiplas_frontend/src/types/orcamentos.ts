@@ -31,6 +31,7 @@ export interface ItemCarrinhoOrcamento {
     status: string;
     data_criacao: string;
     condicao_pagamento: string;
+    token_compartilhamento?: string;
     cliente: {
       id: number;
       razao_social: string;

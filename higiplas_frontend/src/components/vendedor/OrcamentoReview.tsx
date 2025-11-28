@@ -67,16 +67,40 @@ export function OrcamentoReview({
     }
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
     if (!cliente.telefone) {
       toast.error('Cliente não possui telefone cadastrado');
       return;
     }
 
-    const mensagem = `Olá, ${cliente.nome}! Segue o orçamento solicitado. Estou à disposição para qualquer dúvida.`;
-    const fone = cliente.telefone.replace(/\D/g, '');
-    const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
-    window.open(whatsappUrl, '_blank');
+    if (!orcamentoId) {
+      toast.error('Orçamento não encontrado');
+      return;
+    }
+
+    try {
+      // Buscar o orçamento para obter o token de compartilhamento
+      const response = await apiService.get(`/orcamentos/${orcamentoId}`);
+      const orcamento = response?.data || response;
+      
+      if (!orcamento?.token_compartilhamento) {
+        toast.error('Token de compartilhamento não disponível');
+        return;
+      }
+
+      // Construir URL do PDF público
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+      const pdfUrl = `${API_BASE_URL}/orcamentos/${orcamentoId}/pdf/public/${orcamento.token_compartilhamento}`;
+
+      // Mensagem com link do PDF
+      const mensagem = `Olá, ${cliente.nome}! Segue o orçamento solicitado.\n\n📄 Acesse o PDF aqui: ${pdfUrl}\n\nEstou à disposição para qualquer dúvida.`;
+      const fone = cliente.telefone.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
+      window.open(whatsappUrl, '_blank');
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+      toast.error('Erro ao compartilhar orçamento');
+    }
   };
 
   return (
