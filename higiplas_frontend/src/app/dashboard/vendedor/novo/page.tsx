@@ -215,12 +215,45 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-  const handleShareWhatsApp = () => {
-      if(!clienteSelecionado) return;
-      const mensagem = `Olá, ${clienteSelecionado.nome}! Segue o orçamento solicitado. Estou à disposição para qualquer dúvida.`;
-      const fone = clienteSelecionado.telefone.replace(/\D/g, '');
-      const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
-      window.open(whatsappUrl, '_blank');
+  const handleShareWhatsApp = async () => {
+      if(!clienteSelecionado) {
+        toast.error('Selecione um cliente');
+        return;
+      }
+
+      if (!clienteSelecionado.telefone) {
+        toast.error('Cliente não possui telefone cadastrado');
+        return;
+      }
+
+      if (!orcamentoFinalizado) {
+        toast.error('Finalize o orçamento antes de compartilhar');
+        return;
+      }
+
+      try {
+        // Buscar o orçamento para obter o token de compartilhamento
+        const response = await apiService.get(`/orcamentos/${orcamentoFinalizado}`);
+        const orcamento = response?.data || response;
+        
+        if (!orcamento?.token_compartilhamento) {
+          toast.error('Token de compartilhamento não disponível');
+          return;
+        }
+
+        // Construir URL do PDF público
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+        const pdfUrl = `${API_BASE_URL}/orcamentos/${orcamentoFinalizado}/pdf/public/${orcamento.token_compartilhamento}`;
+
+        // Mensagem com link do PDF
+        const mensagem = `Olá, ${clienteSelecionado.nome}! Segue o orçamento solicitado.\n\n📄 Acesse o PDF aqui: ${pdfUrl}\n\nEstou à disposição para qualquer dúvida.`;
+        const fone = clienteSelecionado.telefone.replace(/\D/g, '');
+        const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
+        window.open(whatsappUrl, '_blank');
+      } catch (error) {
+        console.error('Erro ao compartilhar:', error);
+        toast.error('Erro ao compartilhar orçamento');
+      }
   };
 
   const handleCriarNovoCliente = async () => {

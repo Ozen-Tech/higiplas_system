@@ -61,6 +61,7 @@ class OrcamentoCreate(OrcamentoBase):
 class Orcamento(OrcamentoBase):
     id: int
     data_criacao: datetime
+    token_compartilhamento: Optional[str] = None
     
     # Relações com outros objetos
     usuario: Usuario

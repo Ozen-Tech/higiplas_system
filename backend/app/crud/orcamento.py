@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Type
 from sqlalchemy.exc import SQLAlchemyError
+import secrets
 
 from app.db import models
 from app.schemas import orcamento as schemas_orcamento
@@ -16,11 +17,15 @@ from app.crud import produto as crud_produto
 def create_orcamento(db: Session, orcamento_in: schemas_orcamento.OrcamentoCreate, vendedor_id: int, empresa_id: int) -> models.Orcamento:
     """Cria um novo orçamento com seus itens."""
     
+    # Gerar token único para compartilhamento do PDF
+    token_compartilhamento = secrets.token_urlsafe(32)
+    
     db_orcamento = models.Orcamento(
         cliente_id=orcamento_in.cliente_id,
         usuario_id=vendedor_id,
         status=orcamento_in.status,
-        condicao_pagamento=orcamento_in.condicao_pagamento
+        condicao_pagamento=orcamento_in.condicao_pagamento,
+        token_compartilhamento=token_compartilhamento
     )
     db.add(db_orcamento)
     db.flush()
