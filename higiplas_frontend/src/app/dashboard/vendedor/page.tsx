@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PlusCircle, List, Download } from 'lucide-react';
+import { PlusCircle, List, Download, Edit, Share2 } from 'lucide-react';
 
 import { Header } from '@/components/dashboard/Header';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
@@ -16,6 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { OrcamentoEditModal } from '@/components/orcamentos/OrcamentoEditModal';
+import { Loader2 } from 'lucide-react';
 
 // Mapeamento de status para cores do Badge
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -30,6 +32,8 @@ export default function VendedorHubPage() {
   const { orcamentos, loading, error, listarOrcamentosVendedor } = useOrcamentos();
   const [activeTab, setActiveTab] = useState<'historico' | 'novo'>('historico');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedOrcamento, setSelectedOrcamento] = useState<Orcamento | null>(null);
 
   // Verificar se o usuário é vendedor ou admin/gestor
   const perfilUpper = user?.perfil?.toUpperCase() || '';
@@ -65,9 +69,11 @@ export default function VendedorHubPage() {
     return orcamento.itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario_congelado), 0);
   };
   
-  const handleDownloadPDF = async (orcamentoId: number) => {
+  const handleDownloadPDF = async (orcamentoId: number, autoDownload: boolean = true) => {
     setDownloadingId(orcamentoId);
-    toast.loading(`Gerando PDF #${orcamentoId}...`);
+    if (autoDownload) {
+      toast.loading(`Gerando PDF #${orcamentoId}...`);
+    }
 
     try {
         const response = await apiService.getBlob(`/orcamentos/${orcamentoId}/pdf/`);
@@ -82,28 +88,77 @@ export default function VendedorHubPage() {
             }
         }
         
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        
-        toast.dismiss(); // Remove o "loading..."
-        toast.success(`PDF #${orcamentoId} baixado!`);
-        
-        // Limpeza
-        setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-            link.remove();
-        }, 100);
+        if (autoDownload) {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', filename);
+          document.body.appendChild(link);
+          link.click();
+          
+          toast.dismiss();
+          toast.success(`PDF #${orcamentoId} baixado!`);
+          
+          setTimeout(() => {
+              window.URL.revokeObjectURL(url);
+              link.remove();
+          }, 100);
+        }
 
+        return { blob, filename };
     } catch (downloadError) {
         toast.dismiss();
         toast.error("Falha ao gerar o PDF. Verifique o console.");
         console.error("Erro no download:", downloadError);
+        return null;
     } finally {
         setDownloadingId(null);
+    }
+  };
+
+  const handleShareWhatsApp = async (orcamento: Orcamento) => {
+    try {
+      const pdfResult = await handleDownloadPDF(orcamento.id, false);
+      if (!pdfResult) {
+        toast.error('Erro ao gerar PDF para compartilhamento');
+        return;
+      }
+
+      const clienteResponse = await apiService.get(`/clientes-v2/${orcamento.cliente.id}`);
+      const cliente = clienteResponse?.data;
+      const telefone = cliente?.telefone;
+
+      if (!telefone) {
+        toast.error('Telefone do cliente não encontrado');
+        return;
+      }
+
+      const mensagem = `Olá, ${orcamento.cliente.razao_social}! Segue o orçamento #${orcamento.id} atualizado. Estou à disposição para qualquer dúvida.`;
+      const fone = telefone.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
+      
+      window.open(whatsappUrl, '_blank');
+      toast.success('WhatsApp aberto! Envie o PDF manualmente.');
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+      toast.error('Erro ao abrir WhatsApp');
+    }
+  };
+
+  const handleEditSuccess = async () => {
+    if (selectedOrcamento) {
+      setEditModalOpen(false);
+      listarOrcamentosVendedor();
+      
+      const regenerar = confirm('Orçamento atualizado! Deseja regenerar o PDF e enviar pelo WhatsApp?');
+      if (regenerar) {
+        await handleDownloadPDF(selectedOrcamento.id);
+        await handleShareWhatsApp(selectedOrcamento);
+      } else {
+        toast.success('Orçamento atualizado com sucesso!');
+      }
+      
+      setSelectedOrcamento(null);
     }
   };
 
@@ -180,16 +235,49 @@ export default function VendedorHubPage() {
                             R$ {calcularTotal(orc).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleDownloadPDF(orc.id)}
-                              disabled={downloadingId === orc.id}
-                              className="gap-2"
-                            >
-                              {downloadingId === orc.id ? 'Gerando...' : <Download size={14} />}
-                              {downloadingId !== orc.id && 'Baixar PDF'}
-                            </Button>
+                            <div className="flex gap-2 justify-center">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  setSelectedOrcamento(orc);
+                                  setEditModalOpen(true);
+                                }}
+                                className="gap-2"
+                              >
+                                <Edit size={14} />
+                                Editar
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleDownloadPDF(orc.id)}
+                                disabled={downloadingId === orc.id}
+                                className="gap-2"
+                              >
+                                {downloadingId === orc.id ? (
+                                  <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Gerando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download size={14} />
+                                    PDF
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShareWhatsApp(orc)}
+                                className="gap-2"
+                                style={{ backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}
+                              >
+                                <Share2 size={14} />
+                                WhatsApp
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -209,6 +297,19 @@ export default function VendedorHubPage() {
           )}
         </div>
       </main>
+
+      {/* Modal de Edição */}
+      {selectedOrcamento && (
+        <OrcamentoEditModal
+          orcamento={selectedOrcamento}
+          open={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedOrcamento(null);
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </>
   );
 }

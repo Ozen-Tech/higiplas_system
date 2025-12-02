@@ -58,7 +58,8 @@ export interface ItemCarrinhoOrcamento {
   // Tipos para atualização (admin)
   export interface OrcamentoItemUpdate {
     id?: number;
-    produto_id: number;
+    produto_id?: number; // Opcional: se não tiver, deve ter nome_produto_personalizado
+    nome_produto_personalizado?: string; // Opcional: nome do produto personalizado
     quantidade: number;
     preco_unitario: number;
   }

@@ -427,8 +427,21 @@ export default function NovoOrcamentoPage() {
                               <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="À vista">À vista</SelectItem>
+                                  <SelectItem value="7 dias">7 dias</SelectItem>
+                                  <SelectItem value="14 dias">14 dias</SelectItem>
+                                  <SelectItem value="21 dias">21 dias</SelectItem>
                                   <SelectItem value="30 dias">30 dias</SelectItem>
+                                  <SelectItem value="45 dias">45 dias</SelectItem>
+                                  <SelectItem value="60 dias">60 dias</SelectItem>
+                                  <SelectItem value="90 dias">90 dias</SelectItem>
                                   <SelectItem value="30/60 dias">30/60 dias</SelectItem>
+                                  <SelectItem value="30/60/90 dias">30/60/90 dias</SelectItem>
+                                  <SelectItem value="Entrada + 30 dias">Entrada + 30 dias</SelectItem>
+                                  <SelectItem value="Entrada + 60 dias">Entrada + 60 dias</SelectItem>
+                                  <SelectItem value="Boleto 30 dias">Boleto 30 dias</SelectItem>
+                                  <SelectItem value="Boleto 60 dias">Boleto 60 dias</SelectItem>
+                                  <SelectItem value="Cheque 30 dias">Cheque 30 dias</SelectItem>
+                                  <SelectItem value="Cheque 60 dias">Cheque 60 dias</SelectItem>
                               </SelectContent>
                           </Select>
                       </div>

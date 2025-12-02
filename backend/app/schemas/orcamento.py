@@ -75,9 +75,19 @@ class Orcamento(OrcamentoBase):
 # Schemas para atualização (admin)
 class OrcamentoItemUpdate(BaseModel):
     id: Optional[int] = None  # Se None, é um novo item
-    produto_id: int
+    produto_id: Optional[int] = None  # Opcional: se None, deve ter nome_produto_personalizado
+    nome_produto_personalizado: Optional[str] = None  # Opcional: nome do produto personalizado
     quantidade: int
     preco_unitario: float
+    
+    @model_validator(mode='after')
+    def validate_produto_or_nome(self):
+        """Valida que ou produto_id ou nome_produto_personalizado está presente"""
+        if not self.produto_id and not self.nome_produto_personalizado:
+            raise ValueError("Deve fornecer produto_id ou nome_produto_personalizado")
+        if self.produto_id and self.nome_produto_personalizado:
+            raise ValueError("Forneça apenas produto_id OU nome_produto_personalizado, não ambos")
+        return self
 
 class OrcamentoUpdate(BaseModel):
     cliente_id: Optional[int] = None

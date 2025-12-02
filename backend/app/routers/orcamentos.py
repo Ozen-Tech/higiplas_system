@@ -174,7 +174,7 @@ class OrcamentoPDF(FPDF):
         self.set_x(12)
         self.cell(40, 5, 'Validade:', 0, 0)
         self.set_font('Arial', '', 9)
-        self.cell(0, 5, '30 dias', 0, 1)
+        self.cell(0, 5, '5 dias', 0, 1)
         
         self.ln(5)
     
@@ -581,10 +581,19 @@ def editar_orcamento(
     admin_user: models.Usuario = Depends(get_admin_user)
 ):
     """Edita um orçamento existente. Apenas para administradores."""
+    # Obter empresa_id do usuário
+    empresa_id = current_user.empresa_id
+    if not empresa_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Usuário não possui empresa associada"
+        )
+    
     return crud_orcamento.update_orcamento(
         db=db,
         orcamento_id=orcamento_id,
-        orcamento_update=orcamento_update
+        orcamento_update=orcamento_update,
+        empresa_id=empresa_id
     )
 
 @router.patch("/{orcamento_id}/status", response_model=schemas_orcamento.Orcamento, summary="Atualiza o status de um orçamento")

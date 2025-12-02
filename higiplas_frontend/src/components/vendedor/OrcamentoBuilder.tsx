@@ -25,7 +25,7 @@ export function OrcamentoBuilder() {
   const [etapa, setEtapa] = useState<Etapa>('cliente');
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [carrinho, setCarrinho] = useState<ItemCarrinhoOrcamento[]>([]);
-  const [condicaoPagamento, setCondicaoPagamento] = useState<string>('5 dias');
+  const [condicaoPagamento, setCondicaoPagamento] = useState<string>('30 dias');
   const [condicaoPersonalizada, setCondicaoPersonalizada] = useState<string>('');
   const [orcamentoId, setOrcamentoId] = useState<number | null>(null);
   const [isPersonalizadoModalOpen, setIsPersonalizadoModalOpen] = useState(false);
@@ -367,8 +367,22 @@ export function OrcamentoBuilder() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5 dias">5 dias</SelectItem>
+                    <SelectItem value="À vista">À vista</SelectItem>
                     <SelectItem value="7 dias">7 dias</SelectItem>
+                    <SelectItem value="14 dias">14 dias</SelectItem>
+                    <SelectItem value="21 dias">21 dias</SelectItem>
+                    <SelectItem value="30 dias">30 dias</SelectItem>
+                    <SelectItem value="45 dias">45 dias</SelectItem>
+                    <SelectItem value="60 dias">60 dias</SelectItem>
+                    <SelectItem value="90 dias">90 dias</SelectItem>
+                    <SelectItem value="30/60 dias">30/60 dias</SelectItem>
+                    <SelectItem value="30/60/90 dias">30/60/90 dias</SelectItem>
+                    <SelectItem value="Entrada + 30 dias">Entrada + 30 dias</SelectItem>
+                    <SelectItem value="Entrada + 60 dias">Entrada + 60 dias</SelectItem>
+                    <SelectItem value="Boleto 30 dias">Boleto 30 dias</SelectItem>
+                    <SelectItem value="Boleto 60 dias">Boleto 60 dias</SelectItem>
+                    <SelectItem value="Cheque 30 dias">Cheque 30 dias</SelectItem>
+                    <SelectItem value="Cheque 60 dias">Cheque 60 dias</SelectItem>
                     <SelectItem value="personalizado">Personalizado</SelectItem>
                   </SelectContent>
                 </Select>

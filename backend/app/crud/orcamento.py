@@ -138,17 +138,20 @@ def _update_orcamento_fields(
 def _update_orcamento_items(
     db: Session,
     orcamento: models.Orcamento,
-    itens_update: List[schemas_orcamento.OrcamentoItemUpdate]
+    itens_update: List[schemas_orcamento.OrcamentoItemUpdate],
+    empresa_id: int
 ) -> None:
     """
     Atualiza os itens de um orçamento.
     
     Remove itens antigos e adiciona os novos.
+    Lida com itens personalizados criando produtos automaticamente.
     
     Args:
         db: Sessão do banco de dados
         orcamento: Orçamento a ser atualizado
         itens_update: Lista de novos itens
+        empresa_id: ID da empresa para criar produtos personalizados
     """
     # Remover itens antigos
     for item in orcamento.itens:
@@ -156,9 +159,21 @@ def _update_orcamento_items(
     
     # Adicionar novos itens
     for item_update in itens_update:
+        # Se o item tem nome_produto_personalizado, criar o produto primeiro
+        produto_id = item_update.produto_id
+        if not produto_id and item_update.nome_produto_personalizado:
+            # Criar produto personalizado
+            produto_criado = crud_produto.criar_produto_personalizado(
+                db=db,
+                nome=item_update.nome_produto_personalizado,
+                preco_unitario=item_update.preco_unitario,
+                empresa_id=empresa_id
+            )
+            produto_id = produto_criado.id
+        
         db_item = models.OrcamentoItem(
             orcamento_id=orcamento.id,
-            produto_id=item_update.produto_id,
+            produto_id=produto_id,
             quantidade=item_update.quantidade,
             preco_unitario_congelado=item_update.preco_unitario
         )
@@ -168,7 +183,8 @@ def _update_orcamento_items(
 def update_orcamento(
     db: Session,
     orcamento_id: int,
-    orcamento_update: schemas_orcamento.OrcamentoUpdate
+    orcamento_update: schemas_orcamento.OrcamentoUpdate,
+    empresa_id: int
 ) -> models.Orcamento:
     """
     Atualiza um orçamento existente (apenas admin).
@@ -204,7 +220,7 @@ def update_orcamento(
         
         # Atualizar itens se fornecidos
         if orcamento_update.itens is not None:
-            _update_orcamento_items(db, orcamento, orcamento_update.itens)
+            _update_orcamento_items(db, orcamento, orcamento_update.itens, empresa_id)
         
         # Commit das alterações
         db.commit()

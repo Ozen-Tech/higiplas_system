@@ -10,9 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { apiService } from '@/services/apiService';
-import { Download, ArrowLeft, Search, FileText } from 'lucide-react';
+import { Download, ArrowLeft, Search, FileText, Edit, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
+import { OrcamentoEditModal } from '@/components/orcamentos/OrcamentoEditModal';
+import { Orcamento } from '@/types/orcamentos';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   ENVIADO: 'secondary',
@@ -27,6 +29,8 @@ export default function HistoricoPage() {
   const { orcamentos, loading: orcamentosLoading, listarOrcamentosVendedor } = useOrcamentos();
   const [termoBusca, setTermoBusca] = useState('');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedOrcamento, setSelectedOrcamento] = useState<Orcamento | null>(null);
 
   useEffect(() => {
     if (isVendedor) {
@@ -34,9 +38,11 @@ export default function HistoricoPage() {
     }
   }, [isVendedor, listarOrcamentosVendedor]);
 
-  const handleDownloadPDF = async (orcamentoId: number) => {
+  const handleDownloadPDF = async (orcamentoId: number, autoDownload: boolean = true) => {
     setDownloadingId(orcamentoId);
-    toast.loading(`Gerando PDF #${orcamentoId}...`);
+    if (autoDownload) {
+      toast.loading(`Gerando PDF #${orcamentoId}...`);
+    }
 
     try {
       const response = await apiService.getBlob(`/orcamentos/${orcamentoId}/pdf/`);
@@ -51,26 +57,82 @@ export default function HistoricoPage() {
         }
       }
 
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
+      if (autoDownload) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
 
-      toast.dismiss();
-      toast.success(`PDF #${orcamentoId} baixado!`);
+        toast.dismiss();
+        toast.success(`PDF #${orcamentoId} baixado!`);
 
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-        link.remove();
-      }, 100);
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          link.remove();
+        }, 100);
+      }
+
+      return { blob, filename };
     } catch (downloadError) {
       toast.dismiss();
       toast.error('Falha ao gerar o PDF. Verifique o console.');
       console.error('Erro no download:', downloadError);
+      return null;
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleShareWhatsApp = async (orcamento: Orcamento) => {
+    try {
+      // Gerar PDF primeiro
+      const pdfResult = await handleDownloadPDF(orcamento.id, false);
+      if (!pdfResult) {
+        toast.error('Erro ao gerar PDF para compartilhamento');
+        return;
+      }
+
+      // Buscar telefone do cliente
+      const clienteResponse = await apiService.get(`/clientes-v2/${orcamento.cliente.id}`);
+      const cliente = clienteResponse?.data;
+      const telefone = cliente?.telefone;
+
+      if (!telefone) {
+        toast.error('Telefone do cliente não encontrado');
+        return;
+      }
+
+      // Criar mensagem
+      const mensagem = `Olá, ${orcamento.cliente.razao_social}! Segue o orçamento #${orcamento.id} atualizado. Estou à disposição para qualquer dúvida.`;
+      const fone = telefone.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
+      
+      // Abrir WhatsApp
+      window.open(whatsappUrl, '_blank');
+      toast.success('WhatsApp aberto! Envie o PDF manualmente.');
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+      toast.error('Erro ao abrir WhatsApp');
+    }
+  };
+
+  const handleEditSuccess = async () => {
+    if (selectedOrcamento) {
+      setEditModalOpen(false);
+      listarOrcamentosVendedor();
+      
+      // Perguntar se quer regenerar PDF e enviar WhatsApp
+      const regenerar = confirm('Orçamento atualizado! Deseja regenerar o PDF e enviar pelo WhatsApp?');
+      if (regenerar) {
+        await handleDownloadPDF(selectedOrcamento.id);
+        await handleShareWhatsApp(selectedOrcamento);
+      } else {
+        toast.success('Orçamento atualizado com sucesso!');
+      }
+      
+      setSelectedOrcamento(null);
     }
   };
 
@@ -173,24 +235,37 @@ export default function HistoricoPage() {
                           R$ {total.toFixed(2)}
                         </span>
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDownloadPDF(orc.id)}
-                        disabled={downloadingId === orc.id}
-                        className="w-full min-h-[44px] gap-2"
-                      >
-                        {downloadingId === orc.id ? (
-                          <>
-                            <Loader2 size={18} className="animate-spin" />
-                            Gerando PDF...
-                          </>
-                        ) : (
-                          <>
-                            <Download size={18} />
-                            Baixar PDF
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedOrcamento(orc);
+                            setEditModalOpen(true);
+                          }}
+                          className="flex-1 min-h-[44px] gap-2"
+                        >
+                          <Edit size={18} />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDownloadPDF(orc.id)}
+                          disabled={downloadingId === orc.id}
+                          className="flex-1 min-h-[44px] gap-2"
+                        >
+                          {downloadingId === orc.id ? (
+                            <>
+                              <Loader2 size={18} className="animate-spin" />
+                              Gerando...
+                            </>
+                          ) : (
+                            <>
+                              <Download size={18} />
+                              PDF
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -230,25 +305,49 @@ export default function HistoricoPage() {
                             R$ {total.toFixed(2)}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadPDF(orc.id)}
-                              disabled={downloadingId === orc.id}
-                              className="gap-2"
-                            >
-                              {downloadingId === orc.id ? (
-                                <>
-                                  <Loader2 size={14} className="animate-spin" />
-                                  Gerando...
-                                </>
-                              ) : (
-                                <>
-                                  <Download size={14} />
-                                  Baixar PDF
-                                </>
-                              )}
-                            </Button>
+                            <div className="flex gap-2 justify-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedOrcamento(orc);
+                                  setEditModalOpen(true);
+                                }}
+                                className="gap-2"
+                              >
+                                <Edit size={14} />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPDF(orc.id)}
+                                disabled={downloadingId === orc.id}
+                                className="gap-2"
+                              >
+                                {downloadingId === orc.id ? (
+                                  <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Gerando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download size={14} />
+                                    PDF
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShareWhatsApp(orc)}
+                                className="gap-2"
+                                style={{ backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}
+                              >
+                                <Share2 size={14} />
+                                WhatsApp
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -260,6 +359,19 @@ export default function HistoricoPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Edição */}
+      {selectedOrcamento && (
+        <OrcamentoEditModal
+          orcamento={selectedOrcamento}
+          open={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedOrcamento(null);
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 }
