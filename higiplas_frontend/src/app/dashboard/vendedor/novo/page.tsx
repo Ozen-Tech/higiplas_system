@@ -357,10 +357,11 @@ export default function NovoOrcamentoPage() {
                   <CardContent>
                     <div className="flex gap-2 mb-2">
                       <Input placeholder="Buscar produto por nome ou código..." value={termoBuscaProduto} onChange={(e) => setTermoBuscaProduto(e.target.value)} className="flex-1" />
-                      <Button onClick={() => setIsPersonalizadoModalOpen(true)} className="gap-2 flex-shrink-0" variant="outline">
-                        <PlusCircle size={16} /> Item Personalizado
+                      <Button onClick={() => setIsPersonalizadoModalOpen(true)} className="gap-2 flex-shrink-0" variant="default">
+                        <PlusCircle size={16} /> Novo Produto
                       </Button>
                     </div>
+                    <p className="text-xs text-gray-500 mb-2">Não encontrou o produto? Clique em "Novo Produto" para adicionar um item personalizado.</p>
                     <div className="max-h-60 overflow-y-auto mt-2">
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => (
                             <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">

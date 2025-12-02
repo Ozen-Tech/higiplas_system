@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, PlusCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiService } from '@/services/apiService';
 
@@ -28,6 +28,10 @@ export function OrcamentoBuilder() {
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>('5 dias');
   const [condicaoPersonalizada, setCondicaoPersonalizada] = useState<string>('');
   const [orcamentoId, setOrcamentoId] = useState<number | null>(null);
+  const [isPersonalizadoModalOpen, setIsPersonalizadoModalOpen] = useState(false);
+  const [novoItemNome, setNovoItemNome] = useState('');
+  const [novoItemQuantidade, setNovoItemQuantidade] = useState(1);
+  const [novoItemValor, setNovoItemValor] = useState(0);
 
   useEffect(() => {
     buscarClientes();
@@ -51,6 +55,29 @@ export function OrcamentoBuilder() {
     };
     setCarrinho([...carrinho, novoItem]);
     toast.success(`${produto.nome} adicionado ao carrinho`);
+  };
+
+  const adicionarItemPersonalizado = () => {
+    if (!novoItemNome || novoItemQuantidade <= 0 || novoItemValor <= 0) {
+      toast.error('Preencha todos os campos corretamente.');
+      return;
+    }
+
+    const novoItem: ItemCarrinhoOrcamento = {
+      nome_produto_personalizado: novoItemNome,
+      nome: novoItemNome,
+      quantidade: novoItemQuantidade,
+      preco_original: novoItemValor,
+      preco_unitario_editavel: novoItemValor,
+      isPersonalizado: true,
+    };
+    
+    setCarrinho([...carrinho, novoItem]);
+    setNovoItemNome('');
+    setNovoItemQuantidade(1);
+    setNovoItemValor(0);
+    setIsPersonalizadoModalOpen(false);
+    toast.success('Item personalizado adicionado!');
   };
 
   const atualizarItem = (itemKey: number | string | undefined, campo: 'quantidade' | 'preco', valor: number) => {
@@ -213,13 +240,30 @@ export function OrcamentoBuilder() {
       {/* Etapa: Produtos - Otimizado para mobile */}
       {etapa === 'produtos' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-2 order-2 lg:order-1">
+          <div className="lg:col-span-2 order-2 lg:order-1 space-y-4">
             <ProdutoSelector
               produtos={produtos}
               carrinho={carrinho}
               onAdicionarProduto={adicionarProduto}
               loading={vendasLoading}
             />
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-1">Não encontrou o produto?</p>
+                    <p className="text-xs text-gray-500">Adicione um item personalizado que será criado automaticamente no sistema.</p>
+                  </div>
+                  <Button 
+                    onClick={() => setIsPersonalizadoModalOpen(true)} 
+                    className="gap-2 w-full sm:w-auto"
+                    variant="default"
+                  >
+                    <PlusCircle size={16} /> Novo Produto
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
           <div className="lg:col-span-1 order-1 lg:order-2">
             <Card className="sticky top-20 lg:top-4">
@@ -378,6 +422,66 @@ export function OrcamentoBuilder() {
           </Button>
         )}
       </div>
+
+      {/* Modal de Item Personalizado */}
+      {isPersonalizadoModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlusCircle /> Adicionar Item Personalizado
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Este produto será criado automaticamente no sistema quando o orçamento for salvo.
+              </p>
+              <div>
+                <label className="text-sm font-medium">Nome do Produto *</label>
+                <Input
+                  placeholder="Ex: Produto especial sob medida"
+                  value={novoItemNome}
+                  onChange={(e) => setNovoItemNome(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Quantidade *</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={novoItemQuantidade}
+                    onChange={(e) => setNovoItemQuantidade(parseInt(e.target.value) || 1)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Valor Unitário (R$) *</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={novoItemValor}
+                    onChange={(e) => setNovoItemValor(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <div className="flex justify-end gap-4 p-6 pt-0">
+              <Button variant="ghost" onClick={() => {
+                setIsPersonalizadoModalOpen(false);
+                setNovoItemNome('');
+                setNovoItemQuantidade(1);
+                setNovoItemValor(0);
+              }}>
+                Cancelar
+              </Button>
+              <Button onClick={adicionarItemPersonalizado}>
+                Adicionar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
