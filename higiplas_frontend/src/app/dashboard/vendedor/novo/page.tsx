@@ -361,7 +361,7 @@ export default function NovoOrcamentoPage() {
                         <PlusCircle size={16} /> Novo Produto
                       </Button>
                     </div>
-                    <p className="text-xs text-gray-500 mb-2">Não encontrou o produto? Clique em "Novo Produto" para adicionar um item personalizado.</p>
+                    <p className="text-xs text-gray-500 mb-2">Não encontrou o produto? Clique em &quot;Novo Produto&quot; para adicionar um item personalizado.</p>
                     <div className="max-h-60 overflow-y-auto mt-2">
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => (
                             <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">
