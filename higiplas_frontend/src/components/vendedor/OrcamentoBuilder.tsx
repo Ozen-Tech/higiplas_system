@@ -47,14 +47,17 @@ export function OrcamentoBuilder() {
       preco_original: produto.preco,
       preco_unitario_editavel: produto.preco,
       quantidade: 1,
+      isPersonalizado: false,
     };
     setCarrinho([...carrinho, novoItem]);
     toast.success(`${produto.nome} adicionado ao carrinho`);
   };
 
-  const atualizarItem = (produtoId: number, campo: 'quantidade' | 'preco', valor: number) => {
+  const atualizarItem = (itemKey: number | string | undefined, campo: 'quantidade' | 'preco', valor: number) => {
     setCarrinho(carrinho.map(item => {
-      if (item.produto_id === produtoId) {
+      // Para itens normais, usar produto_id; para personalizados, usar nome como chave
+      const itemKeyMatch = item.produto_id ? item.produto_id === itemKey : item.nome === itemKey;
+      if (itemKeyMatch) {
         return {
           ...item,
           [campo === 'quantidade' ? 'quantidade' : 'preco_unitario_editavel']: Math.max(0, valor)
@@ -64,8 +67,11 @@ export function OrcamentoBuilder() {
     }));
   };
 
-  const removerItem = (produtoId: number) => {
-    setCarrinho(carrinho.filter(item => item.produto_id !== produtoId));
+  const removerItem = (itemKey: number | string | undefined) => {
+    setCarrinho(carrinho.filter(item => {
+      // Para itens normais, usar produto_id; para personalizados, usar nome como chave
+      return item.produto_id ? item.produto_id !== itemKey : item.nome !== itemKey;
+    }));
     toast.success('Item removido do carrinho');
   };
 
@@ -90,11 +96,23 @@ export function OrcamentoBuilder() {
       cliente_id: clienteSelecionado.id,
       condicao_pagamento: condicaoFinal,
       status: 'ENVIADO',
-      itens: carrinho.map(item => ({
-        produto_id: item.produto_id,
-        quantidade: item.quantidade,
-        preco_unitario: item.preco_unitario_editavel
-      }))
+      itens: carrinho.map(item => {
+        if (item.isPersonalizado && item.nome_produto_personalizado) {
+          // Item personalizado: enviar nome_produto_personalizado ao invés de produto_id
+          return {
+            nome_produto_personalizado: item.nome_produto_personalizado,
+            quantidade: item.quantidade,
+            preco_unitario: item.preco_unitario_editavel
+          };
+        } else {
+          // Item normal: enviar produto_id
+          return {
+            produto_id: item.produto_id!,
+            quantidade: item.quantidade,
+            preco_unitario: item.preco_unitario_editavel
+          };
+        }
+      })
     };
 
     const novoOrcamento = await criarOrcamento(payload);
@@ -215,55 +233,68 @@ export function OrcamentoBuilder() {
                 {carrinho.length === 0 ? (
                   <p className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">Carrinho vazio</p>
                 ) : (
-                  carrinho.map((item) => (
-                    <div key={item.produto_id} className="p-3 sm:p-4 border rounded-lg space-y-2 sm:space-y-3 bg-white dark:bg-gray-800">
-                      <div className="flex justify-between items-start gap-2">
-                        <p className="font-medium text-sm sm:text-base flex-1 line-clamp-2">{item.nome}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removerItem(item.produto_id)}
-                          className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
-                          title="Remover"
-                        >
-                          <Trash2 size={16} className="text-red-500" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                        <div>
-                          <label className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 block">Qtd</label>
-                          <Input
-                            type="number"
-                            inputMode="numeric"
-                            value={item.quantidade}
-                            onChange={(e) => atualizarItem(item.produto_id, 'quantidade', parseInt(e.target.value) || 0)}
-                            className="h-10 sm:h-9 text-sm sm:text-base"
-                            min="1"
-                          />
+                  carrinho.map((item, index) => {
+                    const itemKey = item.produto_id || item.nome || index;
+                    return (
+                      <div key={itemKey} className="p-3 sm:p-4 border rounded-lg space-y-2 sm:space-y-3 bg-white dark:bg-gray-800">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex items-center gap-2 flex-1">
+                            <p className="font-medium text-sm sm:text-base flex-1 line-clamp-2">{item.nome}</p>
+                            {item.isPersonalizado && (
+                              <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">Novo</span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removerItem(itemKey)}
+                            className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+                            title="Remover"
+                          >
+                            <Trash2 size={16} className="text-red-500" />
+                          </Button>
                         </div>
-                        <div>
-                          <label className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 block">Preço</label>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            step="0.01"
-                            value={item.preco_unitario_editavel}
-                            onChange={(e) => atualizarItem(item.produto_id, 'preco', parseFloat(e.target.value) || 0)}
-                            className="h-10 sm:h-9 text-sm sm:text-base"
-                            min="0"
-                          />
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                          <div>
+                            <label className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 block">Qtd</label>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              value={item.quantidade}
+                              onChange={(e) => atualizarItem(itemKey, 'quantidade', parseInt(e.target.value) || 0)}
+                              className="h-10 sm:h-9 text-sm sm:text-base"
+                              min="1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 block">Preço</label>
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              step="0.01"
+                              value={item.preco_unitario_editavel}
+                              onChange={(e) => atualizarItem(itemKey, 'preco', parseFloat(e.target.value) || 0)}
+                              className="h-10 sm:h-9 text-sm sm:text-base"
+                              min="0"
+                            />
+                          </div>
                         </div>
-                      </div>
-                      {item.quantidade > item.estoque_disponivel && (
-                        <p className="text-xs sm:text-sm text-orange-500 dark:text-orange-400 font-medium">
-                          ⚠️ Estoque insuficiente! (Disponível: {item.estoque_disponivel})
+                        {!item.isPersonalizado && item.estoque_disponivel !== undefined && item.quantidade > item.estoque_disponivel && (
+                          <p className="text-xs sm:text-sm text-orange-500 dark:text-orange-400 font-medium">
+                            ⚠️ Estoque insuficiente! (Disponível: {item.estoque_disponivel})
+                          </p>
+                        )}
+                        {item.isPersonalizado && (
+                          <p className="text-xs sm:text-sm text-blue-500 dark:text-blue-400 font-medium">
+                            ℹ️ Será criado no sistema
+                          </p>
+                        )}
+                        <p className="text-sm sm:text-base font-semibold text-right text-green-600 dark:text-green-400">
+                          R$ {(item.quantidade * item.preco_unitario_editavel).toFixed(2)}
                         </p>
-                      )}
-                      <p className="text-sm sm:text-base font-semibold text-right text-green-600 dark:text-green-400">
-                        R$ {(item.quantidade * item.preco_unitario_editavel).toFixed(2)}
-                      </p>
-                    </div>
-                  ))
+                      </div>
+                    );
+                  })
                 )}
               </CardContent>
               {carrinho.length > 0 && (

@@ -1,6 +1,7 @@
 # backend/app/crud/produto.py
 
 from sqlalchemy.orm import Session
+from datetime import datetime
 from ..schemas import produto as schemas_produto
 from ..db import models
 
@@ -106,6 +107,49 @@ def create_or_update_produto(db: Session, produto_data: schemas_produto.ProdutoC
         )
         db.add(db_produto)
 
+    db.commit()
+    db.refresh(db_produto)
+    return db_produto
+
+def criar_produto_personalizado(
+    db: Session,
+    nome: str,
+    preco_unitario: float,
+    empresa_id: int
+) -> models.Produto:
+    """
+    Cria um produto personalizado automaticamente quando um item personalizado
+    é adicionado ao orçamento.
+    
+    Args:
+        db: Sessão do banco de dados
+        nome: Nome do produto personalizado
+        preco_unitario: Preço unitário do produto
+        empresa_id: ID da empresa
+        
+    Returns:
+        Produto criado
+    """
+    # Gera código único baseado em timestamp
+    timestamp = int(datetime.now().timestamp())
+    codigo = f"PERS-{timestamp}"
+    
+    # Cria produto com estoque inicial 0
+    db_produto = models.Produto(
+        nome=nome,
+        codigo=codigo,
+        categoria="Personalizado",
+        descricao=f"Produto personalizado criado automaticamente",
+        preco_custo=None,  # Não tem custo definido
+        preco_venda=preco_unitario,
+        unidade_medida="UN",  # Unidade padrão
+        estoque_minimo=0,
+        quantidade_em_estoque=0,  # Estoque inicial 0
+        data_validade=None,
+        empresa_id=empresa_id
+    )
+    
+    db.add(db_produto)
     db.commit()
     db.refresh(db_produto)
     return db_produto

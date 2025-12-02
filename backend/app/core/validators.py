@@ -191,6 +191,9 @@ class StockValidator:
         
         for item in orcamento.itens:
             produto = item.produto
+            # Pular validação de estoque para produtos com estoque 0 (produtos personalizados)
+            if produto.quantidade_em_estoque == 0:
+                continue
             if produto.quantidade_em_estoque < item.quantidade:
                 produtos_insuficientes.append({
                     'produto': produto.nome,

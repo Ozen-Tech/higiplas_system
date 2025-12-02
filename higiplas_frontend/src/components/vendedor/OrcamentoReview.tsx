@@ -106,22 +106,30 @@ export function OrcamentoReview({
           <div>
             <h3 className="font-semibold mb-2 text-sm sm:text-base">Itens do Orçamento</h3>
             <div className="space-y-2">
-              {carrinho.map((item) => (
-                <div
-                  key={item.produto_id}
-                  className="p-3 sm:p-4 border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm sm:text-base">{item.nome}</p>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {item.quantidade} x R$ {item.preco_unitario_editavel.toFixed(2)}
+              {carrinho.map((item, index) => {
+                const itemKey = item.produto_id || item.nome || index;
+                return (
+                  <div
+                    key={itemKey}
+                    className="p-3 sm:p-4 border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm sm:text-base">{item.nome}</p>
+                        {item.isPersonalizado && (
+                          <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded">Novo</span>
+                        )}
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {item.quantidade} x R$ {item.preco_unitario_editavel.toFixed(2)}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-base sm:text-lg text-green-600 dark:text-green-400 text-right sm:text-left">
+                      R$ {(item.quantidade * item.preco_unitario_editavel).toFixed(2)}
                     </p>
                   </div>
-                  <p className="font-semibold text-base sm:text-lg text-green-600 dark:text-green-400 text-right sm:text-left">
-                    R$ {(item.quantidade * item.preco_unitario_editavel).toFixed(2)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

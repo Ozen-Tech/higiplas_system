@@ -3,17 +3,20 @@
 // Tipo para um item DENTRO do carrinho, no frontend.
 // Note que tem campos a mais para ajudar a UI, como 'nome' e 'estoque_disponivel'.
 export interface ItemCarrinhoOrcamento {
-    produto_id: number;
+    produto_id?: number; // Opcional: se não tiver, é item personalizado
+    nome_produto_personalizado?: string; // Opcional: nome do produto personalizado
     nome: string;
     quantidade: number;
-    estoque_disponivel: number;
+    estoque_disponivel?: number; // Opcional: itens personalizados não têm estoque
     preco_original: number; // Preço de tabela para referência
     preco_unitario_editavel: number; // O preço que o vendedor pode alterar
+    isPersonalizado?: boolean; // Flag para identificar itens personalizados
   }
   
   // Tipo para os dados que enviaremos para criar o orçamento no backend.
   export interface OrcamentoItemCreate {
-    produto_id: number;
+    produto_id?: number; // Opcional: se não tiver, deve ter nome_produto_personalizado
+    nome_produto_personalizado?: string; // Opcional: nome do produto personalizado
     quantidade: number;
     preco_unitario: number; // Será o 'preco_unitario_editavel'
   }

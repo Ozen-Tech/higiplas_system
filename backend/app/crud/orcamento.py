@@ -11,8 +11,9 @@ from app.core.exceptions import BusinessRuleException, NotFoundError, OrcamentoS
 from app.core.constants import OrcamentoStatus, OrigemMovimentacao, TipoMovimentacao
 from app.core.logger import orcamento_logger
 from app.services.historico_vendas_service import HistoricoVendasService
+from app.crud import produto as crud_produto
 
-def create_orcamento(db: Session, orcamento_in: schemas_orcamento.OrcamentoCreate, vendedor_id: int) -> models.Orcamento:
+def create_orcamento(db: Session, orcamento_in: schemas_orcamento.OrcamentoCreate, vendedor_id: int, empresa_id: int) -> models.Orcamento:
     """Cria um novo orçamento com seus itens."""
     
     db_orcamento = models.Orcamento(
@@ -25,9 +26,21 @@ def create_orcamento(db: Session, orcamento_in: schemas_orcamento.OrcamentoCreat
     db.flush()
 
     for item_in in orcamento_in.itens:
+        # Se o item tem nome_produto_personalizado, criar o produto primeiro
+        produto_id = item_in.produto_id
+        if not produto_id and item_in.nome_produto_personalizado:
+            # Criar produto personalizado
+            produto_criado = crud_produto.criar_produto_personalizado(
+                db=db,
+                nome=item_in.nome_produto_personalizado,
+                preco_unitario=item_in.preco_unitario,
+                empresa_id=empresa_id
+            )
+            produto_id = produto_criado.id
+        
         db_item = models.OrcamentoItem(
             orcamento_id=db_orcamento.id,
-            produto_id=item_in.produto_id,
+            produto_id=produto_id,
             quantidade=item_in.quantidade,
             preco_unitario_congelado=item_in.preco_unitario
         )
@@ -343,6 +356,7 @@ def _processar_baixa_estoque(
 ) -> None:
     """
     Processa a baixa de estoque para todos os itens do orçamento.
+    Pula produtos com estoque 0 (produtos personalizados criados automaticamente).
     
     Args:
         db: Sessão do banco de dados
@@ -360,6 +374,16 @@ def _processar_baixa_estoque(
         stock_service = StockService
     
     for item in orcamento.itens:
+        # Verificar se o produto tem estoque disponível
+        produto = db.query(models.Produto).filter(models.Produto.id == item.produto_id).first()
+        if produto and produto.quantidade_em_estoque == 0:
+            # Pular produtos com estoque 0 (produtos personalizados criados automaticamente)
+            orcamento_logger.info(
+                f"Pulando baixa de estoque para produto {item.produto_id} (estoque 0 - produto personalizado)",
+                extra={"orcamento_id": orcamento.id, "produto_id": item.produto_id}
+            )
+            continue
+        
         stock_service.update_stock_transactionally(
             db=db,
             produto_id=item.produto_id,

@@ -1,6 +1,6 @@
 # /backend/app/schemas/orcamento.py - VERSÃO FINAL CORRIGIDA
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -23,14 +23,25 @@ class ClienteParaOrcamento(BaseModel):
 # --- Itens do Orçamento ---
 
 class OrcamentoItemBase(BaseModel):
-    produto_id: int
     quantidade: int
     
 class OrcamentoItemCreate(OrcamentoItemBase):
+    produto_id: Optional[int] = None  # Opcional: se None, deve ter nome_produto_personalizado
+    nome_produto_personalizado: Optional[str] = None  # Opcional: se None, deve ter produto_id
     preco_unitario: float
+    
+    @model_validator(mode='after')
+    def validate_produto_or_nome(self):
+        """Valida que ou produto_id ou nome_produto_personalizado está presente"""
+        if not self.produto_id and not self.nome_produto_personalizado:
+            raise ValueError("Deve fornecer produto_id ou nome_produto_personalizado")
+        if self.produto_id and self.nome_produto_personalizado:
+            raise ValueError("Forneça apenas produto_id OU nome_produto_personalizado, não ambos")
+        return self
 
 class OrcamentoItem(OrcamentoItemBase):
     id: int
+    produto_id: int
     preco_unitario_congelado: float
     produto: Produto
 

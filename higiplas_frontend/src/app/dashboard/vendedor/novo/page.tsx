@@ -48,6 +48,10 @@ export default function NovoOrcamentoPage() {
   const [termoBuscaCliente, setTermoBuscaCliente] = useState('');
   const [termoBuscaProduto, setTermoBuscaProduto] = useState('');
   const [orcamentoFinalizado, setOrcamentoFinalizado] = useState<number | null>(null);
+  const [isPersonalizadoModalOpen, setIsPersonalizadoModalOpen] = useState(false);
+  const [novoItemNome, setNovoItemNome] = useState('');
+  const [novoItemQuantidade, setNovoItemQuantidade] = useState(1);
+  const [novoItemValor, setNovoItemValor] = useState(0);
 
   useEffect(() => {
     buscarClientes();
@@ -79,8 +83,32 @@ export default function NovoOrcamentoPage() {
         preco_original: produto.preco,
         preco_unitario_editavel: preco !== undefined ? preco : produto.preco,
         quantidade: quantidade !== undefined ? quantidade : 1,
+        isPersonalizado: false,
     };
     setCarrinho([...carrinho, novoItem]);
+  };
+
+  const adicionarItemPersonalizado = () => {
+    if (!novoItemNome || novoItemQuantidade <= 0 || novoItemValor <= 0) {
+      toast.error('Preencha todos os campos corretamente.');
+      return;
+    }
+
+    const novoItem: ItemCarrinhoOrcamento = {
+      nome_produto_personalizado: novoItemNome,
+      nome: novoItemNome,
+      quantidade: novoItemQuantidade,
+      preco_original: novoItemValor,
+      preco_unitario_editavel: novoItemValor,
+      isPersonalizado: true,
+    };
+    
+    setCarrinho([...carrinho, novoItem]);
+    setNovoItemNome('');
+    setNovoItemQuantidade(1);
+    setNovoItemValor(0);
+    setIsPersonalizadoModalOpen(false);
+    toast.success('Item personalizado adicionado!');
   };
 
   const handleAplicarSugestao = (produtoId: number, preco: number, quantidade: number) => {
@@ -91,9 +119,11 @@ export default function NovoOrcamentoPage() {
     }
   };
   
-  const atualizarItemCarrinho = (produtoId: number, campo: 'quantidade' | 'preco', valor: number) => {
+  const atualizarItemCarrinho = (itemKey: string | number, campo: 'quantidade' | 'preco', valor: number) => {
     setCarrinho(carrinho.map(item => {
-        if (item.produto_id === produtoId) {
+        // Para itens normais, usar produto_id; para personalizados, usar nome como chave
+        const itemKeyMatch = item.produto_id ? item.produto_id === itemKey : item.nome === itemKey;
+        if (itemKeyMatch) {
             return {
                 ...item,
                 [campo === 'quantidade' ? 'quantidade' : 'preco_unitario_editavel']: Math.max(0, valor)
@@ -103,8 +133,11 @@ export default function NovoOrcamentoPage() {
     }));
   };
   
-  const removerDoCarrinho = (produtoId: number) => {
-    setCarrinho(carrinho.filter(item => item.produto_id !== produtoId));
+  const removerDoCarrinho = (itemKey: string | number) => {
+    setCarrinho(carrinho.filter(item => {
+      // Para itens normais, usar produto_id; para personalizados, usar nome como chave
+      return item.produto_id ? item.produto_id !== itemKey : item.nome !== itemKey;
+    }));
   };
 
   const totalCarrinho = carrinho.reduce((acc, item) => acc + (item.preco_unitario_editavel * item.quantidade), 0);
@@ -119,11 +152,23 @@ export default function NovoOrcamentoPage() {
         cliente_id: clienteSelecionado.id,
         condicao_pagamento: condicaoPagamento,
         status: 'ENVIADO',
-        itens: carrinho.map(item => ({
-            produto_id: item.produto_id,
-            quantidade: item.quantidade,
-            preco_unitario: item.preco_unitario_editavel
-        }))
+        itens: carrinho.map(item => {
+          if (item.isPersonalizado && item.nome_produto_personalizado) {
+            // Item personalizado: enviar nome_produto_personalizado ao invés de produto_id
+            return {
+              nome_produto_personalizado: item.nome_produto_personalizado,
+              quantidade: item.quantidade,
+              preco_unitario: item.preco_unitario_editavel
+            };
+          } else {
+            // Item normal: enviar produto_id
+            return {
+              produto_id: item.produto_id!,
+              quantidade: item.quantidade,
+              preco_unitario: item.preco_unitario_editavel
+            };
+          }
+        })
     };
     
     const novoOrcamento = await criarOrcamento(payload);
@@ -277,7 +322,12 @@ export default function NovoOrcamentoPage() {
               <Card>
                   <CardHeader><CardTitle className="flex items-center gap-2"><Package/> Adicionar Produtos</CardTitle></CardHeader>
                   <CardContent>
-                    <Input placeholder="Buscar produto por nome ou código..." value={termoBuscaProduto} onChange={(e) => setTermoBuscaProduto(e.target.value)} />
+                    <div className="flex gap-2 mb-2">
+                      <Input placeholder="Buscar produto por nome ou código..." value={termoBuscaProduto} onChange={(e) => setTermoBuscaProduto(e.target.value)} className="flex-1" />
+                      <Button onClick={() => setIsPersonalizadoModalOpen(true)} className="gap-2 flex-shrink-0" variant="outline">
+                        <PlusCircle size={16} /> Item Personalizado
+                      </Button>
+                    </div>
                     <div className="max-h-60 overflow-y-auto mt-2">
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => (
                             <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">
@@ -298,27 +348,40 @@ export default function NovoOrcamentoPage() {
                   <CardHeader><CardTitle className="flex items-center gap-2"><ShoppingCart/> Itens do Pedido</CardTitle></CardHeader>
                   <CardContent className="space-y-4 max-h-[50vh] overflow-y-auto">
                     {carrinho.length === 0 ? <p className="text-gray-500 text-center">Nenhum item.</p> : null}
-                    {carrinho.map(item => (
-                        <div key={item.produto_id} className="p-3 border rounded-lg">
+                    {carrinho.map((item, index) => {
+                      const itemKey = item.produto_id || item.nome || index;
+                      return (
+                        <div key={itemKey} className="p-3 border rounded-lg">
                             <div className="flex justify-between items-center">
-                                <p className="font-semibold">{item.nome}</p>
-                                <Button variant="ghost" size="icon" onClick={() => removerDoCarrinho(item.produto_id)}>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold">{item.nome}</p>
+                                  {item.isPersonalizado && (
+                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Novo Produto</span>
+                                  )}
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => removerDoCarrinho(itemKey)}>
                                     <Trash2 size={16} className="text-red-500"/>
                                 </Button>
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-2">
                                 <div>
                                     <label className="text-xs">Quantidade</label>
-                                    <Input type="number" value={item.quantidade} onChange={(e) => atualizarItemCarrinho(item.produto_id, 'quantidade', parseInt(e.target.value))}/>
-                                    {item.quantidade > item.estoque_disponivel && <p className="text-xs text-orange-500 mt-1">Estoque insuficiente!</p>}
+                                    <Input type="number" value={item.quantidade} onChange={(e) => atualizarItemCarrinho(itemKey, 'quantidade', parseInt(e.target.value) || 0)}/>
+                                    {!item.isPersonalizado && item.estoque_disponivel !== undefined && item.quantidade > item.estoque_disponivel && (
+                                      <p className="text-xs text-orange-500 mt-1">Estoque insuficiente!</p>
+                                    )}
+                                    {item.isPersonalizado && (
+                                      <p className="text-xs text-blue-500 mt-1">Será criado no sistema</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="text-xs">Preço Unit. (R$)</label>
-                                    <Input type="number" step="0.01" value={item.preco_unitario_editavel} onChange={(e) => atualizarItemCarrinho(item.produto_id, 'preco', parseFloat(e.target.value))}/>
+                                    <Input type="number" step="0.01" value={item.preco_unitario_editavel} onChange={(e) => atualizarItemCarrinho(itemKey, 'preco', parseFloat(e.target.value) || 0)}/>
                                 </div>
                             </div>
                         </div>
-                    ))}
+                      );
+                    })}
                   </CardContent>
               </Card>
               <Card>
@@ -418,6 +481,64 @@ export default function NovoOrcamentoPage() {
               </Card>
           </div>
         )}
+      {isPersonalizadoModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlusCircle /> Adicionar Item Personalizado
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Este produto será criado automaticamente no sistema quando o orçamento for salvo.
+              </p>
+              <div>
+                <label className="text-sm font-medium">Nome do Produto *</label>
+                <Input
+                  placeholder="Ex: Produto especial sob medida"
+                  value={novoItemNome}
+                  onChange={(e) => setNovoItemNome(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Quantidade *</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={novoItemQuantidade}
+                    onChange={(e) => setNovoItemQuantidade(parseInt(e.target.value) || 1)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Valor Unitário (R$) *</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={novoItemValor}
+                    onChange={(e) => setNovoItemValor(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <div className="flex justify-end gap-4 p-6 pt-0">
+              <Button variant="ghost" onClick={() => {
+                setIsPersonalizadoModalOpen(false);
+                setNovoItemNome('');
+                setNovoItemQuantidade(1);
+                setNovoItemValor(0);
+              }}>
+                Cancelar
+              </Button>
+              <Button onClick={adicionarItemPersonalizado}>
+                Adicionar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </>
   );
 }

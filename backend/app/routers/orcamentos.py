@@ -270,8 +270,21 @@ def criar_novo_orcamento(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
+    # Obter empresa_id do usuário
+    empresa_id = current_user.empresa_id
+    if not empresa_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Usuário não possui empresa associada"
+        )
+    
     # 1. Cria o orçamento
-    db_orcamento = crud_orcamento.create_orcamento(db=db, orcamento_in=orcamento_in, vendedor_id=current_user.id)
+    db_orcamento = crud_orcamento.create_orcamento(
+        db=db, 
+        orcamento_in=orcamento_in, 
+        vendedor_id=current_user.id,
+        empresa_id=empresa_id
+    )
     
     # ===== CORREÇÃO IMPORTANTE =====
     # 2. Busca novamente o orçamento recém-criado, mas agora com todos os dados
