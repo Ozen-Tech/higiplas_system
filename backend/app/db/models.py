@@ -464,6 +464,9 @@ class PropostaDetalhadaItem(Base):
     ordem = Column(Integer, nullable=True)
 
     concorrente_nome_manual = Column(String, nullable=True)
+    concorrente_quantidade = Column(Float, nullable=True)
+    concorrente_dilucao_numerador = Column(Float, nullable=True)
+    concorrente_dilucao_denominador = Column(Float, nullable=True)
     concorrente_rendimento_manual = Column(Float, nullable=True)
     concorrente_custo_por_litro_manual = Column(Float, nullable=True)
 

@@ -88,6 +88,15 @@ def _montar_itens_calculados(
             rendimento,
         )
 
+        # Calcular rendimento do concorrente se os dados estiverem disponíveis
+        concorrente_rendimento = None
+        if item.concorrente_quantidade and item.concorrente_dilucao_numerador and item.concorrente_dilucao_denominador:
+            concorrente_rendimento = calcular_rendimento(
+                item.concorrente_quantidade,
+                item.concorrente_dilucao_numerador,
+                item.concorrente_dilucao_denominador,
+            )
+
         item_payload = {
             "produto_id": item.produto_id,
             "quantidade_produto": item.quantidade_produto,
@@ -100,7 +109,10 @@ def _montar_itens_calculados(
             "observacoes": item.observacoes,
             "ordem": item.ordem or ordem,
             "concorrente_nome_manual": item.concorrente_nome_manual,
-            "concorrente_rendimento_manual": item.concorrente_rendimento_manual,
+            "concorrente_quantidade": item.concorrente_quantidade,
+            "concorrente_dilucao_numerador": item.concorrente_dilucao_numerador,
+            "concorrente_dilucao_denominador": item.concorrente_dilucao_denominador,
+            "concorrente_rendimento_manual": item.concorrente_rendimento_manual or concorrente_rendimento,
             "concorrente_custo_por_litro_manual": item.concorrente_custo_por_litro_manual,
         }
 

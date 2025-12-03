@@ -14,6 +14,8 @@ import { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { 
   Package, 
   AlertTriangle, 
@@ -26,8 +28,13 @@ import {
   Plus,
   BarChart3,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Filter,
+  X,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiService } from "@/services/apiService";
 import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
@@ -58,6 +65,16 @@ export default function DashboardPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'critical' | 'low' | 'ok'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [aiInsightMinimized, setAiInsightMinimized] = useState(false);
+  
+  // Filtros profissionais
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('all');
+  const [filtroPrecoMin, setFiltroPrecoMin] = useState<string>('');
+  const [filtroPrecoMax, setFiltroPrecoMax] = useState<string>('');
+  const [filtroEstoqueMin, setFiltroEstoqueMin] = useState<string>('');
+  const [filtroEstoqueMax, setFiltroEstoqueMax] = useState<string>('');
+  const [ordenarPor, setOrdenarPor] = useState<'nome' | 'codigo' | 'preco_venda' | 'preco_custo' | 'quantidade_em_estoque' | 'categoria' | 'creationDate'>('nome');
+  const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<'asc' | 'desc'>('asc');
+  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
 
   useEffect(() => {
     fetchProducts(true);
@@ -160,12 +177,19 @@ export default function DashboardPage() {
     };
   }, [products]);
 
+  // Obter todas as categorias únicas
+  const categorias = useMemo(() => {
+    const cats = new Set(products.map(p => p.categoria).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(p =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.codigo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
+    // Filtro por status de estoque
     if (filterStatus === 'critical') {
       filtered = filtered.filter(p => p.quantidade_em_estoque <= (p.estoque_minimo || 0));
     } else if (filterStatus === 'low') {
@@ -177,8 +201,96 @@ export default function DashboardPage() {
       filtered = filtered.filter(p => p.quantidade_em_estoque > ((p.estoque_minimo || 0) * 1.5));
     }
 
-    return filtered;
-  }, [products, searchTerm, filterStatus]);
+    // Filtro por categoria
+    if (filtroCategoria !== 'all') {
+      filtered = filtered.filter(p => p.categoria === filtroCategoria);
+    }
+
+    // Filtro por preço
+    if (filtroPrecoMin) {
+      const min = parseFloat(filtroPrecoMin);
+      if (!isNaN(min)) {
+        filtered = filtered.filter(p => (p.preco_venda || 0) >= min);
+      }
+    }
+    if (filtroPrecoMax) {
+      const max = parseFloat(filtroPrecoMax);
+      if (!isNaN(max)) {
+        filtered = filtered.filter(p => (p.preco_venda || 0) <= max);
+      }
+    }
+
+    // Filtro por estoque
+    if (filtroEstoqueMin) {
+      const min = parseInt(filtroEstoqueMin);
+      if (!isNaN(min)) {
+        filtered = filtered.filter(p => p.quantidade_em_estoque >= min);
+      }
+    }
+    if (filtroEstoqueMax) {
+      const max = parseInt(filtroEstoqueMax);
+      if (!isNaN(max)) {
+        filtered = filtered.filter(p => p.quantidade_em_estoque <= max);
+      }
+    }
+
+    // Ordenação
+    const sorted = [...filtered].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (ordenarPor) {
+        case 'nome':
+          aValue = a.nome.toLowerCase();
+          bValue = b.nome.toLowerCase();
+          break;
+        case 'codigo':
+          aValue = a.codigo.toLowerCase();
+          bValue = b.codigo.toLowerCase();
+          break;
+        case 'preco_venda':
+          aValue = a.preco_venda || 0;
+          bValue = b.preco_venda || 0;
+          break;
+        case 'preco_custo':
+          aValue = a.preco_custo || 0;
+          bValue = b.preco_custo || 0;
+          break;
+        case 'quantidade_em_estoque':
+          aValue = a.quantidade_em_estoque;
+          bValue = b.quantidade_em_estoque;
+          break;
+        case 'categoria':
+          aValue = a.categoria.toLowerCase();
+          bValue = b.categoria.toLowerCase();
+          break;
+        case 'creationDate':
+          aValue = new Date(a.creationDate).getTime();
+          bValue = new Date(b.creationDate).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return direcaoOrdenacao === 'asc' ? -1 : 1;
+      if (aValue > bValue) return direcaoOrdenacao === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [products, searchTerm, filterStatus, filtroCategoria, filtroPrecoMin, filtroPrecoMax, filtroEstoqueMin, filtroEstoqueMax, ordenarPor, direcaoOrdenacao]);
+
+  const limparFiltros = () => {
+    setFiltroCategoria('all');
+    setFiltroPrecoMin('');
+    setFiltroPrecoMax('');
+    setFiltroEstoqueMin('');
+    setFiltroEstoqueMax('');
+    setFilterStatus('all');
+    setSearchTerm('');
+  };
+
+  const temFiltrosAtivos = filtroCategoria !== 'all' || filtroPrecoMin || filtroPrecoMax || filtroEstoqueMin || filtroEstoqueMax || filterStatus !== 'all' || searchTerm;
   
   return (
     <> 
@@ -395,55 +507,194 @@ export default function DashboardPage() {
           {/* Tabela de Produtos */}
           <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Produtos em Estoque
-                </CardTitle>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
-                  {/* Filtros */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant={filterStatus === 'all' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFilterStatus('all')}
-                    >
-                      Todos ({products.length})
-                    </Button>
-                    <Button
-                      variant={filterStatus === 'critical' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFilterStatus('critical')}
-                      className="border-red-500 text-red-600 hover:bg-red-50"
-                    >
-                      Críticos ({stats.critical})
-                    </Button>
-                    <Button
-                      variant={filterStatus === 'low' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFilterStatus('low')}
-                      className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                    >
-                      Atenção ({stats.low})
-                    </Button>
-            </div>
-
-                  {/* Busca */}
-                  <div className="relative flex-1 sm:flex-initial">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <input
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                    Produtos em Estoque
+                  </CardTitle>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                    {/* Busca */}
+                    <div className="relative flex-1 sm:flex-initial">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <input
                         type="text"
-                      placeholder="Buscar produto..."
+                        placeholder="Buscar produto..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
-                    />
+                        className="w-full pl-10 pr-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMostrarFiltrosAvancados(!mostrarFiltrosAvancados)}
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filtros
+                    </Button>
+                    
+                    <Button onClick={() => setIsCreateModalOpen(true)} size="default">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Produto
+                    </Button>
                   </div>
-                  
-                  <Button onClick={() => setIsCreateModalOpen(true)} size="default">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Produto
+                </div>
+
+                {/* Filtros Rápidos */}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={filterStatus === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterStatus('all')}
+                  >
+                    Todos ({products.length})
                   </Button>
-                  </div>
+                  <Button
+                    variant={filterStatus === 'critical' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterStatus('critical')}
+                    className="border-red-500 text-red-600 hover:bg-red-50"
+                  >
+                    Críticos ({stats.critical})
+                  </Button>
+                  <Button
+                    variant={filterStatus === 'low' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterStatus('low')}
+                    className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                  >
+                    Atenção ({stats.low})
+                  </Button>
+                  {temFiltrosAtivos && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={limparFiltros}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar Filtros
+                    </Button>
+                  )}
+                </div>
+
+                {/* Filtros Avançados */}
+                {mostrarFiltrosAvancados && (
+                  <Card className="bg-gray-50 dark:bg-gray-800/50 border-2">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Filtro por Categoria */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Categoria</Label>
+                          <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Todas as categorias" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todas as categorias</SelectItem>
+                              {categorias.map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Filtro por Preço */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Preço Mínimo (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={filtroPrecoMin}
+                            onChange={(e) => setFiltroPrecoMin(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Preço Máximo (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="9999.99"
+                            value={filtroPrecoMax}
+                            onChange={(e) => setFiltroPrecoMax(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Filtro por Estoque */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Estoque Mínimo</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={filtroEstoqueMin}
+                            onChange={(e) => setFiltroEstoqueMin(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Estoque Máximo</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="9999"
+                            value={filtroEstoqueMax}
+                            onChange={(e) => setFiltroEstoqueMax(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Ordenação */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Ordenar por</Label>
+                          <Select value={ordenarPor} onValueChange={(v: 'nome' | 'codigo' | 'preco_venda' | 'preco_custo' | 'quantidade_em_estoque' | 'categoria' | 'creationDate') => setOrdenarPor(v)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nome">Nome</SelectItem>
+                              <SelectItem value="codigo">Código</SelectItem>
+                              <SelectItem value="preco_venda">Preço de Venda</SelectItem>
+                              <SelectItem value="preco_custo">Preço de Custo</SelectItem>
+                              <SelectItem value="quantidade_em_estoque">Estoque</SelectItem>
+                              <SelectItem value="categoria">Categoria</SelectItem>
+                              <SelectItem value="creationDate">Data de Cadastro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Direção da Ordenação */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Direção</Label>
+                          <div className="flex gap-2">
+                            <Button
+                              variant={direcaoOrdenacao === 'asc' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setDirecaoOrdenacao('asc')}
+                              className="flex-1"
+                            >
+                              <ArrowUp className="h-4 w-4 mr-1" />
+                              Crescente
+                            </Button>
+                            <Button
+                              variant={direcaoOrdenacao === 'desc' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setDirecaoOrdenacao('desc')}
+                              className="flex-1"
+                            >
+                              <ArrowDown className="h-4 w-4 mr-1" />
+                              Decrescente
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </CardHeader>
             <CardContent>

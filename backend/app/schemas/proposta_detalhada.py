@@ -93,6 +93,9 @@ class PropostaDetalhadaItemBase(BaseModel):
     dilucao_denominador: Optional[float] = None
     observacoes: Optional[str] = None
     concorrente_nome_manual: Optional[str] = None
+    concorrente_quantidade: Optional[float] = None
+    concorrente_dilucao_numerador: Optional[float] = None
+    concorrente_dilucao_denominador: Optional[float] = None
     concorrente_rendimento_manual: Optional[float] = None
     concorrente_custo_por_litro_manual: Optional[float] = None
 

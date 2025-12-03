@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ClienteSelector } from '@/components/vendedor/ClienteSelector';
 import { Cliente, Produto } from '@/types/vendas';
-import { FichaTecnica, PropostaDetalhadaItemCreatePayload, ComparacaoConcorrenteManualCreate } from '@/services/propostaService';
+import { FichaTecnica, PropostaDetalhadaItemCreatePayload } from '@/services/propostaService';
 import { Calculator, Save, Loader2, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,9 +31,12 @@ export function PropostaDetalhadaBuilder() {
     fichaTecnica: FichaTecnica | null;
     rendimentoCalculado: number | null;
     custoPorLitro: number | null;
-    concorrenteNomeManual: string;
-    concorrenteRendimentoManual: string;
-    concorrenteCustoPorLitroManual: string;
+    concorrenteNome: string;
+    concorrenteQuantidade: string;
+    concorrenteDilucaoNumerador: string;
+    concorrenteDilucaoDenominador: string;
+    concorrenteRendimentoCalculado: number | null;
+    concorrenteCustoPorLitro: string;
   };
 
   const criarItemVazio = (): ItemFormState => ({
@@ -45,18 +48,17 @@ export function PropostaDetalhadaBuilder() {
     fichaTecnica: null,
     rendimentoCalculado: null,
     custoPorLitro: null,
-    concorrenteNomeManual: '',
-    concorrenteRendimentoManual: '',
-    concorrenteCustoPorLitroManual: '',
+    concorrenteNome: '',
+    concorrenteQuantidade: '1',
+    concorrenteDilucaoNumerador: '',
+    concorrenteDilucaoDenominador: '',
+    concorrenteRendimentoCalculado: null,
+    concorrenteCustoPorLitro: '',
   });
 
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [itens, setItens] = useState<ItemFormState[]>([criarItemVazio()]);
   const [observacoes, setObservacoes] = useState<string>('');
-  const [mostrarComparacaoManual, setMostrarComparacaoManual] = useState(false);
-  const [comparacoesManuais, setComparacoesManuais] = useState<ComparacaoConcorrenteManualCreate[]>([
-    { nome: '', rendimento_litro: undefined, custo_por_litro: undefined, observacoes: '' },
-  ]);
 
   useEffect(() => {
     buscarClientes();
@@ -68,6 +70,7 @@ export function PropostaDetalhadaBuilder() {
       const novos = [...prev];
       const atualizado = { ...novos[index], ...updates };
 
+      // Calcular rendimento do produto Higiplas
       const qtd = parseFloat(atualizado.quantidade) || 0;
       const num = parseFloat(atualizado.dilucaoNumerador) || undefined;
       const den = parseFloat(atualizado.dilucaoDenominador) || undefined;
@@ -87,6 +90,18 @@ export function PropostaDetalhadaBuilder() {
       } else {
         atualizado.rendimentoCalculado = null;
         atualizado.custoPorLitro = null;
+      }
+
+      // Calcular rendimento do concorrente
+      const concQtd = parseFloat(atualizado.concorrenteQuantidade) || 0;
+      const concNum = parseFloat(atualizado.concorrenteDilucaoNumerador) || undefined;
+      const concDen = parseFloat(atualizado.concorrenteDilucaoDenominador) || undefined;
+
+      if (concQtd > 0 && concNum && concDen) {
+        const concRendimento = calcularRendimento(concQtd, concNum, concDen);
+        atualizado.concorrenteRendimentoCalculado = concRendimento ?? null;
+      } else {
+        atualizado.concorrenteRendimentoCalculado = null;
       }
 
       novos[index] = atualizado;
@@ -118,38 +133,6 @@ export function PropostaDetalhadaBuilder() {
     setItens((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleComparacaoManualChange = (index: number, campo: keyof ComparacaoConcorrenteManualCreate, valor: string) => {
-    setComparacoesManuais((prev) => {
-      const copia = [...prev];
-      const atualizado = { ...copia[index] };
-      
-      // Campos numéricos
-      if (campo === 'rendimento_litro') {
-        atualizado.rendimento_litro = valor ? Number(valor) : undefined;
-      } else if (campo === 'custo_por_litro') {
-        atualizado.custo_por_litro = valor ? Number(valor) : undefined;
-      } else if (campo === 'ordem') {
-        atualizado.ordem = valor ? Number(valor) : undefined;
-      } 
-      // Campos string
-      else if (campo === 'nome') {
-        atualizado.nome = valor;
-      } else if (campo === 'observacoes') {
-        atualizado.observacoes = valor;
-      }
-      
-      copia[index] = atualizado;
-      return copia;
-    });
-  };
-
-  const adicionarComparacaoManual = () => {
-    setComparacoesManuais((prev) => [...prev, { nome: '', rendimento_litro: undefined, custo_por_litro: undefined, observacoes: '' }]);
-  };
-
-  const removerComparacaoManual = (index: number) => {
-    setComparacoesManuais((prev) => prev.filter((_, idx) => idx !== index));
-  };
 
   const itensValidos = itens.every((item) => {
     const qtd = parseFloat(item.quantidade);
@@ -174,6 +157,10 @@ export function PropostaDetalhadaBuilder() {
       const num = parseFloat(item.dilucaoNumerador);
       const den = parseFloat(item.dilucaoDenominador);
 
+      const concQuantidade = parseFloat(item.concorrenteQuantidade) || 0;
+      const concNum = parseFloat(item.concorrenteDilucaoNumerador) || undefined;
+      const concDen = parseFloat(item.concorrenteDilucaoDenominador) || undefined;
+
       return {
         produto_id: item.produto!.id,
         quantidade_produto: quantidade,
@@ -182,9 +169,12 @@ export function PropostaDetalhadaBuilder() {
         dilucao_denominador: den,
         observacoes: item.observacoes || undefined,
         ordem: index + 1,
-        concorrente_nome_manual: item.concorrenteNomeManual || undefined,
-        concorrente_rendimento_manual: item.concorrenteRendimentoManual ? Number(item.concorrenteRendimentoManual) : undefined,
-        concorrente_custo_por_litro_manual: item.concorrenteCustoPorLitroManual ? Number(item.concorrenteCustoPorLitroManual) : undefined,
+        concorrente_nome_manual: item.concorrenteNome || undefined,
+        concorrente_quantidade: concQuantidade > 0 ? concQuantidade : undefined,
+        concorrente_dilucao_numerador: concNum || undefined,
+        concorrente_dilucao_denominador: concDen || undefined,
+        concorrente_rendimento_manual: item.concorrenteRendimentoCalculado || undefined,
+        concorrente_custo_por_litro_manual: item.concorrenteCustoPorLitro ? Number(item.concorrenteCustoPorLitro) : undefined,
       };
     });
 
@@ -194,17 +184,12 @@ export function PropostaDetalhadaBuilder() {
         observacoes: observacoes || undefined,
         compartilhavel: false,
         itens: payloadItens,
-        comparacoes_personalizadas: mostrarComparacaoManual
-          ? comparacoesManuais.filter((comp) => comp.nome?.trim())
-          : undefined,
       });
 
       toast.success('Proposta detalhada criada com sucesso!');
       setClienteSelecionado(null);
       setItens([criarItemVazio()]);
       setObservacoes('');
-      setMostrarComparacaoManual(false);
-      setComparacoesManuais([{ nome: '', rendimento_litro: undefined, custo_por_litro: undefined, observacoes: '' }]);
     } catch (error) {
       console.error('Erro ao criar proposta:', error);
       let errorMessage = 'Erro ao criar proposta';
@@ -303,7 +288,7 @@ export function PropostaDetalhadaBuilder() {
 
                 {item.fichaTecnica && <FichaTecnicaCard ficha={item.fichaTecnica} />}
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>Quantidade</Label>
                     <Input
@@ -339,40 +324,88 @@ export function PropostaDetalhadaBuilder() {
                     />
                     <p className="text-xs text-gray-500 mt-1">1:10 = 1 parte para 10 partes</p>
                   </div>
-                  <div>
-                    <Label>Concorrente (nome)</Label>
-                    <Input
-                      value={item.concorrenteNomeManual}
-                      onChange={(e) => atualizarItem(index, { concorrenteNomeManual: e.target.value })}
-                      placeholder="Produto do cliente"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Opcional por item</p>
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Rendimento concorrente (L)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={item.concorrenteRendimentoManual}
-                      onChange={(e) => atualizarItem(index, { concorrenteRendimentoManual: e.target.value })}
-                      placeholder="Ex: 30"
-                    />
+                {/* Seção de Concorrente */}
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-semibold mb-4 text-gray-700 dark:text-gray-300">Informações do Concorrente</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <Label>Nome do Concorrente</Label>
+                      <Input
+                        value={item.concorrenteNome}
+                        onChange={(e) => atualizarItem(index, { concorrenteNome: e.target.value })}
+                        placeholder="Ex: Produto X"
+                      />
+                    </div>
+                    <div>
+                      <Label>Quantidade</Label>
+                      <Input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={item.concorrenteQuantidade}
+                        onChange={(e) => atualizarItem(index, { concorrenteQuantidade: e.target.value })}
+                        placeholder="Ex: 2"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Litros ou unidades</p>
+                    </div>
+                    <div>
+                      <Label>Diluição - parte 1</Label>
+                      <Input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={item.concorrenteDilucaoNumerador}
+                        onChange={(e) => atualizarItem(index, { concorrenteDilucaoNumerador: e.target.value })}
+                        placeholder="Ex: 1"
+                      />
+                    </div>
+                    <div>
+                      <Label>Diluição - parte 2</Label>
+                      <Input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={item.concorrenteDilucaoDenominador}
+                        onChange={(e) => atualizarItem(index, { concorrenteDilucaoDenominador: e.target.value })}
+                        placeholder="Ex: 10"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">1:10 = 1 parte para 10 partes</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label>Custo concorrente por litro</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={item.concorrenteCustoPorLitroManual}
-                      onChange={(e) => atualizarItem(index, { concorrenteCustoPorLitroManual: e.target.value })}
-                      placeholder="Ex: 2.5"
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Custo concorrente por litro (R$)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.concorrenteCustoPorLitro}
+                        onChange={(e) => atualizarItem(index, { concorrenteCustoPorLitro: e.target.value })}
+                        placeholder="Ex: 2.50"
+                      />
+                    </div>
                   </div>
+
+                  {item.concorrenteRendimentoCalculado !== null && (
+                    <Card className="bg-orange-50 dark:bg-orange-900/20 mt-4">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Calculator className="h-5 w-5 text-orange-600" />
+                          <h3 className="font-semibold">Rendimento do Concorrente</h3>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Rendimento total</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {item.concorrenteRendimentoCalculado.toFixed(2)} litros
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 {item.rendimentoCalculado !== null && (
@@ -404,87 +437,6 @@ export function PropostaDetalhadaBuilder() {
               </CardContent>
             </Card>
           ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Comparação rápida com concorrentes</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={mostrarComparacaoManual}
-              onChange={(e) => setMostrarComparacaoManual(e.target.checked)}
-            />
-            Incluir tabela de produtos concorrentes do cliente
-          </label>
-
-          {mostrarComparacaoManual && (
-            <div className="space-y-4">
-              {comparacoesManuais.map((comparacao, index) => (
-                <Card key={index}>
-                  <CardHeader className="flex flex-row items-center justify-between py-3">
-                    <p className="font-semibold">Concorrente #{index + 1}</p>
-                    {comparacoesManuais.length > 1 && (
-                      <Button variant="ghost" size="sm" onClick={() => removerComparacaoManual(index)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                        <span className="sr-only">Remover concorrente</span>
-                      </Button>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <Label>Nome do produto</Label>
-                        <Input
-                          value={comparacao.nome}
-                          onChange={(e) => handleComparacaoManualChange(index, 'nome', e.target.value)}
-                          placeholder="Produto que o cliente utiliza"
-                        />
-                      </div>
-                      <div>
-                        <Label>Rendimento (L)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={comparacao.rendimento_litro ?? ''}
-                          onChange={(e) => handleComparacaoManualChange(index, 'rendimento_litro', e.target.value)}
-                          placeholder="Ex: 30"
-                        />
-                      </div>
-                      <div>
-                        <Label>Custo por litro</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={comparacao.custo_por_litro ?? ''}
-                          onChange={(e) => handleComparacaoManualChange(index, 'custo_por_litro', e.target.value)}
-                          placeholder="Ex: 2.40"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Observações (opcional)</Label>
-                      <Input
-                        value={comparacao.observacoes ?? ''}
-                        onChange={(e) => handleComparacaoManualChange(index, 'observacoes', e.target.value)}
-                        placeholder="Diferenciais ou alertas"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              <Button variant="outline" onClick={adicionarComparacaoManual}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar concorrente
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
