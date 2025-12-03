@@ -2,6 +2,8 @@
 
 from sqlalchemy.orm import Session
 from datetime import datetime
+import time
+import uuid
 from ..schemas import produto as schemas_produto
 from ..db import models
 
@@ -49,11 +51,28 @@ def update_produto(db: Session, produto_id: int, produto_data: schemas_produto.P
 
 # --- NOVA FUNÇÃO DE DELETE ---
 def delete_produto(db: Session, produto_id: int, empresa_id: int):
-    """Deleta um produto existente."""
-    db_produto = db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
+    """
+    Deleta um produto existente.
+    
+    Verifica se o produto está sendo usado em orçamentos antes de deletar.
+    Se estiver sendo usado, retorna None para indicar que não pode ser deletado.
+    """
+    db_produto = db.query(models.Produto).filter(
+        models.Produto.id == produto_id, 
+        models.Produto.empresa_id == empresa_id
+    ).first()
 
     if not db_produto:
         return None
+
+    # Verificar se o produto está sendo usado em itens de orçamento
+    itens_orcamento = db.query(models.OrcamentoItem).filter(
+        models.OrcamentoItem.produto_id == produto_id
+    ).first()
+    
+    if itens_orcamento:
+        # Produto está sendo usado em orçamentos, não pode ser deletado
+        raise ValueError("Produto não pode ser deletado pois está sendo usado em orçamentos. Delete os orçamentos relacionados primeiro.")
 
     db.delete(db_produto)
     db.commit()
@@ -121,6 +140,9 @@ def criar_produto_personalizado(
     Cria um produto personalizado automaticamente quando um item personalizado
     é adicionado ao orçamento.
     
+    Usa timestamp em milissegundos + UUID para garantir unicidade mesmo em
+    requisições simultâneas.
+    
     Args:
         db: Sessão do banco de dados
         nome: Nome do produto personalizado
@@ -130,9 +152,19 @@ def criar_produto_personalizado(
     Returns:
         Produto criado
     """
-    # Gera código único baseado em timestamp
-    timestamp = int(datetime.now().timestamp())
-    codigo = f"PERS-{timestamp}"
+    # Gera código único usando timestamp em milissegundos + parte do UUID
+    # Isso garante unicidade mesmo em requisições simultâneas
+    timestamp = int(time.time() * 1000)  # milissegundos para maior precisão
+    uuid_part = str(uuid.uuid4())[:8]  # Primeiros 8 caracteres do UUID
+    codigo = f"PERS-{timestamp}-{uuid_part}"
+    
+    # Verificar se o código já existe (muito improvável, mas por segurança)
+    tentativas = 0
+    while db.query(models.Produto).filter(models.Produto.codigo == codigo).first() and tentativas < 5:
+        timestamp = int(time.time() * 1000)
+        uuid_part = str(uuid.uuid4())[:8]
+        codigo = f"PERS-{timestamp}-{uuid_part}"
+        tentativas += 1
     
     # Cria produto com estoque inicial 0
     db_produto = models.Produto(
@@ -150,6 +182,6 @@ def criar_produto_personalizado(
     )
     
     db.add(db_produto)
-    db.commit()
+    db.flush()  # Usa flush em vez de commit para manter transação
     db.refresh(db_produto)
     return db_produto

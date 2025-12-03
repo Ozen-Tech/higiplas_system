@@ -218,8 +218,12 @@ def delete_produto_endpoint(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Deleta um produto do banco de dados."""
-    deleted_produto = crud_produto.delete_produto(db=db, produto_id=produto_id, empresa_id=current_user.empresa_id)
-    if deleted_produto is None:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    try:
+        deleted_produto = crud_produto.delete_produto(db=db, produto_id=produto_id, empresa_id=current_user.empresa_id)
+        if deleted_produto is None:
+            raise HTTPException(status_code=404, detail="Produto não encontrado")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ValueError as e:
+        # Produto está sendo usado em orçamentos
+        raise HTTPException(status_code=400, detail=str(e))
 
