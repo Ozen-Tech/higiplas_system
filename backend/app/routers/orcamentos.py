@@ -573,14 +573,46 @@ def buscar_orcamento(
     
     return orcamento
 
-@router.put("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Edita um orçamento (apenas admin)")
+@router.put("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Edita um orçamento")
 def editar_orcamento(
     orcamento_id: int,
     orcamento_update: schemas_orcamento.OrcamentoUpdate,
     db: Session = Depends(get_db),
-    admin_user: models.Usuario = Depends(get_admin_user)
+    current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Edita um orçamento existente. Apenas para administradores."""
+    """Edita um orçamento existente. Vendedores podem editar apenas seus próprios orçamentos."""
+    # Buscar o orçamento
+    orcamento = crud_orcamento.get_orcamento_by_id(db=db, orcamento_id=orcamento_id)
+    if not orcamento:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Orçamento não encontrado"
+        )
+    
+    # Verificar se o usuário tem permissão para editar
+    # Admins podem editar qualquer orçamento da empresa
+    # Vendedores só podem editar seus próprios orçamentos
+    if current_user.perfil.upper() not in ["ADMIN", "GESTOR"]:
+        if orcamento.usuario_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você só pode editar seus próprios orçamentos"
+            )
+    
+    # Verificar se o orçamento pertence à mesma empresa
+    # Garantir que o usuário está carregado
+    if not orcamento.usuario:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao carregar dados do orçamento"
+        )
+    
+    if orcamento.usuario.empresa_id != current_user.empresa_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Orçamento não pertence à sua empresa"
+        )
+    
     # Obter empresa_id do usuário
     empresa_id = current_user.empresa_id
     if not empresa_id:
