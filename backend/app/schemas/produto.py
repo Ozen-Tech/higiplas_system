@@ -1,8 +1,8 @@
 # backend/app/schemas/produto.py
 
-from pydantic import BaseModel, ConfigDict
-from typing import Optional
-from datetime import date
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
+from typing import Optional, Union
+from datetime import date, datetime
 
 # Schema base com os campos comuns a todos os outros
 class ProdutoBase(BaseModel):
@@ -38,7 +38,14 @@ class Produto(ProdutoBase):
     empresa_id: int
     quantidade_em_estoque: int
     data_validade: Optional[date] = None
-    data_criacao: Optional[str] = None  # ISO format string
+    data_criacao: Optional[datetime] = None  # Aceita datetime do banco
+
+    @field_serializer('data_criacao')
+    def serialize_datetime(self, value: Optional[datetime], _info):
+        """Serializa datetime para string ISO format"""
+        if value is None:
+            return None
+        return value.isoformat()
 
     # Configuração para permitir que o Pydantic leia dados de um objeto SQLAlchemy
     model_config = ConfigDict(from_attributes=True)
