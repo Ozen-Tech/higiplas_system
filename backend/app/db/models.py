@@ -28,6 +28,7 @@ class Usuario(Base):
     xp = Column(Integer, default=0) # Pontos de experiência
     level = Column(Integer, default=1) # Nível
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
+    foto_perfil = Column(String, nullable=True)
     empresa = relationship("Empresa", back_populates="usuarios")
     movimentacoes = relationship(
         "MovimentacaoEstoque", 
@@ -48,6 +49,7 @@ class Produto(Base):
     estoque_minimo = Column(Integer, default=0)
     data_validade = Column(Date, nullable=True)
     quantidade_em_estoque = Column(Integer, default=0)
+    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     empresa = relationship("Empresa", back_populates="produtos")

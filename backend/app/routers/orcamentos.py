@@ -548,6 +548,42 @@ def obter_sugestao_produto(
             detail=f"Erro ao obter sugestão: {str(e)}"
         )
 
+@router.get("/precos/{cliente_id}/{produto_id}", response_model=schemas_orcamento.RangePrecosClienteProduto, summary="Obter range de preços de um produto para um cliente")
+def obter_range_precos(
+    cliente_id: int,
+    produto_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna o range de preços (mínimo, máximo, padrão) de um produto para um cliente específico.
+    - preco_padrao: Preço do sistema do produto (sempre disponível)
+    - preco_minimo: Menor preço já vendido para este cliente (se existir histórico)
+    - preco_maximo: Maior preço já vendido para este cliente (se existir histórico)
+    """
+    try:
+        range_precos = crud_orcamento.get_range_precos_cliente_produto(
+            db=db,
+            cliente_id=cliente_id,
+            produto_id=produto_id
+        )
+        
+        if not range_precos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Produto não encontrado"
+            )
+        
+        return range_precos
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter range de preços: {str(e)}"
+        )
+
 
 @router.get("/{orcamento_id}", response_model=schemas_orcamento.Orcamento, summary="Busca um orçamento específico")
 def buscar_orcamento(

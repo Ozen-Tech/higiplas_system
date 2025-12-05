@@ -10,6 +10,8 @@ from ..core.logger import stock_operations_logger
 
 def create_movimentacao_estoque(db: Session, movimentacao: schemas_movimentacao.MovimentacaoEstoqueCreate, usuario_id: int, empresa_id: int):
     origem = getattr(movimentacao, 'origem', None)
+    motivo_movimentacao = getattr(movimentacao, 'motivo_movimentacao', None)
+    observacao_motivo = getattr(movimentacao, 'observacao_motivo', None)
     
     produto_atualizado = StockService.update_stock_transactionally(
         db=db,
@@ -19,7 +21,9 @@ def create_movimentacao_estoque(db: Session, movimentacao: schemas_movimentacao.
         usuario_id=usuario_id,
         empresa_id=empresa_id,
         origem=origem,
-        observacao=movimentacao.observacao
+        observacao=movimentacao.observacao,
+        motivo_movimentacao=motivo_movimentacao,
+        observacao_motivo=observacao_motivo
     )
     
     return produto_atualizado

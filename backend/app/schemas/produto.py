@@ -38,6 +38,7 @@ class Produto(ProdutoBase):
     empresa_id: int
     quantidade_em_estoque: int
     data_validade: Optional[date] = None
+    data_criacao: Optional[str] = None  # ISO format string
 
     # Configuração para permitir que o Pydantic leia dados de um objeto SQLAlchemy
     model_config = ConfigDict(from_attributes=True)

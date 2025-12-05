@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Product, ProdutoCreateData, ProdutoUpdateData } from '@/types';
+import { Product, ProdutoCreateData, ProdutoUpdateData, MotivoMovimentacao } from '@/types';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,7 @@ interface ApiProduct {
   empresa_id: number;
   quantidade_em_estoque: number;
   data_validade?: string;
+  data_criacao?: string;
 }
 
 // Funções de mapeamento de dados
@@ -36,7 +37,7 @@ const mapProductFromApi = (apiProduct: ApiProduct): Product => ({
   empresa_id: apiProduct.empresa_id,
   quantidade_em_estoque: apiProduct.quantidade_em_estoque,
   data_validade: apiProduct.data_validade,
-  creationDate: new Date().toISOString(), // Usando data atual como fallback
+  creationDate: apiProduct.data_criacao || new Date().toISOString(), // Usa data real do backend ou fallback
 });
 
 const mapToApiData = (data: Partial<ProdutoCreateData | ProdutoUpdateData>): Record<string, unknown> => ({
@@ -119,12 +120,21 @@ export function useProducts() {
     });
   };
 
-  const moveStock = async (productId: number, tipo: 'entrada' | 'saida', quantidade: number, observacao?: string) => {
+  const moveStock = async (
+    productId: number, 
+    tipo: 'entrada' | 'saida', 
+    quantidade: number, 
+    motivoMovimentacao: MotivoMovimentacao,
+    observacao?: string,
+    observacaoMotivo?: string
+  ) => {
     const promise = apiService.post('/movimentacoes/', {
       produto_id: productId,
       tipo_movimentacao: tipo.toUpperCase(),
       quantidade,
+      motivo_movimentacao: motivoMovimentacao,
       observacao,
+      observacao_motivo: observacaoMotivo,
     }).then(() => {
       // Força a busca de produtos para atualizar o estoque
       return fetchProducts(true);

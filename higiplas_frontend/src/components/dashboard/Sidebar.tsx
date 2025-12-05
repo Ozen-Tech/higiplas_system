@@ -9,7 +9,8 @@ import {
   // CORRIGIDO: Ícones não utilizados foram removidos da importação.
   ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
   ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon,
-  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon
+  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -40,6 +41,7 @@ const navigation: NavigationItem[] = [
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: DocumentTextIcon },
   { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
   { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
+  { name: 'Meu Perfil', href: '/dashboard/perfil', icon: UserCircleIcon },
 ];
 
 const adminNavigation: NavigationItem[] = [

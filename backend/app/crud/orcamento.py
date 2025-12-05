@@ -701,3 +701,52 @@ def delete_orcamento(
             exc_info=True
         )
         raise BusinessRuleException(f"Erro inesperado ao deletar orçamento: {str(e)}")
+
+def get_range_precos_cliente_produto(
+    db: Session,
+    cliente_id: int,
+    produto_id: int
+) -> Optional[dict]:
+    """
+    Busca o range de preços (mínimo, máximo, padrão) de um produto para um cliente específico.
+    
+    Args:
+        db: Sessão do banco de dados
+        cliente_id: ID do cliente
+        produto_id: ID do produto
+        
+    Returns:
+        Dicionário com preco_padrao, preco_minimo, preco_maximo ou None se não houver histórico
+    """
+    # Buscar registro de preço cliente-produto
+    preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+        models.PrecoClienteProduto.cliente_id == cliente_id,
+        models.PrecoClienteProduto.produto_id == produto_id
+    ).first()
+    
+    # Buscar preço padrão do produto (preco_venda)
+    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+    
+    if not produto:
+        return None
+    
+    preco_padrao_sistema = produto.preco_venda
+    
+    # Se não houver histórico específico do cliente, retornar apenas preço padrão do sistema
+    if not preco_cliente_produto:
+        return {
+            "cliente_id": cliente_id,
+            "produto_id": produto_id,
+            "preco_padrao": preco_padrao_sistema,
+            "preco_minimo": None,
+            "preco_maximo": None
+        }
+    
+    # Retornar range completo
+    return {
+        "cliente_id": cliente_id,
+        "produto_id": produto_id,
+        "preco_padrao": preco_padrao_sistema,
+        "preco_minimo": preco_cliente_produto.preco_minimo,
+        "preco_maximo": preco_cliente_produto.preco_maximo
+    }

@@ -18,7 +18,7 @@ export interface Product {
   creationDate: string;
 }
 
-export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>;
+export type ProdutoCreateData = Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque' | 'creationDate'>;
 
 export type ProdutoUpdateData = Partial<Omit<Product, 'id' | 'empresa_id' | 'quantidade_em_estoque'>>;
 
@@ -66,6 +66,19 @@ export interface User {
   is_active: boolean;
   xp?: number;
   level?: number;
+  foto_perfil?: string | null;
+  data_criacao?: string;
+}
+
+export interface UserUpdate {
+  nome?: string;
+  email?: string;
+  foto_perfil?: string | null;
+}
+
+export interface UserPasswordUpdate {
+  senha_atual: string;
+  nova_senha: string;
 }
 
 // ======================== MOVIMENTAÇÕES PENDENTES ========================

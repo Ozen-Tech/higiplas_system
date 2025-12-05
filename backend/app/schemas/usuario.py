@@ -26,6 +26,7 @@ class Usuario(UsuarioBase):
     is_active: bool
     data_criacao: datetime
     perfil: str
+    foto_perfil: Optional[str] = None
 
     @field_serializer('data_criacao')
     def serialize_datetime(self, value: datetime, _info):
@@ -47,3 +48,15 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+# Schemas para atualização de perfil
+class UsuarioUpdate(BaseModel):
+    """Schema para atualizar dados do perfil do usuário"""
+    nome: Optional[str] = Field(None, min_length=3)
+    email: Optional[EmailStr] = None
+    foto_perfil: Optional[str] = None
+
+class UsuarioUpdateSenha(BaseModel):
+    """Schema para atualizar senha do usuário"""
+    senha_atual: str
+    nova_senha: str = Field(..., min_length=6)

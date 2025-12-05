@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MotivoMovimentacao } from "@/types";
 
 interface StockMovementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (tipo: "entrada" | "saida", quantidade: number, observacao?: string) => void;
+  onSubmit: (
+    tipo: "entrada" | "saida", 
+    quantidade: number, 
+    motivoMovimentacao: MotivoMovimentacao,
+    observacao?: string,
+    observacaoMotivo?: string
+  ) => void;
   productName: string;
 }
 
@@ -17,14 +24,18 @@ export default function StockMovementModal({
 }: StockMovementModalProps) {
   const [tipo, setTipo] = useState<"entrada" | "saida">("entrada");
   const [quantidade, setQuantidade] = useState<number>(1);
+  const [motivoMovimentacao, setMotivoMovimentacao] = useState<MotivoMovimentacao>(MotivoMovimentacao.AJUSTE_FISICO);
   const [observacao, setObservacao] = useState<string>("");
+  const [observacaoMotivo, setObservacaoMotivo] = useState<string>("");
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
       setTipo("entrada");
       setQuantidade(1);
+      setMotivoMovimentacao(MotivoMovimentacao.AJUSTE_FISICO);
       setObservacao("");
+      setObservacaoMotivo("");
       setError("");
     }
   }, [isOpen]);
@@ -36,8 +47,22 @@ export default function StockMovementModal({
       return;
     }
     setError("");
-    onSubmit(tipo, quantidade, observacao.trim() || undefined);
+    onSubmit(
+      tipo, 
+      quantidade, 
+      motivoMovimentacao,
+      observacao.trim() || undefined,
+      observacaoMotivo.trim() || undefined
+    );
   };
+
+  const motivos = [
+    { value: MotivoMovimentacao.AJUSTE_FISICO, label: 'Ajuste Físico' },
+    { value: MotivoMovimentacao.CARREGAMENTO, label: 'Carregamento para Entrega' },
+    { value: MotivoMovimentacao.DEVOLUCAO, label: 'Devolução' },
+    { value: MotivoMovimentacao.PERDA_AVARIA, label: 'Perda/Avaria' },
+    { value: MotivoMovimentacao.TRANSFERENCIA_INTERNA, label: 'Transferência Interna' },
+  ];
 
   if (!isOpen) return null;
 
@@ -87,8 +112,41 @@ export default function StockMovementModal({
             </div>
 
             <div>
+              <label htmlFor="motivo" className={labelClasses}>
+                Motivo da Movimentação <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="motivo"
+                value={motivoMovimentacao}
+                onChange={(e) => setMotivoMovimentacao(e.target.value as MotivoMovimentacao)}
+                className={`${inputBaseClasses} ${inputColorClasses} pl-3 pr-10 py-2 text-base`}
+                required
+              >
+                {motivos.map((motivo) => (
+                  <option key={motivo.value} value={motivo.value}>
+                    {motivo.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="observacaoMotivo" className={labelClasses}>
+                Observação do Motivo (opcional)
+              </label>
+              <textarea
+                id="observacaoMotivo"
+                rows={2}
+                value={observacaoMotivo}
+                onChange={(e) => setObservacaoMotivo(e.target.value)}
+                className={`${inputBaseClasses} ${inputColorClasses} px-3 py-2 resize-none`}
+                placeholder="Ex: Detalhes sobre o ajuste, número da NF, etc."
+              />
+            </div>
+
+            <div>
               <label htmlFor="observacao" className={labelClasses}>
-                Observação (opcional)
+                Observação Geral (opcional)
               </label>
               <textarea
                 id="observacao"
@@ -96,7 +154,7 @@ export default function StockMovementModal({
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 className={`${inputBaseClasses} ${inputColorClasses} px-3 py-2 resize-none`}
-                placeholder="Ex: Nota fiscal, motivo da movimentação, etc."
+                placeholder="Ex: Observações adicionais sobre a movimentação"
               />
             </div>
           </div>

@@ -61,6 +61,51 @@ def read_users_me(current_user: models.Usuario = Depends(get_current_user)):
     """Retorna os dados do usuário atualmente logado."""
     return current_user
 
+@router.put("/me", response_model=schemas_usuario.Usuario, summary="Atualizar perfil do usuário")
+def update_user_profile(
+    user_update: schemas_usuario.UsuarioUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Atualiza os dados do perfil do usuário (nome, email, foto_perfil).
+    """
+    try:
+        updated_user = crud_usuario.update_user_profile(
+            db=db,
+            user_id=current_user.id,
+            user_update=user_update
+        )
+        return updated_user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.put("/me/password", response_model=schemas_usuario.Usuario, summary="Alterar senha do usuário")
+def update_user_password(
+    password_update: schemas_usuario.UsuarioUpdateSenha,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Altera a senha do usuário após validar a senha atual.
+    """
+    try:
+        updated_user = crud_usuario.update_user_password(
+            db=db,
+            user_id=current_user.id,
+            senha_atual=password_update.senha_atual,
+            nova_senha=password_update.nova_senha
+        )
+        return updated_user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
 
 @router.post("/admin/create", response_model=schemas_usuario.Usuario, status_code=status.HTTP_201_CREATED)
 def create_user_admin(

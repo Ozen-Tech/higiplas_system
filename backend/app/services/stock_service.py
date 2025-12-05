@@ -23,6 +23,8 @@ class StockService:
         empresa_id: int,
         origem: Optional[OrigemMovimentacao] = None,
         observacao: Optional[str] = None,
+        motivo_movimentacao: Optional[MotivoMovimentacao] = None,
+        observacao_motivo: Optional[str] = None,
         apply_immediately: bool = True
     ) -> models.Produto:
         try:
@@ -67,7 +69,9 @@ class StockService:
                 origem=origem,
                 quantidade_antes=quantidade_antes,
                 quantidade_depois=quantidade_depois,
-                status='CONFIRMADO' if apply_immediately else 'PENDENTE'
+                status='CONFIRMADO' if apply_immediately else 'PENDENTE',
+                motivo_movimentacao=motivo_movimentacao.value if motivo_movimentacao else None,
+                observacao_motivo=observacao_motivo
             )
             
             db.add(movimentacao)

@@ -779,7 +779,7 @@ export default function DashboardPage() {
         <StockMovementModal 
         isOpen={isMovementModalOpen} 
         onClose={() => setIsMovementModalOpen(false)} 
-          onSubmit={(tipo, qtd, obs) => moveStock(selectedProduct.id, tipo, qtd, obs).then(() => {
+          onSubmit={(tipo, qtd, motivo, obs, obsMotivo) => moveStock(selectedProduct.id, tipo, qtd, motivo, obs, obsMotivo).then(() => {
             setIsMovementModalOpen(false);
             fetchProducts(true);
             fetchKPIs();

@@ -97,3 +97,14 @@ class OrcamentoUpdate(BaseModel):
 
 class OrcamentoStatusUpdate(BaseModel):
     status: str
+
+# Schema para range de preços por cliente-produto
+class RangePrecosClienteProduto(BaseModel):
+    """Schema para retornar range de preços de um produto para um cliente específico"""
+    cliente_id: int
+    produto_id: int
+    preco_padrao: float  # Preço do sistema do produto
+    preco_minimo: Optional[float] = None  # Menor preço já vendido para este cliente
+    preco_maximo: Optional[float] = None  # Maior preço já vendido para este cliente
+    
+    model_config = ConfigDict(from_attributes=True)

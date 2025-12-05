@@ -52,3 +52,56 @@ def authenticate_user(db: Session, email: str, password: str) -> models.Usuario 
         return None
     
     return user
+
+def update_user_profile(
+    db: Session,
+    user_id: int,
+    user_update: schemas_usuario.UsuarioUpdate
+) -> models.Usuario:
+    """
+    Atualiza os dados do perfil do usuário (nome, email, foto_perfil).
+    """
+    user = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+    if not user:
+        raise ValueError("Usuário não encontrado")
+    
+    # Verificar se o email já está em uso por outro usuário
+    if user_update.email and user_update.email != user.email:
+        existing_user = get_user_by_email(db, email=user_update.email)
+        if existing_user and existing_user.id != user_id:
+            raise ValueError("E-mail já está em uso por outro usuário")
+    
+    # Atualizar campos fornecidos
+    if user_update.nome is not None:
+        user.nome = user_update.nome
+    if user_update.email is not None:
+        user.email = user_update.email
+    if user_update.foto_perfil is not None:
+        user.foto_perfil = user_update.foto_perfil
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+def update_user_password(
+    db: Session,
+    user_id: int,
+    senha_atual: str,
+    nova_senha: str
+) -> models.Usuario:
+    """
+    Atualiza a senha do usuário após validar a senha atual.
+    """
+    user = db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+    if not user:
+        raise ValueError("Usuário não encontrado")
+    
+    # Verificar senha atual
+    if not verify_password(senha_atual, user.hashed_password):
+        raise ValueError("Senha atual incorreta")
+    
+    # Atualizar senha
+    user.hashed_password = get_password_hash(nova_senha)
+    db.commit()
+    db.refresh(user)
+    return user

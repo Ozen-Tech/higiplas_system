@@ -51,7 +51,6 @@ export default function CreateProductModal({ isOpen, onClose, onCreate }: Create
       // A MÁGICA: Se data_validade for uma string vazia, envia null.
       // Senão, envia a própria string da data.
       data_validade: newProductData.data_validade || null,
-      creationDate: new Date().toISOString(),
     };
     
     // Validação extra para garantir que campos obrigatórios não estão vazios
