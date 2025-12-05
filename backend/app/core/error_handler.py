@@ -27,6 +27,27 @@ from .responses import ErrorResponse
 from .logger import api_logger as logger
 
 
+def get_cors_headers(request: Request) -> dict:
+    """Retorna headers CORS baseados na origem da requisição."""
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "https://higiplas-system.vercel.app",
+        "https://higiplas-system.onrender.com"
+    ]
+    allow_origin = origin if origin and origin in allowed_origins else allowed_origins[0] if allowed_origins else "*"
+    
+    return {
+        "Access-Control-Allow-Origin": allow_origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, User-Agent, DNT, Cache-Control, X-Requested-With"
+    }
+
+
 async def base_app_exception_handler(
     request: Request,
     exc: BaseAppException
@@ -61,7 +82,8 @@ async def base_app_exception_handler(
     
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump()
+        content=error_response.model_dump(),
+        headers=get_cors_headers(request)
     )
 
 
@@ -114,7 +136,8 @@ async def validation_exception_handler(
     
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=content
+        content=content,
+        headers=get_cors_headers(request)
     )
 
 
@@ -176,7 +199,8 @@ async def sqlalchemy_exception_handler(
     
     return JSONResponse(
         status_code=status_code,
-        content=content
+        content=content,
+        headers=get_cors_headers(request)
     )
 
 
@@ -224,12 +248,27 @@ async def generic_exception_handler(
         details=error_details
     )
     
+    # Adicionar headers CORS
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "https://higiplas-system.vercel.app",
+        "https://higiplas-system.onrender.com"
+    ]
+    allow_origin = origin if origin and origin in allowed_origins else allowed_origins[0] if allowed_origins else "*"
+    
+    cors_headers = get_cors_headers(request)
+    
     try:
         # Usar model_dump com mode='json' para serializar corretamente
         content = error_response.model_dump(mode='json')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=content
+            content=content,
+            headers=cors_headers
         )
     except Exception as e:
         # Fallback se ainda houver problema de serialização
@@ -248,7 +287,8 @@ async def generic_exception_handler(
                     "error": "InternalServerError",
                     "message": "Erro interno do servidor.",
                     "details": safe_details
-                }
+                },
+                headers=cors_headers
             )
         except Exception:
             # Último fallback
