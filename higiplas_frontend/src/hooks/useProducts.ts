@@ -69,6 +69,10 @@ export function useProducts() {
       localStorage.removeItem("authToken");
       router.push('/');
       setError("Sessão expirou. Faça login novamente.");
+    } else if (errorMessage.includes("CORS") || errorMessage.includes("conexão") || errorMessage.includes("fetch")) {
+      // Erro de CORS ou conexão
+      setError("Erro de conexão com o servidor. Verifique se o backend está online e a configuração de CORS está correta.");
+      console.error("Erro de conexão/CORS:", errorMessage);
     } else {
       setError(errorMessage);
     }

@@ -38,10 +38,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configuração de CORS para desenvolvimento: permitir todas as origens
+# Configuração de CORS - lista específica de origens permitidas
+allowed_origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "https://higiplas-system.vercel.app",
+    "https://higiplas-system.onrender.com"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permitir todas as origens temporariamente para debug
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=[
@@ -110,17 +119,9 @@ async def cors_test():
 @app.options("/{path:path}")
 async def options_handler(request: Request):
     origin = request.headers.get("origin")
-    allowed_origins = [
-        "http://localhost",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "https://higiplas-system.vercel.app",
-        "https://higiplas-system.onrender.com"
-    ]
 
     # Verificar se a origem está na lista permitida
-    allow_origin = origin if origin in allowed_origins else "https://higiplas-system.vercel.app"
+    allow_origin = origin if origin and origin in allowed_origins else allowed_origins[0] if allowed_origins else "https://higiplas-system.vercel.app"
 
     return Response(
         status_code=200,
@@ -164,9 +165,16 @@ async def add_cors_and_log(request: Request, call_next):
     try:
         response = await call_next(request)
 
-        # Adicionar headers CORS manualmente
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
+        # Adicionar headers CORS manualmente baseado na origem da requisição
+        origin = request.headers.get("origin")
+        if origin and origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        else:
+            # Se não houver origem ou não estiver na lista, usar a primeira origem permitida como fallback
+            response.headers["Access-Control-Allow-Origin"] = allowed_origins[0] if allowed_origins else "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, User-Agent, DNT, Cache-Control, X-Requested-With"
         response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Type, Content-Length"
