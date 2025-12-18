@@ -14,6 +14,52 @@ from app.dependencies import get_current_user
 
 router = APIRouter()
 
+
+def parse_float_br(value) -> float:
+    """
+    Converte um valor para float, aceitando tanto o formato brasileiro (vírgula)
+    quanto o formato internacional (ponto) como separador decimal.
+    
+    Exemplos:
+        - "15,75" -> 15.75
+        - "1.234,56" -> 1234.56
+        - 15.75 -> 15.75
+        - "15.75" -> 15.75
+    """
+    if value is None:
+        return 0.0
+    
+    # Se já é um número, retorna diretamente
+    if isinstance(value, (int, float)):
+        return float(value)
+    
+    # Converte para string e processa
+    str_value = str(value).strip()
+    
+    if not str_value:
+        return 0.0
+    
+    # Detecta formato brasileiro: contém vírgula como separador decimal
+    # Formato brasileiro: 1.234,56 (ponto para milhar, vírgula para decimal)
+    # Formato internacional: 1,234.56 (vírgula para milhar, ponto para decimal)
+    
+    if ',' in str_value:
+        # Se tem vírgula e ponto, precisamos verificar qual é o separador decimal
+        if '.' in str_value:
+            # Se a vírgula vem depois do ponto, é formato brasileiro (1.234,56)
+            if str_value.rfind(',') > str_value.rfind('.'):
+                # Formato brasileiro: remove pontos de milhar, troca vírgula por ponto
+                str_value = str_value.replace('.', '').replace(',', '.')
+            # Se o ponto vem depois da vírgula, é formato internacional (1,234.56)
+            else:
+                # Formato internacional: apenas remove vírgulas de milhar
+                str_value = str_value.replace(',', '')
+        else:
+            # Só tem vírgula, assume que é separador decimal brasileiro
+            str_value = str_value.replace(',', '.')
+    
+    return float(str_value)
+
 @router.post("/upload-excel", status_code=status.HTTP_200_OK)
 async def upload_excel_file(
     file: UploadFile = File(...),
@@ -69,12 +115,12 @@ async def upload_excel_file(
                 codigo=str(row["codigo"]),
                 nome=str(row["nome"]),
                 categoria=str(row["categoria"]),
-                preco_venda=float(row["preco_venda"]),
+                preco_venda=parse_float_br(row["preco_venda"]),
                 unidade_medida=str(row["unidade_medida"]),
                 quantidade_em_estoque=int(row.get("estoque")) if pd.notna(row.get("estoque")) else 0,
                 # Campos opcionais com tratamento para valores nulos (NA)
                 descricao=str(row.get("descricao")) if pd.notna(row.get("descricao")) else None,
-                preco_custo=float(row.get("preco_custo")) if pd.notna(row.get("preco_custo")) else None,
+                preco_custo=parse_float_br(row.get("preco_custo")) if pd.notna(row.get("preco_custo")) else None,
                 estoque_minimo=int(row.get("estoque_minimo")) if pd.notna(row.get("estoque_minimo")) else 0,
                 data_validade=pd.to_datetime(row.get("data_validade")).date() if pd.notna(row.get("data_validade")) else None,
             )
