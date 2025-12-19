@@ -18,8 +18,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SugestoesCliente } from '@/components/orcamentos/SugestoesCliente';
+import { useSugestoesOrcamento, SugestaoProduto } from '@/hooks/useSugestoesOrcamento';
 import { 
-  Users, Package, ShoppingCart, PlusCircle, Trash2, ArrowLeft, Send, Share2, UserPlus 
+  Users, Package, ShoppingCart, PlusCircle, Trash2, ArrowLeft, Send, Share2, UserPlus, History
 } from 'lucide-react';
 
 export default function NovoOrcamentoPage() {
@@ -33,6 +34,7 @@ export default function NovoOrcamentoPage() {
     loading: vendasLoading
   } = useVendas();
   const { criarOrcamento, loading: orcamentoLoading } = useOrcamentos();
+  const { obterSugestoesCliente } = useSugestoesOrcamento();
 
   // Estados
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
@@ -52,11 +54,31 @@ export default function NovoOrcamentoPage() {
   const [novoItemNome, setNovoItemNome] = useState('');
   const [novoItemQuantidade, setNovoItemQuantidade] = useState(1);
   const [novoItemValor, setNovoItemValor] = useState(0);
+  
+  // Estado para sugestões de preços do cliente
+  const [sugestoesCliente, setSugestoesCliente] = useState<Map<number, SugestaoProduto>>(new Map());
 
   useEffect(() => {
     buscarClientes();
     buscarProdutos();
   }, [buscarClientes, buscarProdutos]);
+  
+  // Carregar sugestões quando cliente é selecionado
+  useEffect(() => {
+    if (clienteSelecionado) {
+      obterSugestoesCliente(clienteSelecionado.id).then(response => {
+        if (response?.sugestoes) {
+          const sugestoesMap = new Map<number, SugestaoProduto>();
+          response.sugestoes.forEach(s => {
+            sugestoesMap.set(s.produto_id, s);
+          });
+          setSugestoesCliente(sugestoesMap);
+        }
+      });
+    } else {
+      setSugestoesCliente(new Map());
+    }
+  }, [clienteSelecionado, obterSugestoesCliente]);
   
   const adicionarAoCarrinho = (produto: Produto, preco?: number, quantidade?: number) => {
     const itemExistente = carrinho.find(item => item.produto_id === produto.id);
@@ -76,14 +98,28 @@ export default function NovoOrcamentoPage() {
       }
       return;
     }
+    
+    // Verificar se há sugestão de preço para este cliente
+    const sugestao = sugestoesCliente.get(produto.id);
+    
+    // Prioridade de preço: 1) parâmetro passado, 2) último preço do cliente, 3) preço do sistema
+    let precoInicial = produto.preco;
+    if (preco !== undefined) {
+      precoInicial = preco;
+    } else if (sugestao?.preco_cliente?.ultimo) {
+      precoInicial = sugestao.preco_cliente.ultimo;
+    }
+    
     const novoItem: ItemCarrinhoOrcamento = {
         produto_id: produto.id,
         nome: produto.nome,
         estoque_disponivel: produto.estoque_disponivel,
-        preco_original: produto.preco,
-        preco_unitario_editavel: preco !== undefined ? preco : produto.preco,
+        preco_original: produto.preco, // Preço do sistema
+        preco_unitario_editavel: precoInicial,
         quantidade: quantidade !== undefined ? quantidade : 1,
         isPersonalizado: false,
+        // Guardar dados de sugestão para exibir no carrinho
+        preco_cliente: sugestao?.preco_cliente || null,
     };
     setCarrinho([...carrinho, novoItem]);
   };
@@ -363,15 +399,35 @@ export default function NovoOrcamentoPage() {
                     </div>
                     <p className="text-xs text-gray-500 mb-2">Não encontrou o produto? Clique em &quot;Novo Produto&quot; para adicionar um item personalizado.</p>
                     <div className="max-h-60 overflow-y-auto mt-2">
-                        {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => (
-                            <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">
-                                <div>
-                                    <p>{p.nome}</p>
-                                    <p className="text-xs text-gray-500">Estoque: {p.estoque_disponivel}</p>
-                                </div>
-                                <Button size="sm" onClick={() => adicionarAoCarrinho(p)}><PlusCircle size={14}/></Button>
-                            </div>
-                        ))}
+                        {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => {
+                            const sugestao = sugestoesCliente.get(p.id);
+                            const temHistorico = sugestao?.historico_disponivel;
+                            
+                            return (
+                              <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">
+                                  <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <p>{p.nome}</p>
+                                        {temHistorico && (
+                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <History size={10} /> Já vendido
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                        <span>Estoque: {p.estoque_disponivel}</span>
+                                        <span>Sistema: R$ {p.preco.toFixed(2)}</span>
+                                        {sugestao?.preco_cliente && (
+                                          <span className="text-blue-600">
+                                            Cliente: R$ {sugestao.preco_cliente.minimo?.toFixed(2)} - R$ {sugestao.preco_cliente.maximo?.toFixed(2)}
+                                          </span>
+                                        )}
+                                      </div>
+                                  </div>
+                                  <Button size="sm" onClick={() => adicionarAoCarrinho(p)}><PlusCircle size={14}/></Button>
+                              </div>
+                            );
+                        })}
                     </div>
                   </CardContent>
               </Card>
@@ -411,6 +467,15 @@ export default function NovoOrcamentoPage() {
                                 <div>
                                     <label className="text-xs">Preço Unit. (R$)</label>
                                     <Input type="number" step="0.01" value={item.preco_unitario_editavel} onChange={(e) => atualizarItemCarrinho(itemKey, 'preco', parseFloat(e.target.value) || 0)}/>
+                                    {/* Mostrar preço do sistema e range do cliente */}
+                                    <p className="text-xs text-gray-400 mt-1">
+                                      Sistema: R$ {item.preco_original.toFixed(2)}
+                                    </p>
+                                    {item.preco_cliente && (
+                                      <p className="text-xs text-blue-500 mt-0.5">
+                                        Cliente: R$ {item.preco_cliente.minimo?.toFixed(2)} - R$ {item.preco_cliente.maximo?.toFixed(2)}
+                                      </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
