@@ -740,18 +740,34 @@ def atualizar_status_orcamento(
 @router.post("/{orcamento_id}/confirmar", response_model=schemas_orcamento.Orcamento, summary="Confirma orçamento e dá baixa no estoque")
 def confirmar_orcamento(
     orcamento_id: int,
+    baixar_estoque: bool = True,
     db: Session = Depends(get_db),
     admin_user: models.Usuario = Depends(get_admin_user)
 ):
     """
-    Confirma um orçamento e processa a baixa de estoque dos produtos.
+    Confirma um orçamento e opcionalmente processa a baixa de estoque dos produtos.
     Apenas para administradores.
+    
+    Args:
+        orcamento_id: ID do orçamento a confirmar
+        baixar_estoque: Se True (padrão), baixa o estoque. Se False, apenas registra histórico.
+                       Útil quando a NF já foi lançada pela aba de movimentações.
+                       Apenas Admin/Gestor podem usar baixar_estoque=False.
     """
+    # Verificar permissão para usar baixar_estoque=False
+    if not baixar_estoque:
+        if admin_user.perfil.upper() not in ["ADMIN", "GESTOR"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas Admin/Gestor podem confirmar sem baixar estoque"
+            )
+    
     return crud_orcamento.confirmar_orcamento(
         db=db,
         orcamento_id=orcamento_id,
         usuario_id=admin_user.id,
-        empresa_id=admin_user.empresa_id
+        empresa_id=admin_user.empresa_id,
+        baixar_estoque=baixar_estoque
     )
 
 @router.delete("/{orcamento_id}", summary="Exclui um orçamento (apenas admin)")

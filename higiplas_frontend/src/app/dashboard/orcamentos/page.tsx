@@ -122,8 +122,8 @@ export default function OrcamentosAdminPage() {
     }
   };
 
-  const handleConfirmar = async (orcamento: Orcamento) => {
-    const resultado = await confirmarOrcamento(orcamento.id);
+  const handleConfirmar = async (orcamento: Orcamento, baixarEstoque: boolean = true) => {
+    const resultado = await confirmarOrcamento(orcamento.id, baixarEstoque);
     if (resultado) {
       setConfirmModalOpen(false);
       listarTodosOrcamentos();
@@ -364,7 +364,8 @@ export default function OrcamentosAdminPage() {
               setConfirmModalOpen(false);
               setSelectedOrcamento(null);
             }}
-            onConfirm={() => handleConfirmar(selectedOrcamento)}
+            onConfirm={(baixarEstoque) => handleConfirmar(selectedOrcamento, baixarEstoque)}
+            userPerfil={user?.perfil || 'VENDEDOR'}
           />
         </>
       )}

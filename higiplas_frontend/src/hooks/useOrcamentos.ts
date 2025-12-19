@@ -118,12 +118,24 @@ export function useOrcamentos() {
     }
   }, [handleApiError]);
 
-  // Confirmar orçamento e dar baixa no estoque (admin)
-  const confirmarOrcamento = useCallback(async (orcamentoId: number): Promise<Orcamento | null> => {
+  // Confirmar orçamento e opcionalmente dar baixa no estoque (admin)
+  const confirmarOrcamento = useCallback(async (
+    orcamentoId: number, 
+    baixarEstoque: boolean = true
+  ): Promise<Orcamento | null> => {
     setLoading(true);
     try {
-      const response = await apiService.post(`/orcamentos/${orcamentoId}/confirmar`, {});
-      toast.success('Orçamento confirmado e baixa de estoque realizada com sucesso!');
+      const response = await apiService.post(
+        `/orcamentos/${orcamentoId}/confirmar?baixar_estoque=${baixarEstoque}`, 
+        {}
+      );
+      
+      if (baixarEstoque) {
+        toast.success('Orçamento confirmado e baixa de estoque realizada com sucesso!');
+      } else {
+        toast.success('Orçamento confirmado! Histórico do cliente registrado (estoque não alterado).');
+      }
+      
       return response?.data || null;
     } catch (err) {
       handleApiError(err, 'Erro ao confirmar orçamento.');

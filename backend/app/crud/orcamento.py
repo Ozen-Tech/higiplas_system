@@ -565,10 +565,11 @@ def confirmar_orcamento(
     orcamento_id: int,
     usuario_id: int,
     empresa_id: int,
-    stock_service: Optional[Type] = None
+    stock_service: Optional[Type] = None,
+    baixar_estoque: bool = True
 ) -> models.Orcamento:
     """
-    Confirma um orçamento e dá baixa no estoque dos produtos.
+    Confirma um orçamento e opcionalmente dá baixa no estoque dos produtos.
     
     Orquestra as operações de validação, processamento de estoque e atualização de status.
     Segue o princípio de responsabilidade única, delegando cada etapa para funções específicas.
@@ -579,6 +580,7 @@ def confirmar_orcamento(
         usuario_id: ID do usuário que está confirmando
         empresa_id: ID da empresa
         stock_service: Serviço de estoque (injetado para facilitar testes)
+        baixar_estoque: Se True (padrão), baixa o estoque. Se False, apenas registra histórico.
         
     Returns:
         Orçamento confirmado com status FINALIZADO
@@ -586,28 +588,35 @@ def confirmar_orcamento(
     Raises:
         NotFoundError: Se orçamento não existir
         OrcamentoStatusError: Se status não permitir confirmação
-        BusinessRuleException: Se houver estoque insuficiente
+        BusinessRuleException: Se houver estoque insuficiente (quando baixar_estoque=True)
         Exception: Se houver erro ao processar
     """
     orcamento_logger.info(
-        f"Iniciando confirmação do orçamento #{orcamento_id}",
-        extra={"orcamento_id": orcamento_id, "usuario_id": usuario_id}
+        f"Iniciando confirmação do orçamento #{orcamento_id} (baixar_estoque={baixar_estoque})",
+        extra={"orcamento_id": orcamento_id, "usuario_id": usuario_id, "baixar_estoque": baixar_estoque}
     )
     
     try:
         # 1. Validar orçamento e status
         orcamento = _validar_orcamento_para_confirmacao(db, orcamento_id)
         
-        # 2. Validar estoque disponível
-        _validar_estoque_orcamento(db, orcamento)
+        # 2 e 3. Validar e processar estoque apenas se baixar_estoque=True
+        if baixar_estoque:
+            # 2. Validar estoque disponível
+            _validar_estoque_orcamento(db, orcamento)
+            
+            # 3. Processar baixa de estoque
+            _processar_baixa_estoque(db, orcamento, usuario_id, empresa_id, stock_service)
+        else:
+            orcamento_logger.info(
+                f"Orçamento #{orcamento_id}: Pulando baixa de estoque (NF já lançada)",
+                extra={"orcamento_id": orcamento_id}
+            )
         
-        # 3. Processar baixa de estoque
-        _processar_baixa_estoque(db, orcamento, usuario_id, empresa_id, stock_service)
-        
-        # 3.5. Salvar histórico de vendas para sugestões e KPIs
+        # 3.5. Salvar histórico de vendas para sugestões e KPIs (sempre executa)
         _salvar_historico_vendas(db, orcamento, usuario_id, empresa_id)
         
-        # 3.6. Atualizar preços padrão e calcular ranges por cliente-produto
+        # 3.6. Atualizar preços padrão e calcular ranges por cliente-produto (sempre executa)
         _atualizar_precos_cliente_produto(db, orcamento, empresa_id)
         
         # 4. Atualizar status para FINALIZADO
