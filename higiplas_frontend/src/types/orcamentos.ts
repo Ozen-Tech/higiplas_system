@@ -1,5 +1,13 @@
 // /src/types/orcamentos.ts
 
+// Range de preços do histórico com o cliente
+export interface PrecoClienteCarrinho {
+  ultimo: number | null;    // Último preço vendido
+  minimo: number | null;    // Menor preço já vendido
+  maximo: number | null;    // Maior preço já vendido
+  medio: number | null;     // Média de preços
+}
+
 // Tipo para um item DENTRO do carrinho, no frontend.
 // Note que tem campos a mais para ajudar a UI, como 'nome' e 'estoque_disponivel'.
 export interface ItemCarrinhoOrcamento {
@@ -8,9 +16,10 @@ export interface ItemCarrinhoOrcamento {
     nome: string;
     quantidade: number;
     estoque_disponivel?: number; // Opcional: itens personalizados não têm estoque
-    preco_original: number; // Preço de tabela para referência
+    preco_original: number; // Preço de tabela para referência (preço do sistema)
     preco_unitario_editavel: number; // O preço que o vendedor pode alterar
     isPersonalizado?: boolean; // Flag para identificar itens personalizados
+    preco_cliente?: PrecoClienteCarrinho | null; // Range de preços do histórico do cliente
   }
   
   // Tipo para os dados que enviaremos para criar o orçamento no backend.

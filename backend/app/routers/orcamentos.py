@@ -457,23 +457,67 @@ def obter_sugestoes_cliente(
 ):
     """
     Retorna sugestões de preço e quantidade para todos os produtos já vendidos ao cliente.
+    Inclui range de preços (min, max, médio) e preço do sistema para comparação.
     Baseado no histórico de vendas do vendedor para este cliente.
     """
     try:
         historico_service = HistoricoVendasService(db)
         
-        # Obter sugestões (filtra por vendedor se não for admin/gestor)
+        # Obter sugestões básicas (filtra por vendedor se não for admin/gestor)
         vendedor_id = None if current_user.perfil.upper() in ["ADMIN", "GESTOR"] else current_user.id
         
-        sugestoes = historico_service.obter_sugestoes_cliente(
+        sugestoes_basicas = historico_service.obter_sugestoes_cliente(
             cliente_id=cliente_id,
             vendedor_id=vendedor_id
         )
         
+        # Expandir sugestões com range de preços e preço do sistema
+        sugestoes_expandidas = []
+        
+        for sugestao in sugestoes_basicas:
+            produto_id = sugestao.get('produto_id')
+            
+            # Buscar produto para obter preço do sistema e nome
+            produto = db.query(models.Produto).filter(
+                models.Produto.id == produto_id
+            ).first()
+            
+            preco_sistema = produto.preco_venda if produto else 0.0
+            produto_nome = produto.nome if produto else None
+            
+            # Buscar range de preços da tabela PrecoClienteProduto
+            preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+                models.PrecoClienteProduto.cliente_id == cliente_id,
+                models.PrecoClienteProduto.produto_id == produto_id
+            ).first()
+            
+            # Montar objeto de preço do cliente
+            preco_cliente = None
+            total_vendas = 0
+            
+            if preco_cliente_produto:
+                preco_cliente = {
+                    "ultimo": preco_cliente_produto.preco_padrao,
+                    "minimo": preco_cliente_produto.preco_minimo,
+                    "maximo": preco_cliente_produto.preco_maximo,
+                    "medio": preco_cliente_produto.preco_medio
+                }
+                total_vendas = preco_cliente_produto.total_vendas or 0
+            
+            sugestoes_expandidas.append({
+                "produto_id": produto_id,
+                "produto_nome": produto_nome,
+                "preco_sistema": preco_sistema,
+                "preco_cliente": preco_cliente,
+                "quantidade_sugerida": sugestao.get('quantidade_sugerida'),
+                "total_vendas": total_vendas,
+                "historico_disponivel": preco_cliente is not None
+            })
+        
         return {
             "cliente_id": cliente_id,
-            "sugestoes": sugestoes,
-            "total_produtos": len(sugestoes)
+            "sugestoes": sugestoes_expandidas,
+            "total_produtos": len(sugestoes_expandidas)
         }
         
     except Exception as e:
@@ -492,18 +536,45 @@ def obter_sugestao_produto(
 ):
     """
     Retorna sugestão específica de preço e quantidade para um produto específico.
-    Lógica: média dos últimos 5 pedidos (ou último se < 5).
+    Inclui range de preços (min, max, médio) e preço do sistema para comparação.
+    Lógica de quantidade: média dos últimos 5 pedidos (ou último se < 5).
     """
     try:
         historico_service = HistoricoVendasService(db)
         
-        # Determinar vendedor_id
+        # Buscar produto para obter preço do sistema e nome
+        produto = db.query(models.Produto).filter(
+            models.Produto.id == produto_id
+        ).first()
+        
+        preco_sistema = produto.preco_venda if produto else 0.0
+        produto_nome = produto.nome if produto else None
+        
+        # Buscar range de preços da tabela PrecoClienteProduto
+        preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+            models.PrecoClienteProduto.cliente_id == cliente_id,
+            models.PrecoClienteProduto.produto_id == produto_id
+        ).first()
+        
+        # Montar objeto de preço do cliente
+        preco_cliente = None
+        total_vendas = 0
+        
+        if preco_cliente_produto:
+            preco_cliente = {
+                "ultimo": preco_cliente_produto.preco_padrao,
+                "minimo": preco_cliente_produto.preco_minimo,
+                "maximo": preco_cliente_produto.preco_maximo,
+                "medio": preco_cliente_produto.preco_medio
+            }
+            total_vendas = preco_cliente_produto.total_vendas or 0
+        
+        # Determinar vendedor_id para cálculo de quantidade sugerida
         vendedor_id = current_user.id if current_user.perfil.upper() not in ["ADMIN", "GESTOR"] else None
         
-        # Se não for admin/gestor, usar o próprio ID como vendedor
+        quantidade_sugerida = None
         if vendedor_id is None:
-            # Para admin/gestor, buscar histórico de qualquer vendedor para este cliente
-            # Mas vamos usar o último histórico encontrado
+            # Para admin/gestor, buscar histórico de qualquer vendedor
             historicos = historico_service.obter_historico_completo(
                 cliente_id=cliente_id,
                 produto_id=produto_id,
@@ -511,35 +582,23 @@ def obter_sugestao_produto(
             )
             if historicos:
                 vendedor_id = historicos[0].vendedor_id
-            else:
-                return {
-                    "cliente_id": cliente_id,
-                    "produto_id": produto_id,
-                    "ultimo_preco": None,
-                    "quantidade_sugerida": None,
-                    "historico_disponivel": False
-                }
         
-        # Obter último preço
-        ultimo_preco = historico_service.obter_ultimo_preco(
-            vendedor_id=vendedor_id,
-            cliente_id=cliente_id,
-            produto_id=produto_id
-        )
-        
-        # Obter média de quantidade
-        quantidade_sugerida = historico_service.obter_media_quantidade(
-            vendedor_id=vendedor_id,
-            cliente_id=cliente_id,
-            produto_id=produto_id
-        )
+        if vendedor_id:
+            quantidade_sugerida = historico_service.obter_media_quantidade(
+                vendedor_id=vendedor_id,
+                cliente_id=cliente_id,
+                produto_id=produto_id
+            )
         
         return {
             "cliente_id": cliente_id,
             "produto_id": produto_id,
-            "ultimo_preco": ultimo_preco,
+            "produto_nome": produto_nome,
+            "preco_sistema": preco_sistema,
+            "preco_cliente": preco_cliente,
             "quantidade_sugerida": quantidade_sugerida,
-            "historico_disponivel": ultimo_preco is not None
+            "total_vendas": total_vendas,
+            "historico_disponivel": preco_cliente is not None
         }
         
     except Exception as e:

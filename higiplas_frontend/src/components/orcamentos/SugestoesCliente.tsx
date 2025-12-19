@@ -5,7 +5,7 @@ import { useSugestoesOrcamento, SugestaoProduto } from '@/hooks/useSugestoesOrca
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react';
 
 interface SugestoesClienteProps {
   clienteId: number | null;
@@ -33,11 +33,11 @@ export function SugestoesCliente({ clienteId, onAplicarSugestao }: SugestoesClie
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 border-blue-200 bg-blue-50/30">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Sparkles size={16} className="text-blue-500" />
-          Sugestões Inteligentes
+          Histórico de Compras do Cliente
           <Badge variant="secondary" className="ml-2">
             {sugestoes.length} {sugestoes.length === 1 ? 'produto' : 'produtos'}
           </Badge>
@@ -48,42 +48,67 @@ export function SugestoesCliente({ clienteId, onAplicarSugestao }: SugestoesClie
           <p className="text-sm text-gray-500">Carregando sugestões...</p>
         ) : (
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {sugestoes.map((sugestao) => (
-              <div
-                key={sugestao.produto_id}
-                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Produto #{sugestao.produto_id}</p>
-                  <div className="flex items-center gap-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
-                    {sugestao.ultimo_preco && (
-                      <span>Último preço: R$ {sugestao.ultimo_preco.toFixed(2)}</span>
-                    )}
-                    {sugestao.quantidade_sugerida && (
-                      <span className="flex items-center gap-1">
-                        <TrendingUp size={12} />
-                        Qtd sugerida: {sugestao.quantidade_sugerida}
+            {sugestoes.map((sugestao) => {
+              const precoAplicar = sugestao.preco_cliente?.ultimo || sugestao.preco_sistema;
+              const quantidadeAplicar = sugestao.quantidade_sugerida || 1;
+              
+              return (
+                <div
+                  key={sugestao.produto_id}
+                  className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border"
+                >
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {sugestao.produto_nome || `Produto #${sugestao.produto_id}`}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-xs">
+                      {/* Preço do sistema */}
+                      <span className="text-gray-500 flex items-center gap-1">
+                        <DollarSign size={10} />
+                        Sistema: R$ {sugestao.preco_sistema.toFixed(2)}
                       </span>
-                    )}
+                      
+                      {/* Range de preços do cliente */}
+                      {sugestao.preco_cliente && (
+                        <span className="text-blue-600 font-medium">
+                          Cliente: R$ {sugestao.preco_cliente.minimo?.toFixed(2)} - R$ {sugestao.preco_cliente.maximo?.toFixed(2)}
+                        </span>
+                      )}
+                      
+                      {/* Total de vendas */}
+                      {sugestao.total_vendas > 0 && (
+                        <span className="text-gray-400 flex items-center gap-1">
+                          <ShoppingBag size={10} />
+                          {sugestao.total_vendas}x vendido
+                        </span>
+                      )}
+                      
+                      {/* Quantidade sugerida */}
+                      {sugestao.quantidade_sugerida && (
+                        <span className="text-green-600 flex items-center gap-1">
+                          <TrendingUp size={10} />
+                          Qtd média: {sugestao.quantidade_sugerida}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                {sugestao.ultimo_preco && sugestao.quantidade_sugerida && (
                   <Button
                     size="sm"
                     variant="outline"
+                    className="ml-2"
                     onClick={() =>
                       onAplicarSugestao(
                         sugestao.produto_id,
-                        sugestao.ultimo_preco!,
-                        Math.round(sugestao.quantidade_sugerida!)
+                        precoAplicar,
+                        Math.round(quantidadeAplicar)
                       )
                     }
                   >
-                    Aplicar
+                    Adicionar
                   </Button>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>

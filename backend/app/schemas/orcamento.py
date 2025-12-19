@@ -108,3 +108,30 @@ class RangePrecosClienteProduto(BaseModel):
     preco_maximo: Optional[float] = None  # Maior preço já vendido para este cliente
     
     model_config = ConfigDict(from_attributes=True)
+
+
+# Schemas para sugestões inteligentes de preços
+class PrecoCliente(BaseModel):
+    """Range de preços do histórico com o cliente"""
+    ultimo: Optional[float] = None      # Último preço vendido
+    minimo: Optional[float] = None      # Menor preço já vendido
+    maximo: Optional[float] = None      # Maior preço já vendido
+    medio: Optional[float] = None       # Média de preços
+
+
+class SugestaoProdutoExpandida(BaseModel):
+    """Sugestão expandida com range de preços e preço do sistema"""
+    produto_id: int
+    produto_nome: Optional[str] = None
+    preco_sistema: float                # Preço de venda cadastrado no produto
+    preco_cliente: Optional[PrecoCliente] = None  # Range de preços do cliente
+    quantidade_sugerida: Optional[int] = None
+    total_vendas: int = 0               # Quantas vezes vendeu para este cliente
+    historico_disponivel: bool = False
+
+
+class SugestoesClienteResponse(BaseModel):
+    """Resposta do endpoint de sugestões com dados expandidos"""
+    cliente_id: int
+    sugestoes: List[SugestaoProdutoExpandida]
+    total_produtos: int
