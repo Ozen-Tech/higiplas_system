@@ -432,64 +432,89 @@ def _atualizar_precos_cliente_produto(
         orcamento: Orçamento confirmado
         empresa_id: ID da empresa
     """
-    for item in orcamento.itens:
-        preco_vendido = item.preco_unitario_congelado
-        cliente_id = orcamento.cliente_id
-        produto_id = item.produto_id
+    try:
+        for item in orcamento.itens:
+            preco_vendido = item.preco_unitario_congelado
+            cliente_id = orcamento.cliente_id
+            produto_id = item.produto_id
+            
+            # Tentar salvar no histórico de preços (tabela pode não existir em produção)
+            try:
+                historico_preco = models.HistoricoPrecoProduto(
+                    produto_id=produto_id,
+                    preco_unitario=preco_vendido,
+                    quantidade=item.quantidade,
+                    valor_total=item.quantidade * preco_vendido,
+                    empresa_id=empresa_id,
+                    cliente_id=cliente_id,
+                    nota_fiscal=orcamento.numero_nf
+                )
+                db.add(historico_preco)
+                db.flush()
+            except Exception as hist_error:
+                orcamento_logger.warning(
+                    f"Tabela historico_preco_produto pode não existir, pulando: {str(hist_error)}",
+                    extra={"orcamento_id": orcamento.id}
+                )
+                db.rollback()
+            
+            # Buscar ou criar registro de preço cliente-produto
+            try:
+                preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+                    models.PrecoClienteProduto.cliente_id == cliente_id,
+                    models.PrecoClienteProduto.produto_id == produto_id
+                ).first()
+                
+                if not preco_cliente_produto:
+                    # Criar novo registro
+                    preco_cliente_produto = models.PrecoClienteProduto(
+                        cliente_id=cliente_id,
+                        produto_id=produto_id,
+                        preco_padrao=preco_vendido,
+                        preco_minimo=preco_vendido,
+                        preco_maximo=preco_vendido,
+                        preco_medio=preco_vendido,
+                        total_vendas=1,
+                        data_ultima_venda=orcamento.data_criacao
+                    )
+                    db.add(preco_cliente_produto)
+                else:
+                    # Atualizar registro existente
+                    preco_cliente_produto.preco_padrao = preco_vendido
+                    preco_cliente_produto.total_vendas += 1
+                    preco_cliente_produto.data_ultima_venda = orcamento.data_criacao
+                    
+                    # Calcular ranges baseado no preço atual (simplificado)
+                    if preco_cliente_produto.preco_minimo is None or preco_vendido < preco_cliente_produto.preco_minimo:
+                        preco_cliente_produto.preco_minimo = preco_vendido
+                    if preco_cliente_produto.preco_maximo is None or preco_vendido > preco_cliente_produto.preco_maximo:
+                        preco_cliente_produto.preco_maximo = preco_vendido
+                    # Média simples (pode ser melhorada depois)
+                    if preco_cliente_produto.preco_medio:
+                        preco_cliente_produto.preco_medio = (preco_cliente_produto.preco_medio + preco_vendido) / 2
+                    else:
+                        preco_cliente_produto.preco_medio = preco_vendido
+                
+                db.flush()
+            except Exception as preco_error:
+                orcamento_logger.warning(
+                    f"Erro ao atualizar precos_cliente_produto, pulando: {str(preco_error)}",
+                    extra={"orcamento_id": orcamento.id}
+                )
+                db.rollback()
         
-        # Salvar no histórico de preços primeiro
-        historico_preco = models.HistoricoPrecoProduto(
-            produto_id=produto_id,
-            preco_unitario=preco_vendido,
-            quantidade=item.quantidade,
-            valor_total=item.quantidade * preco_vendido,
-            empresa_id=empresa_id,
-            cliente_id=cliente_id,
-            nota_fiscal=orcamento.numero_nf
+        orcamento_logger.info(
+            f"Preços cliente-produto atualizados para orçamento #{orcamento.id}",
+            extra={"orcamento_id": orcamento.id, "itens": len(orcamento.itens)}
         )
-        db.add(historico_preco)
-        db.flush()
         
-        # Buscar ou criar registro de preço cliente-produto
-        preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
-            models.PrecoClienteProduto.cliente_id == cliente_id,
-            models.PrecoClienteProduto.produto_id == produto_id
-        ).first()
-        
-        if not preco_cliente_produto:
-            # Criar novo registro
-            preco_cliente_produto = models.PrecoClienteProduto(
-                cliente_id=cliente_id,
-                produto_id=produto_id,
-                preco_padrao=preco_vendido,
-                preco_minimo=preco_vendido,
-                preco_maximo=preco_vendido,
-                preco_medio=preco_vendido,
-                total_vendas=1,
-                data_ultima_venda=orcamento.data_criacao
-            )
-            db.add(preco_cliente_produto)
-        else:
-            # Atualizar registro existente
-            preco_cliente_produto.preco_padrao = preco_vendido  # Último preço confirmado vira padrão
-            preco_cliente_produto.total_vendas += 1
-            preco_cliente_produto.data_ultima_venda = orcamento.data_criacao
-            
-            # Buscar histórico de preços deste cliente-produto para calcular ranges
-            historicos = db.query(models.HistoricoPrecoProduto).filter(
-                models.HistoricoPrecoProduto.produto_id == produto_id,
-                models.HistoricoPrecoProduto.cliente_id == cliente_id
-            ).all()
-            
-            # Calcular ranges
-            precos = [h.preco_unitario for h in historicos]
-            
-            if len(precos) >= 1:
-                preco_cliente_produto.preco_minimo = min(precos)
-                preco_cliente_produto.preco_maximo = max(precos)
-                preco_cliente_produto.preco_medio = sum(precos) / len(precos)
-        
-        db.flush()
+    except Exception as e:
+        orcamento_logger.error(
+            f"Erro ao atualizar preços cliente-produto para orçamento #{orcamento.id}: {str(e)}",
+            extra={"orcamento_id": orcamento.id},
+            exc_info=True
+        )
+        # Não interrompe o fluxo se houver erro ao atualizar preços
 
 
 def _salvar_historico_vendas(
@@ -526,7 +551,8 @@ def _salvar_historico_vendas(
                 data_venda=orcamento.data_criacao
             )
         
-        db.commit()
+        # Não faz commit aqui - será feito no final junto com as outras operações
+        db.flush()
         
         orcamento_logger.info(
             f"Histórico de vendas salvo para orçamento #{orcamento.id}",
@@ -540,7 +566,6 @@ def _salvar_historico_vendas(
             exc_info=True
         )
         # Não interrompe o fluxo se houver erro ao salvar histórico
-        db.rollback()
 
 
 def _atualizar_status_finalizado(

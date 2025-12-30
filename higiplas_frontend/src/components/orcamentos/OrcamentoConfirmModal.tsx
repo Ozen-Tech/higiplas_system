@@ -27,9 +27,6 @@ export function OrcamentoConfirmModal({
   
   // Apenas Admin/Gestor podem usar a opção de não baixar estoque
   const podeNaoBaixarEstoque = ['ADMIN', 'GESTOR'].includes(userPerfil.toUpperCase());
-  
-  // Debug - remover depois
-  console.log('OrcamentoConfirmModal - userPerfil:', userPerfil, '| podeNaoBaixarEstoque:', podeNaoBaixarEstoque);
 
   if (!open) return null;
 
@@ -92,11 +89,6 @@ export function OrcamentoConfirmModal({
             </div>
           </Alert>
           
-          {/* DEBUG - Remover depois */}
-          <div className="text-xs text-gray-400 mb-2">
-            [DEBUG] Perfil recebido: &quot;{userPerfil}&quot; | Pode não baixar estoque: {podeNaoBaixarEstoque ? 'SIM' : 'NÃO'}
-          </div>
-
           {/* Opção de não baixar estoque (apenas Admin/Gestor) */}
           {podeNaoBaixarEstoque && (
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border">
