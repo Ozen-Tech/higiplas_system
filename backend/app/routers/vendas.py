@@ -252,7 +252,8 @@ def listar_produtos_venda(
                 estoque_disponivel=p.quantidade_em_estoque,
                 categoria=p.categoria,
                 unidade_medida=p.unidade_medida,
-                estatisticas_preco=estatisticas_vazias
+                estatisticas_preco=estatisticas_vazias,
+                preco_cliente=None  # Adicionar campo preco_cliente mesmo em caso de erro
             )
             
             resultado.append(produto_venda)
