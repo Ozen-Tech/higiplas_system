@@ -784,3 +784,96 @@ def excluir_orcamento(
     if resultado:
         return {"message": f"Orçamento #{orcamento_id} excluído com sucesso"}
     raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+
+
+@router.post("/admin/recalcular-precos", summary="Recalcula ranges de preços baseado em orçamentos finalizados")
+def recalcular_precos_historico(
+    db: Session = Depends(get_db),
+    admin_user: models.Usuario = Depends(get_admin_user)
+):
+    """
+    Recalcula os ranges de preços (mín, máx, médio) para todos os clientes
+    baseado nos orçamentos já finalizados. Útil para corrigir dados históricos.
+    Apenas para administradores.
+    """
+    try:
+        # Buscar todos os orçamentos finalizados
+        orcamentos = db.query(models.Orcamento).filter(
+            models.Orcamento.status == "FINALIZADO",
+            models.Orcamento.cliente_id.isnot(None)
+        ).all()
+        
+        precos_atualizados = 0
+        clientes_processados = set()
+        
+        for orcamento in orcamentos:
+            for item in orcamento.itens:
+                cliente_id = orcamento.cliente_id
+                produto_id = item.produto_id
+                preco_vendido = item.preco_unitario_congelado
+                
+                # Buscar ou criar registro de preço cliente-produto
+                preco_cliente = db.query(models.PrecoClienteProduto).filter(
+                    models.PrecoClienteProduto.cliente_id == cliente_id,
+                    models.PrecoClienteProduto.produto_id == produto_id
+                ).first()
+                
+                if not preco_cliente:
+                    # Criar novo registro
+                    preco_cliente = models.PrecoClienteProduto(
+                        cliente_id=cliente_id,
+                        produto_id=produto_id,
+                        preco_padrao=preco_vendido,
+                        preco_minimo=preco_vendido,
+                        preco_maximo=preco_vendido,
+                        preco_medio=preco_vendido,
+                        total_vendas=1,
+                        data_ultima_venda=orcamento.data_criacao
+                    )
+                    db.add(preco_cliente)
+                else:
+                    # Atualizar registro existente
+                    preco_cliente.total_vendas = (preco_cliente.total_vendas or 0) + 1
+                    
+                    # Atualizar mínimo se necessário
+                    if preco_cliente.preco_minimo is None or preco_vendido < preco_cliente.preco_minimo:
+                        preco_cliente.preco_minimo = preco_vendido
+                    
+                    # Atualizar máximo se necessário
+                    if preco_cliente.preco_maximo is None or preco_vendido > preco_cliente.preco_maximo:
+                        preco_cliente.preco_maximo = preco_vendido
+                    
+                    # Atualizar média (média ponderada simplificada)
+                    if preco_cliente.preco_medio:
+                        preco_cliente.preco_medio = (
+                            (preco_cliente.preco_medio * (preco_cliente.total_vendas - 1) + preco_vendido) 
+                            / preco_cliente.total_vendas
+                        )
+                    else:
+                        preco_cliente.preco_medio = preco_vendido
+                    
+                    # Atualizar último preço e data
+                    preco_cliente.preco_padrao = preco_vendido
+                    if orcamento.data_criacao:
+                        if preco_cliente.data_ultima_venda is None or orcamento.data_criacao > preco_cliente.data_ultima_venda:
+                            preco_cliente.data_ultima_venda = orcamento.data_criacao
+                
+                precos_atualizados += 1
+                clientes_processados.add(cliente_id)
+        
+        db.commit()
+        
+        return {
+            "sucesso": True,
+            "mensagem": "Ranges de preços recalculados com sucesso",
+            "orcamentos_processados": len(orcamentos),
+            "clientes_processados": len(clientes_processados),
+            "registros_precos_atualizados": precos_atualizados
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao recalcular preços: {str(e)}"
+        )
