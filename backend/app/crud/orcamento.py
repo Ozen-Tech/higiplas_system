@@ -1,6 +1,7 @@
 # /backend/app/crud/orcamento.py - VERSÃO PROFISSIONAL COM SOLID
 
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import text as sa_text
 from typing import List, Optional, Type
 from sqlalchemy.exc import SQLAlchemyError
 import secrets
@@ -425,83 +426,69 @@ def _atualizar_precos_cliente_produto(
     """
     Atualiza preços padrão e calcula ranges (min, max, médio) para cada produto do orçamento.
     Quando um orçamento é confirmado, o preço é salvo como padrão para o cliente.
-    Se houver histórico suficiente, calcula ranges de preços.
+    
+    NOTA: Esta função é opcional e não deve impedir a confirmação do orçamento.
+    Se as tabelas não existirem, a função simplesmente retorna sem fazer nada.
     
     Args:
         db: Sessão do banco de dados
         orcamento: Orçamento confirmado
         empresa_id: ID da empresa
     """
+    # Verificar se as tabelas existem antes de tentar usar
+    try:
+        # Tenta uma query simples para verificar se a tabela existe
+        db.execute(sa_text("SELECT 1 FROM precos_cliente_produto LIMIT 1"))
+    except Exception:
+        orcamento_logger.warning(
+            f"Tabela precos_cliente_produto não existe, pulando atualização de preços para orçamento #{orcamento.id}",
+            extra={"orcamento_id": orcamento.id}
+        )
+        return
+    
     try:
         for item in orcamento.itens:
             preco_vendido = item.preco_unitario_congelado
             cliente_id = orcamento.cliente_id
             produto_id = item.produto_id
             
-            # Tentar salvar no histórico de preços (tabela pode não existir em produção)
-            try:
-                historico_preco = models.HistoricoPrecoProduto(
-                    produto_id=produto_id,
-                    preco_unitario=preco_vendido,
-                    quantidade=item.quantidade,
-                    valor_total=item.quantidade * preco_vendido,
-                    empresa_id=empresa_id,
-                    cliente_id=cliente_id,
-                    nota_fiscal=orcamento.numero_nf
-                )
-                db.add(historico_preco)
-                db.flush()
-            except Exception as hist_error:
-                orcamento_logger.warning(
-                    f"Tabela historico_preco_produto pode não existir, pulando: {str(hist_error)}",
-                    extra={"orcamento_id": orcamento.id}
-                )
-                db.rollback()
-            
             # Buscar ou criar registro de preço cliente-produto
-            try:
-                preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
-                    models.PrecoClienteProduto.cliente_id == cliente_id,
-                    models.PrecoClienteProduto.produto_id == produto_id
-                ).first()
-                
-                if not preco_cliente_produto:
-                    # Criar novo registro
-                    preco_cliente_produto = models.PrecoClienteProduto(
-                        cliente_id=cliente_id,
-                        produto_id=produto_id,
-                        preco_padrao=preco_vendido,
-                        preco_minimo=preco_vendido,
-                        preco_maximo=preco_vendido,
-                        preco_medio=preco_vendido,
-                        total_vendas=1,
-                        data_ultima_venda=orcamento.data_criacao
-                    )
-                    db.add(preco_cliente_produto)
-                else:
-                    # Atualizar registro existente
-                    preco_cliente_produto.preco_padrao = preco_vendido
-                    preco_cliente_produto.total_vendas += 1
-                    preco_cliente_produto.data_ultima_venda = orcamento.data_criacao
-                    
-                    # Calcular ranges baseado no preço atual (simplificado)
-                    if preco_cliente_produto.preco_minimo is None or preco_vendido < preco_cliente_produto.preco_minimo:
-                        preco_cliente_produto.preco_minimo = preco_vendido
-                    if preco_cliente_produto.preco_maximo is None or preco_vendido > preco_cliente_produto.preco_maximo:
-                        preco_cliente_produto.preco_maximo = preco_vendido
-                    # Média simples (pode ser melhorada depois)
-                    if preco_cliente_produto.preco_medio:
-                        preco_cliente_produto.preco_medio = (preco_cliente_produto.preco_medio + preco_vendido) / 2
-                    else:
-                        preco_cliente_produto.preco_medio = preco_vendido
-                
-                db.flush()
-            except Exception as preco_error:
-                orcamento_logger.warning(
-                    f"Erro ao atualizar precos_cliente_produto, pulando: {str(preco_error)}",
-                    extra={"orcamento_id": orcamento.id}
+            preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+                models.PrecoClienteProduto.cliente_id == cliente_id,
+                models.PrecoClienteProduto.produto_id == produto_id
+            ).first()
+            
+            if not preco_cliente_produto:
+                # Criar novo registro
+                preco_cliente_produto = models.PrecoClienteProduto(
+                    cliente_id=cliente_id,
+                    produto_id=produto_id,
+                    preco_padrao=preco_vendido,
+                    preco_minimo=preco_vendido,
+                    preco_maximo=preco_vendido,
+                    preco_medio=preco_vendido,
+                    total_vendas=1,
+                    data_ultima_venda=orcamento.data_criacao
                 )
-                db.rollback()
+                db.add(preco_cliente_produto)
+            else:
+                # Atualizar registro existente
+                preco_cliente_produto.preco_padrao = preco_vendido
+                preco_cliente_produto.total_vendas = (preco_cliente_produto.total_vendas or 0) + 1
+                preco_cliente_produto.data_ultima_venda = orcamento.data_criacao
+                
+                # Calcular ranges baseado no preço atual (simplificado)
+                if preco_cliente_produto.preco_minimo is None or preco_vendido < preco_cliente_produto.preco_minimo:
+                    preco_cliente_produto.preco_minimo = preco_vendido
+                if preco_cliente_produto.preco_maximo is None or preco_vendido > preco_cliente_produto.preco_maximo:
+                    preco_cliente_produto.preco_maximo = preco_vendido
+                # Média simples
+                if preco_cliente_produto.preco_medio:
+                    preco_cliente_produto.preco_medio = (preco_cliente_produto.preco_medio + preco_vendido) / 2
+                else:
+                    preco_cliente_produto.preco_medio = preco_vendido
+            
+            db.flush()
         
         orcamento_logger.info(
             f"Preços cliente-produto atualizados para orçamento #{orcamento.id}",
@@ -509,12 +496,11 @@ def _atualizar_precos_cliente_produto(
         )
         
     except Exception as e:
-        orcamento_logger.error(
+        orcamento_logger.warning(
             f"Erro ao atualizar preços cliente-produto para orçamento #{orcamento.id}: {str(e)}",
-            extra={"orcamento_id": orcamento.id},
-            exc_info=True
+            extra={"orcamento_id": orcamento.id}
         )
-        # Não interrompe o fluxo se houver erro ao atualizar preços
+        # Não interrompe o fluxo - esta função é opcional
 
 
 def _salvar_historico_vendas(
