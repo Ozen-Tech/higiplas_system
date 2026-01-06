@@ -60,8 +60,8 @@ export function useVendas() {
     }
   }, [handleApiError]);
 
-  // Buscar produtos (sem alterações)
-  const buscarProdutos = useCallback(async (busca?: string, categoria?: string) => {
+  // Buscar produtos (agora com suporte a cliente_id para range de preços)
+  const buscarProdutos = useCallback(async (busca?: string, categoria?: string, clienteId?: number) => {
     try {
       setLoading(true);
       setError(null);
@@ -69,6 +69,7 @@ export function useVendas() {
       const params = new URLSearchParams();
       if (busca) params.append('busca', busca);
       if (categoria) params.append('categoria', categoria);
+      if (clienteId) params.append('cliente_id', clienteId.toString());
       if (params.toString()) url += `?${params.toString()}`;
       const data = await apiService.get(url);
       setProdutos(data?.data || data || []);

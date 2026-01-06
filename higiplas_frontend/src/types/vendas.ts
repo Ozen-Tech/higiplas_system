@@ -24,6 +24,14 @@ export interface Dashboard {
     total_vendas: number;
   }
 
+  export interface PrecoClienteRange {
+    minimo: number | null;
+    maximo: number | null;
+    medio: number | null;
+    ultimo: number | null;
+    total_vendas: number;
+  }
+
   export interface Produto {
     id: number;
     nome: string;
@@ -33,6 +41,7 @@ export interface Dashboard {
     categoria: string;
     unidade_medida: string;
     estatisticas_preco?: EstatisticasPreco | null;
+    preco_cliente?: PrecoClienteRange | null;
   }
   
   export interface ItemCarrinho {

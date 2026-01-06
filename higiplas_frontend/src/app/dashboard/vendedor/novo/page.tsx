@@ -63,6 +63,16 @@ export default function NovoOrcamentoPage() {
     buscarProdutos();
   }, [buscarClientes, buscarProdutos]);
   
+  // Recarregar produtos quando cliente é selecionado (para buscar range de preços)
+  useEffect(() => {
+    if (clienteSelecionado) {
+      buscarProdutos(termoBuscaProduto, undefined, clienteSelecionado.id);
+    } else {
+      // Se não há cliente selecionado, recarregar sem cliente_id
+      buscarProdutos(termoBuscaProduto);
+    }
+  }, [clienteSelecionado?.id, buscarProdutos]); // Recarrega quando o ID do cliente muda
+  
   // Carregar sugestões quando cliente é selecionado
   useEffect(() => {
     if (clienteSelecionado) {
@@ -401,7 +411,7 @@ export default function NovoOrcamentoPage() {
                     <div className="max-h-60 overflow-y-auto mt-2">
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => {
                             const sugestao = sugestoesCliente.get(p.id);
-                            const temHistorico = sugestao?.historico_disponivel;
+                            const temHistorico = p.preco_cliente?.total_vendas ? p.preco_cliente.total_vendas > 0 : sugestao?.historico_disponivel;
                             
                             return (
                               <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">
@@ -417,9 +427,9 @@ export default function NovoOrcamentoPage() {
                                       <div className="flex items-center gap-3 text-xs text-gray-500">
                                         <span>Estoque: {p.estoque_disponivel}</span>
                                         <span>Sistema: R$ {p.preco.toFixed(2)}</span>
-                                        {sugestao?.preco_cliente && (
-                                          <span className="text-blue-600">
-                                            Cliente: R$ {sugestao.preco_cliente.minimo?.toFixed(2)} - R$ {sugestao.preco_cliente.maximo?.toFixed(2)}
+                                        {p.preco_cliente && p.preco_cliente.minimo !== null && p.preco_cliente.maximo !== null && (
+                                          <span className="text-blue-600 font-medium">
+                                            Cliente: R$ {p.preco_cliente.minimo.toFixed(2)} - R$ {p.preco_cliente.maximo.toFixed(2)}
                                           </span>
                                         )}
                                       </div>
