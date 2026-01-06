@@ -40,6 +40,14 @@ class EstatisticasPreco(BaseModel):
     preco_menor: Optional[float] = None
     total_vendas: int = 0
 
+class PrecoClienteRange(BaseModel):
+    """Range de preços específico do cliente para este produto"""
+    minimo: Optional[float] = None
+    maximo: Optional[float] = None
+    medio: Optional[float] = None
+    ultimo: Optional[float] = None
+    total_vendas: int = 0
+
 class ProdutoVenda(BaseModel):
     """Produto disponível para venda"""
     id: int
@@ -50,6 +58,7 @@ class ProdutoVenda(BaseModel):
     categoria: str
     unidade_medida: str
     estatisticas_preco: Optional[EstatisticasPreco] = None
+    preco_cliente: Optional[PrecoClienteRange] = None  # Range de preços específico do cliente
     
     class Config:
         from_attributes = True

@@ -160,6 +160,7 @@ def calcular_estatisticas_preco(produto_id: int, empresa_id: int, db: Session) -
 def listar_produtos_venda(
     busca: Optional[str] = None,
     categoria: Optional[str] = None,
+    cliente_id: Optional[int] = None,  # Novo parâmetro para buscar range de preços do cliente
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
@@ -193,6 +194,29 @@ def listar_produtos_venda(
             # Sempre criar o objeto de estatísticas, mesmo que os valores sejam None
             estatisticas = schemas.EstatisticasPreco(**estatisticas_dict)
             
+            # Buscar range de preços do cliente se cliente_id foi fornecido
+            preco_cliente = None
+            if cliente_id:
+                try:
+                    preco_cliente_produto = db.query(models.PrecoClienteProduto).filter(
+                        models.PrecoClienteProduto.cliente_id == cliente_id,
+                        models.PrecoClienteProduto.produto_id == p.id
+                    ).first()
+                    
+                    if preco_cliente_produto:
+                        preco_cliente = schemas.PrecoClienteRange(
+                            minimo=preco_cliente_produto.preco_minimo,
+                            maximo=preco_cliente_produto.preco_maximo,
+                            medio=preco_cliente_produto.preco_medio,
+                            ultimo=preco_cliente_produto.preco_padrao,
+                            total_vendas=preco_cliente_produto.total_vendas or 0
+                        )
+                except Exception as e:
+                    # Se houver erro ao buscar preço do cliente, apenas logar e continuar
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Erro ao buscar preço do cliente {cliente_id} para produto {p.id}: {str(e)}")
+            
             produto_venda = schemas.ProdutoVenda(
                 id=p.id,
                 nome=p.nome,
@@ -201,7 +225,8 @@ def listar_produtos_venda(
                 estoque_disponivel=p.quantidade_em_estoque,
                 categoria=p.categoria,
                 unidade_medida=p.unidade_medida,
-                estatisticas_preco=estatisticas
+                estatisticas_preco=estatisticas,
+                preco_cliente=preco_cliente
             )
             
             resultado.append(produto_venda)
