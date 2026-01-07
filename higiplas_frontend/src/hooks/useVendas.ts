@@ -76,7 +76,7 @@ export function useVendas() {
       
       // Debug temporário - remover depois
       if (clienteId && produtosList.length > 0) {
-        const produtosComRange = produtosList.filter((p: any) => p.preco_cliente);
+        const produtosComRange = produtosList.filter((p: Produto) => p.preco_cliente);
         console.log(`[DEBUG] Produtos com range de preços para cliente ${clienteId}:`, produtosComRange.length);
       }
       
