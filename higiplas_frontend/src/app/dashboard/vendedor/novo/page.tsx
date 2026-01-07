@@ -67,11 +67,9 @@ export default function NovoOrcamentoPage() {
   useEffect(() => {
     if (clienteSelecionado) {
       buscarProdutos(termoBuscaProduto, undefined, clienteSelecionado.id);
-    } else {
-      // Se não há cliente selecionado, recarregar sem cliente_id
-      buscarProdutos(termoBuscaProduto);
     }
-  }, [clienteSelecionado?.id, buscarProdutos]); // Recarrega quando o ID do cliente muda
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteSelecionado?.id]); // Recarrega apenas quando o ID do cliente muda
   
   // Carregar sugestões quando cliente é selecionado
   useEffect(() => {
@@ -411,25 +409,30 @@ export default function NovoOrcamentoPage() {
                     <div className="max-h-60 overflow-y-auto mt-2">
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => {
                             const sugestao = sugestoesCliente.get(p.id);
-                            const temHistorico = p.preco_cliente?.total_vendas ? p.preco_cliente.total_vendas > 0 : sugestao?.historico_disponivel;
+                            const temHistorico = (p.preco_cliente && p.preco_cliente.total_vendas > 0) || sugestao?.historico_disponivel;
+                            const temRangePreco = p.preco_cliente && 
+                                                  p.preco_cliente.minimo !== null && 
+                                                  p.preco_cliente.maximo !== null &&
+                                                  p.preco_cliente.minimo !== undefined &&
+                                                  p.preco_cliente.maximo !== undefined;
                             
                             return (
                               <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">
                                   <div className="flex-1">
                                       <div className="flex items-center gap-2">
-                                        <p>{p.nome}</p>
+                                        <p className="font-medium">{p.nome}</p>
                                         {temHistorico && (
                                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                                             <History size={10} /> Já vendido
                                           </span>
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
                                         <span>Estoque: {p.estoque_disponivel}</span>
                                         <span>Sistema: R$ {p.preco.toFixed(2)}</span>
-                                        {p.preco_cliente && p.preco_cliente.minimo !== null && p.preco_cliente.maximo !== null && (
-                                          <span className="text-blue-600 font-medium">
-                                            Cliente: R$ {p.preco_cliente.minimo.toFixed(2)} - R$ {p.preco_cliente.maximo.toFixed(2)}
+                                        {temRangePreco && (
+                                          <span className="text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded">
+                                            Cliente: R$ {p.preco_cliente!.minimo!.toFixed(2)} - R$ {p.preco_cliente!.maximo!.toFixed(2)}
                                           </span>
                                         )}
                                       </div>
