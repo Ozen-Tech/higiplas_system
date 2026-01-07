@@ -72,7 +72,15 @@ export function useVendas() {
       if (clienteId) params.append('cliente_id', clienteId.toString());
       if (params.toString()) url += `?${params.toString()}`;
       const data = await apiService.get(url);
-      setProdutos(data?.data || data || []);
+      const produtosList = data?.data || data || [];
+      
+      // Debug temporário - remover depois
+      if (clienteId && produtosList.length > 0) {
+        const produtosComRange = produtosList.filter((p: any) => p.preco_cliente);
+        console.log(`[DEBUG] Produtos com range de preços para cliente ${clienteId}:`, produtosComRange.length);
+      }
+      
+      setProdutos(produtosList);
     } catch (err) {
       handleApiError(err);
     } finally {
