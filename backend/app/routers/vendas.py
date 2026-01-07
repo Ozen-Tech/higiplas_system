@@ -238,6 +238,10 @@ def listar_produtos_venda(
                 preco_cliente=preco_cliente
             )
             
+            # Debug temporário - contar produtos com preco_cliente
+            if cliente_id and preco_cliente:
+                logger.info(f"[DEBUG] Produto {p.id} ({p.nome}) retornado com preco_cliente: min={preco_cliente.minimo}, max={preco_cliente.maximo}")
+            
             resultado.append(produto_venda)
         except Exception as e:
             # Se houver erro ao calcular estatísticas, retornar produto com estatísticas vazias
@@ -266,6 +270,11 @@ def listar_produtos_venda(
             )
             
             resultado.append(produto_venda)
+    
+    # Debug final - resumo
+    if cliente_id:
+        produtos_com_range = [p for p in resultado if p.preco_cliente]
+        logger.info(f"[DEBUG] Total de produtos retornados: {len(resultado)}, com range de preços: {len(produtos_com_range)}")
     
     return resultado
     

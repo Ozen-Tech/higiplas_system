@@ -71,6 +71,19 @@ export default function NovoOrcamentoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clienteSelecionado?.id]); // Recarrega apenas quando o ID do cliente muda
   
+  // Recarregar produtos quando termo de busca muda (mantendo cliente_id se houver)
+  useEffect(() => {
+    if (clienteSelecionado) {
+      // Debounce simples - recarrega após 500ms de inatividade
+      const timeoutId = setTimeout(() => {
+        buscarProdutos(termoBuscaProduto, undefined, clienteSelecionado.id);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [termoBuscaProduto]); // Recarrega quando o termo de busca muda
+  
   // Carregar sugestões quando cliente é selecionado
   useEffect(() => {
     if (clienteSelecionado) {
