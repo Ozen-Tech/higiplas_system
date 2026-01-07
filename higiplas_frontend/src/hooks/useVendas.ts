@@ -77,7 +77,17 @@ export function useVendas() {
       // Debug temporário - remover depois
       if (clienteId && produtosList.length > 0) {
         const produtosComRange = produtosList.filter((p: Produto) => p.preco_cliente);
-        console.log(`[DEBUG] Produtos com range de preços para cliente ${clienteId}:`, produtosComRange.length);
+        console.log(`[DEBUG] URL chamada: ${url}`);
+        console.log(`[DEBUG] Cliente ID: ${clienteId}`);
+        console.log(`[DEBUG] Total de produtos: ${produtosList.length}`);
+        console.log(`[DEBUG] Produtos com range de preços: ${produtosComRange.length}`);
+        if (produtosComRange.length > 0) {
+          console.log(`[DEBUG] Exemplo de produto com range:`, {
+            id: produtosComRange[0].id,
+            nome: produtosComRange[0].nome,
+            preco_cliente: produtosComRange[0].preco_cliente
+          });
+        }
       }
       
       setProdutos(produtosList);

@@ -410,11 +410,24 @@ export default function NovoOrcamentoPage() {
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => {
                             const sugestao = sugestoesCliente.get(p.id);
                             const temHistorico = (p.preco_cliente && p.preco_cliente.total_vendas > 0) || sugestao?.historico_disponivel;
+                            
+                            // Debug temporário
+                            if (p.preco_cliente && clienteSelecionado) {
+                              console.log(`[DEBUG RENDER] Produto ${p.id} (${p.nome}):`, {
+                                preco_cliente: p.preco_cliente,
+                                minimo: p.preco_cliente.minimo,
+                                maximo: p.preco_cliente.maximo,
+                                temRange: p.preco_cliente.minimo !== null && p.preco_cliente.maximo !== null
+                              });
+                            }
+                            
                             const temRangePreco = p.preco_cliente && 
                                                   p.preco_cliente.minimo !== null && 
                                                   p.preco_cliente.maximo !== null &&
                                                   p.preco_cliente.minimo !== undefined &&
-                                                  p.preco_cliente.maximo !== undefined;
+                                                  p.preco_cliente.maximo !== undefined &&
+                                                  p.preco_cliente.minimo > 0 &&
+                                                  p.preco_cliente.maximo > 0;
                             
                             return (
                               <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">

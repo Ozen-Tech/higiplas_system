@@ -165,6 +165,12 @@ def listar_produtos_venda(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     empresa_id = _resolve_empresa_id(db, current_user)
+    
+    # Debug temporário
+    import logging
+    logger = logging.getLogger(__name__)
+    if cliente_id:
+        logger.info(f"[DEBUG] Buscando produtos com cliente_id={cliente_id}")
 
     query = db.query(models.Produto).filter(
         models.Produto.empresa_id == empresa_id,
@@ -211,6 +217,9 @@ def listar_produtos_venda(
                             ultimo=preco_cliente_produto.preco_padrao,
                             total_vendas=preco_cliente_produto.total_vendas or 0
                         )
+                        logger.info(f"[DEBUG] Produto {p.id} tem range: min={preco_cliente.minimo}, max={preco_cliente.maximo}")
+                    else:
+                        logger.info(f"[DEBUG] Produto {p.id} NÃO tem range para cliente {cliente_id}")
                 except Exception as e:
                     # Se houver erro ao buscar preço do cliente, apenas logar e continuar
                     import logging
