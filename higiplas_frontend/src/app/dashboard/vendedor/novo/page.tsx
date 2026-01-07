@@ -71,6 +71,19 @@ export default function NovoOrcamentoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clienteSelecionado?.id]); // Recarrega apenas quando o ID do cliente muda
   
+  // Recarregar produtos quando termo de busca muda (mantendo cliente_id se houver)
+  useEffect(() => {
+    if (clienteSelecionado) {
+      // Debounce simples - recarrega após 500ms de inatividade
+      const timeoutId = setTimeout(() => {
+        buscarProdutos(termoBuscaProduto, undefined, clienteSelecionado.id);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [termoBuscaProduto]); // Recarrega quando o termo de busca muda
+  
   // Carregar sugestões quando cliente é selecionado
   useEffect(() => {
     if (clienteSelecionado) {
@@ -410,11 +423,24 @@ export default function NovoOrcamentoPage() {
                         {produtos.filter(p => p.nome.toLowerCase().includes(termoBuscaProduto.toLowerCase())).map(p => {
                             const sugestao = sugestoesCliente.get(p.id);
                             const temHistorico = (p.preco_cliente && p.preco_cliente.total_vendas > 0) || sugestao?.historico_disponivel;
+                            
+                            // Debug temporário
+                            if (p.preco_cliente && clienteSelecionado) {
+                              console.log(`[DEBUG RENDER] Produto ${p.id} (${p.nome}):`, {
+                                preco_cliente: p.preco_cliente,
+                                minimo: p.preco_cliente.minimo,
+                                maximo: p.preco_cliente.maximo,
+                                temRange: p.preco_cliente.minimo !== null && p.preco_cliente.maximo !== null
+                              });
+                            }
+                            
                             const temRangePreco = p.preco_cliente && 
                                                   p.preco_cliente.minimo !== null && 
                                                   p.preco_cliente.maximo !== null &&
                                                   p.preco_cliente.minimo !== undefined &&
-                                                  p.preco_cliente.maximo !== undefined;
+                                                  p.preco_cliente.maximo !== undefined &&
+                                                  p.preco_cliente.minimo > 0 &&
+                                                  p.preco_cliente.maximo > 0;
                             
                             return (
                               <div key={p.id} className="flex justify-between items-center p-2 hover:bg-gray-100 rounded">

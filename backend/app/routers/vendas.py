@@ -165,6 +165,12 @@ def listar_produtos_venda(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     empresa_id = _resolve_empresa_id(db, current_user)
+    
+    # Debug temporário
+    import logging
+    logger = logging.getLogger(__name__)
+    if cliente_id:
+        logger.info(f"[DEBUG] Buscando produtos com cliente_id={cliente_id}")
 
     query = db.query(models.Produto).filter(
         models.Produto.empresa_id == empresa_id,
@@ -211,6 +217,9 @@ def listar_produtos_venda(
                             ultimo=preco_cliente_produto.preco_padrao,
                             total_vendas=preco_cliente_produto.total_vendas or 0
                         )
+                        logger.info(f"[DEBUG] Produto {p.id} tem range: min={preco_cliente.minimo}, max={preco_cliente.maximo}")
+                    else:
+                        logger.info(f"[DEBUG] Produto {p.id} NÃO tem range para cliente {cliente_id}")
                 except Exception as e:
                     # Se houver erro ao buscar preço do cliente, apenas logar e continuar
                     import logging
@@ -228,6 +237,10 @@ def listar_produtos_venda(
                 estatisticas_preco=estatisticas,
                 preco_cliente=preco_cliente
             )
+            
+            # Debug temporário - contar produtos com preco_cliente
+            if cliente_id and preco_cliente:
+                logger.info(f"[DEBUG] Produto {p.id} ({p.nome}) retornado com preco_cliente: min={preco_cliente.minimo}, max={preco_cliente.maximo}")
             
             resultado.append(produto_venda)
         except Exception as e:
@@ -257,6 +270,11 @@ def listar_produtos_venda(
             )
             
             resultado.append(produto_venda)
+    
+    # Debug final - resumo
+    if cliente_id:
+        produtos_com_range = [p for p in resultado if p.preco_cliente]
+        logger.info(f"[DEBUG] Total de produtos retornados: {len(resultado)}, com range de preços: {len(produtos_com_range)}")
     
     return resultado
     
