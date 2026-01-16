@@ -53,10 +53,19 @@ class NFProcessorService:
         """
         try:
             # 1. Extrair texto do PDF
+            import os
+            nome_arquivo = os.path.basename(caminho_pdf).upper()
             texto_completo = self._extrair_texto_pdf(caminho_pdf)
             
-            if not texto_completo:
-                raise ValueError("Não foi possível extrair texto do PDF")
+            # Se não conseguiu extrair texto, tentar detectar Delta Plástico pelo nome do arquivo
+            if not texto_completo or not texto_completo.strip():
+                if "DELTA" in nome_arquivo and "PLAST" in nome_arquivo:
+                    logger.info(f"PDF Delta Plástico detectado pelo nome do arquivo: {nome_arquivo}")
+                    # Criar texto mínimo para permitir processamento
+                    texto_completo = f"DELTA PLASTICOS {nome_arquivo}"
+                else:
+                    logger.error(f"Não foi possível extrair texto do PDF {nome_arquivo}")
+                    raise ValueError("Não foi possível extrair texto do PDF e não foi possível identificar o tipo pelo nome do arquivo")
             
             # 2. Extrair dados básicos da NF
             dados_nf = self._extrair_dados_nf(texto_completo, tipo_movimentacao)
@@ -65,16 +74,20 @@ class NFProcessorService:
             empresa_id = self._identificar_empresa(
                 texto_completo,
                 dados_nf,
-                empresa_id_override
+                empresa_id_override,
+                caminho_pdf
             )
             
             if not empresa_id:
                 raise ValueError("Não foi possível identificar a empresa da NF")
             
             # 4. Detectar se é Delta Plástico (entrada especial)
-            is_delta_plastico = self._detectar_delta_plastico(texto_completo, dados_nf)
+            is_delta_plastico = self._detectar_delta_plastico(texto_completo, dados_nf, caminho_pdf)
             if is_delta_plastico:
                 tipo_movimentacao = "ENTRADA"
+                # Se for Delta Plástico, garantir que o fornecedor está definido
+                if not dados_nf.get('fornecedor'):
+                    dados_nf['fornecedor'] = "Delta Plásticos"
             
             # 5. Para NF de saída, reconhecer/criar cliente
             cliente_id = None
@@ -258,15 +271,42 @@ class NFProcessorService:
         }
     
     def _extrair_texto_pdf(self, caminho_pdf: str) -> str:
-        """Extrai texto completo de um PDF."""
+        """Extrai texto completo de um PDF usando múltiplas bibliotecas como fallback."""
         texto = ""
+        
+        # Tentar primeiro com pdfplumber (melhor para tabelas e texto estruturado)
         try:
             with pdfplumber.open(caminho_pdf) as pdf:
                 for page in pdf.pages:
-                    texto += page.extract_text() or ""
+                    page_text = page.extract_text()
+                    if page_text:
+                        texto += page_text + "\n"
+            if texto.strip():
+                logger.info(f"Texto extraído com pdfplumber: {len(texto)} caracteres")
+                return texto
         except Exception as e:
-            logger.error(f"Erro ao extrair texto do PDF: {e}")
-            raise
+            logger.warning(f"Erro ao extrair texto com pdfplumber: {e}. Tentando PyPDF2...")
+        
+        # Fallback para PyPDF2 se pdfplumber falhar ou não retornar texto
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(caminho_pdf)
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    texto += page_text + "\n"
+            if texto.strip():
+                logger.info(f"Texto extraído com PyPDF2: {len(texto)} caracteres")
+                return texto
+        except ImportError:
+            logger.warning("PyPDF2 não disponível, pulando fallback")
+        except Exception as e2:
+            logger.warning(f"Erro ao extrair texto com PyPDF2: {e2}")
+        
+        # Se nenhuma biblioteca conseguiu extrair texto, retornar string vazia
+        # (permitir processamento baseado em nome do arquivo ou outras heurísticas)
+        if not texto.strip():
+            logger.warning(f"Não foi possível extrair texto do PDF {caminho_pdf}. Retornando string vazia para permitir detecção por nome do arquivo.")
         
         return texto
     
@@ -376,9 +416,10 @@ class NFProcessorService:
         self,
         texto_completo: str,
         dados_nf: Dict[str, Any],
-        empresa_id_override: Optional[int]
+        empresa_id_override: Optional[int],
+        caminho_pdf: Optional[str] = None
     ) -> Optional[int]:
-        """Identifica empresa pelo CNPJ emitente."""
+        """Identifica empresa pelo CNPJ emitente ou contexto."""
         if empresa_id_override:
             return empresa_id_override
         
@@ -393,22 +434,36 @@ class NFProcessorService:
                 return empresa_id
         
         # Se não encontrou pelos CNPJs, tentar pelo contexto do texto
-        if "HIGIPLAS" in texto_completo.upper():
+        texto_upper = texto_completo.upper() if texto_completo else ''
+        
+        if "HIGIPLAS" in texto_upper:
             empresa_id = EmpresaService.get_empresa_id(self.db, "HIGIPLAS")
             if empresa_id:
                 return empresa_id
         
-        if "HIGITEC" in texto_completo.upper():
+        if "HIGITEC" in texto_upper:
             empresa_id = EmpresaService.get_empresa_id(self.db, "HIGITEC")
             if empresa_id:
                 return empresa_id
+        
+        # Se ainda não encontrou e é Delta Plástico, usar HIGIPLAS como padrão
+        # (Delta Plástico é fornecedor de HIGIPLAS)
+        if caminho_pdf:
+            import os
+            nome_arquivo = os.path.basename(caminho_pdf).upper()
+            if "DELTA" in nome_arquivo and "PLAST" in nome_arquivo:
+                empresa_id = EmpresaService.get_empresa_id(self.db, "HIGIPLAS")
+                if empresa_id:
+                    logger.info("Empresa identificada como HIGIPLAS baseado no nome do arquivo Delta Plástico")
+                    return empresa_id
         
         return None
     
     def _detectar_delta_plastico(
         self,
         texto_completo: str,
-        dados_nf: Dict[str, Any]
+        dados_nf: Dict[str, Any],
+        caminho_pdf: Optional[str] = None
     ) -> bool:
         """Detecta se é NF do Delta Plástico (sacos de lixo - entrada especial)."""
         # Detectar pelo nome do fornecedor (tratando caso None)
@@ -416,11 +471,22 @@ class NFProcessorService:
         fornecedor = str(fornecedor).upper() if fornecedor else ''
         texto_upper = texto_completo.upper() if texto_completo else ''
         
-        return (
-            fornecedor and "DELTA" in fornecedor and "PLASTIC" in fornecedor
-        ) or (
-            "DELTA PLAST" in texto_upper
-        )
+        # Verificar no fornecedor
+        if fornecedor and "DELTA" in fornecedor and "PLASTIC" in fornecedor:
+            return True
+        
+        # Verificar no texto extraído
+        if "DELTA PLAST" in texto_upper:
+            return True
+        
+        # Verificar pelo nome do arquivo como fallback
+        if caminho_pdf:
+            import os
+            nome_arquivo = os.path.basename(caminho_pdf).upper()
+            if "DELTA" in nome_arquivo and "PLAST" in nome_arquivo:
+                return True
+        
+        return False
     
     def _reconhecer_ou_criar_cliente(
         self,
