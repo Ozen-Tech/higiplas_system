@@ -503,3 +503,44 @@ class PropostaConcorrenteManual(Base):
     __table_args__ = (
         Index('idx_proposta_concorrente_manual', 'proposta_id', 'nome'),
     )
+
+class VisitaVendedor(Base):
+    """Armazena registros de visitas realizadas por vendedores com localização GPS"""
+    __tablename__ = "visitas_vendedor"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    vendedor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True, index=True)
+    data_visita = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    
+    # Localização GPS
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    endereco_completo = Column(String, nullable=True)  # Geocodificação reversa
+    
+    # Dados da visita
+    motivo_visita = Column(String, nullable=True)  # Ex: "Diluição", "Atendimento", etc.
+    observacoes = Column(String, nullable=True)
+    foto_comprovante = Column(String, nullable=True)  # URL da foto
+    
+    # Status
+    confirmada = Column(Boolean, default=False, nullable=False, index=True)
+    
+    # Empresa
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False, index=True)
+    
+    # Timestamps
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relacionamentos
+    vendedor = relationship("Usuario", foreign_keys=[vendedor_id])
+    cliente = relationship("Cliente")
+    empresa = relationship("Empresa")
+    
+    # Índices compostos
+    __table_args__ = (
+        Index('idx_visita_vendedor_data', 'vendedor_id', 'data_visita'),
+        Index('idx_visita_cliente', 'cliente_id', 'data_visita'),
+        Index('idx_visita_empresa_confirmada', 'empresa_id', 'confirmada', 'data_visita'),
+    )

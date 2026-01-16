@@ -116,10 +116,16 @@ export default function VendedorLoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <div className="text-center">
+          <div className="text-center space-y-2">
+            <button
+              onClick={() => router.push('/vendedor/visitas')}
+              className="block w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition"
+            >
+              📍 Registrar Visita
+            </button>
             <button
               onClick={() => router.push('/')}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
             >
               Voltar para o login principal
             </button>

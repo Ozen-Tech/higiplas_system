@@ -213,15 +213,17 @@ async def buscar_produtos_similares(
     "/preview-pdf",
     response_model=Dict[str, Any],
     summary="Visualiza dados extraídos do PDF",
-    description="Extrai dados de um PDF de nota fiscal para visualização e confirmação antes do processamento."
+    description="Extrai dados de um PDF de nota fiscal para visualização e confirmação antes do processamento. Identifica empresa, reconhece/cria cliente automaticamente."
 )
 async def preview_pdf_movimentacao(
     arquivo: UploadFile = File(..., description="Arquivo PDF da nota fiscal"),
     tipo_movimentacao: str = Form(..., description="Tipo de movimentação: ENTRADA ou SAIDA"),
+    vendedor_id: Optional[int] = Form(None, description="ID do vendedor (opcional, para NF de saída)"),
+    orcamento_id: Optional[int] = Form(None, description="ID do orçamento relacionado (opcional)"),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Extrai dados do PDF para visualização antes do processamento."""
+    """Extrai dados do PDF para visualização antes do processamento usando o novo serviço integrado."""
     
     print(f"DEBUG: Arquivo recebido: {arquivo.filename}")
     print(f"DEBUG: Tipo de movimentação: {tipo_movimentacao}")
@@ -256,103 +258,79 @@ async def preview_pdf_movimentacao(
         
         print(f"DEBUG: Arquivo salvo temporariamente em {temp_file_path}")
         
-        # Extrair dados do PDF baseado no tipo de movimentação
-        print(f"DEBUG: Iniciando extração de dados do PDF")
-        if tipo_movimentacao == 'ENTRADA':
-            dados_extraidos = extrair_dados_pdf_entrada(temp_file_path)
-        else:
-            dados_extraidos = extrair_dados_pdf(temp_file_path)
-        print(f"DEBUG: Dados extraídos: {dados_extraidos}")
+        # Usar novo serviço de processamento de NF
+        from ..services.nf_processor_service import NFProcessorService
+        nf_service = NFProcessorService(db)
+        
+        # Processar NF usando o serviço integrado
+        resultado = nf_service.processar_nf_pdf(
+            caminho_pdf=temp_file_path,
+            tipo_movimentacao=tipo_movimentacao,
+            vendedor_id=vendedor_id,
+            orcamento_id=orcamento_id,
+            usuario_id=current_user.id,
+            empresa_id_override=None  # Deixar o serviço identificar automaticamente
+        )
         
         # Limpar arquivo temporário
         os.unlink(temp_file_path)
         
-        if not dados_extraidos or not dados_extraidos.get('produtos'):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não foi possível extrair dados válidos do PDF"
-            )
+        # Buscar lista de vendedores para seleção (se NF de saída)
+        vendedores_disponiveis = []
+        if tipo_movimentacao == 'SAIDA':
+            vendedores = db.query(models.Usuario).filter(
+                models.Usuario.empresa_id == resultado['empresa_id'],
+                models.Usuario.perfil.ilike('%VENDEDOR%'),
+                models.Usuario.is_active == True
+            ).all()
+            vendedores_disponiveis = [
+                {
+                    'id': v.id,
+                    'nome': v.nome,
+                    'email': v.email
+                }
+                for v in vendedores
+            ]
         
-        # Enriquecer dados dos produtos com informações do banco
-        produtos_enriquecidos = []
-        produtos_nao_encontrados = []
+        # Buscar lista de orçamentos recentes do cliente (se cliente identificado)
+        orcamentos_disponiveis = []
+        if tipo_movimentacao == 'SAIDA' and resultado.get('cliente_id'):
+            orcamentos = db.query(models.Orcamento).filter(
+                models.Orcamento.cliente_id == resultado['cliente_id'],
+                models.Orcamento.status.in_(['RASCUNHO', 'ENVIADO', 'APROVADO'])
+            ).order_by(models.Orcamento.data_criacao.desc()).limit(10).all()
+            orcamentos_disponiveis = [
+                {
+                    'id': o.id,
+                    'numero': f"#{o.id}",
+                    'data_criacao': o.data_criacao.isoformat() if o.data_criacao else None,
+                    'status': o.status
+                }
+                for o in orcamentos
+            ]
         
-        # Inicializar serviço de similaridade
-        from ..services.product_similarity import product_similarity_service
-        similarity_service = product_similarity_service
-        
-        for produto_data in dados_extraidos['produtos']:
-            codigo = produto_data.get('codigo')
-            descricao = produto_data.get('descricao', '')
-            quantidade = produto_data.get('quantidade', 0)
-            
-            if not codigo or quantidade <= 0:
-                continue
-            
-            # Buscar produto pelo código exato
-            produto = db.query(models.Produto).filter(
-                models.Produto.codigo == str(codigo),
-                models.Produto.empresa_id == current_user.empresa_id
-            ).first()
-            
-            produto_info = {
-                'codigo': codigo,
-                'descricao_pdf': descricao,
-                'quantidade': quantidade,
-                'valor_unitario': produto_data.get('valor_unitario', 0),
-                'valor_total': produto_data.get('valor_total', 0),
-                'encontrado': produto is not None,
-                'produtos_similares': []
-            }
-            
-            if produto:
-                produto_info.update({
-                    'produto_id': produto.id,
-                    'nome_sistema': produto.nome,
-                    'estoque_atual': produto.quantidade_em_estoque,
-                'estoque_projetado': produto.quantidade_em_estoque + (quantidade if tipo_movimentacao == 'ENTRADA' else -quantidade)
-                })
-                produtos_enriquecidos.append(produto_info)
-            else:
-                # Buscar produtos similares por nome
-                produtos_similares = similarity_service.find_similar_products(
-                    search_name=descricao,
-                    db=db,
-                    empresa_id=current_user.empresa_id,
-                    limit=5,
-                    min_similarity=30  # Threshold mais baixo para encontrar mais produtos similares
-                )
-                # Mapear incluindo estoque_atual e renomear score para score_similaridade para alinhar com o frontend
-                similares_mapeados = []
-                for p in produtos_similares:
-                    prod_db = db.query(models.Produto).filter(
-                        models.Produto.id == p['id'],
-                        models.Produto.empresa_id == current_user.empresa_id
-                    ).first()
-                    similares_mapeados.append({
-                        'produto_id': p['id'],
-                        'nome': p['nome'],
-                        'codigo': p['codigo'],
-                        'estoque_atual': getattr(prod_db, 'quantidade_em_estoque', 0) if prod_db else 0,
-                        'score_similaridade': p['similarity_score'],
-                        'categoria': p.get('categoria', ''),
-                        'unidade_medida': p.get('unidade_medida', ''),
-                        'preco_venda': p.get('preco_venda', 0)
-                    })
-                produto_info['produtos_similares'] = similares_mapeados
-                produtos_nao_encontrados.append(produto_info)
-        
+        # Formatar resposta
         return {
             'sucesso': True,
             'arquivo': arquivo.filename,
-            'tipo_movimentacao': tipo_movimentacao,
-            'nota_fiscal': dados_extraidos.get('nota_fiscal'),
-            'data_emissao': dados_extraidos.get('data_emissao'),
-            'cliente': dados_extraidos.get('cliente'),
-            'produtos_encontrados': produtos_enriquecidos,
-            'produtos_nao_encontrados': produtos_nao_encontrados,
-            'total_produtos_pdf': len(dados_extraidos['produtos']),
-            'produtos_validos': len(produtos_enriquecidos)
+            'tipo_movimentacao': resultado['tipo_movimentacao'],
+            'empresa_id': resultado['empresa_id'],
+            'nota_fiscal': resultado.get('nota_fiscal'),
+            'data_emissao': resultado.get('data_emissao'),
+            'cliente_id': resultado.get('cliente_id'),
+            'cliente': resultado.get('cliente'),
+            'cnpj_cliente': resultado.get('cnpj_cliente'),
+            'vendedor_id': resultado.get('vendedor_id'),
+            'orcamento_id': resultado.get('orcamento_id'),
+            'is_delta_plastico': resultado.get('is_delta_plastico', False),
+            'valor_total': resultado.get('valor_total'),
+            'produtos_encontrados': resultado['produtos_encontrados'],
+            'produtos_nao_encontrados': resultado['produtos_nao_encontrados'],
+            'produtos': resultado['produtos'],
+            'total_produtos_pdf': resultado['total_produtos'],
+            'produtos_validos': len(resultado['produtos_encontrados']),
+            'vendedores_disponiveis': vendedores_disponiveis,
+            'orcamentos_disponiveis': orcamentos_disponiveis
         }
         
     except HTTPException as he:
@@ -451,25 +429,75 @@ async def associar_produto_similar(
     "/confirmar-movimentacoes",
     response_model=Dict[str, Any],
     summary="Confirma e processa movimentações de estoque",
-    description="Processa as movimentações de estoque após confirmação do usuário."
+    description="Processa as movimentações de estoque após confirmação do usuário. Usa o novo serviço integrado de processamento de NF."
 )
 async def confirmar_movimentacoes(
     dados: Dict[str, Any],
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Processa as movimentações após confirmação do usuário."""
+    """Processa as movimentações após confirmação do usuário usando o novo serviço integrado."""
     
     try:
+        # Validar dados obrigatórios
         produtos_confirmados = dados.get('produtos_confirmados', [])
         tipo_movimentacao = dados.get('tipo_movimentacao')
         nota_fiscal = dados.get('nota_fiscal')
+        empresa_id = dados.get('empresa_id', current_user.empresa_id)
         
         if not produtos_confirmados:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Nenhum produto foi confirmado para processamento"
             )
+        
+        # Preparar dados para o novo serviço
+        dados_confirmacao = {
+            'nota_fiscal': nota_fiscal,
+            'tipo_movimentacao': tipo_movimentacao,
+            'empresa_id': empresa_id,
+            'cliente_id': dados.get('cliente_id'),
+            'vendedor_id': dados.get('vendedor_id'),
+            'orcamento_id': dados.get('orcamento_id'),
+            'produtos_confirmados': produtos_confirmados
+        }
+        
+        # Usar novo serviço de processamento
+        from ..services.nf_processor_service import NFProcessorService
+        nf_service = NFProcessorService(db)
+        
+        resultado = nf_service.confirmar_processamento(
+            dados_confirmacao=dados_confirmacao,
+            usuario_id=current_user.id
+        )
+        
+        # Processar códigos sincronizados se houver (mantendo compatibilidade)
+        codigos_sincronizados = []
+        for produto_data in produtos_confirmados:
+            codigo_nf = (produto_data.get('codigo_nf') or "").strip()
+            produto_id = produto_data.get('produto_id')
+            
+            if codigo_nf and produto_id:
+                produto = db.query(models.Produto).filter(
+                    models.Produto.id == produto_id,
+                    models.Produto.empresa_id == empresa_id
+                ).first()
+                
+                if produto and produto.codigo == codigo_nf:
+                    codigos_sincronizados.append({
+                        'produto_id': produto.id,
+                        'produto_nome': produto.nome,
+                        'codigo_novo': produto.codigo
+                    })
+        
+        return {
+            'sucesso': True,
+            'mensagem': f'Processamento concluído com sucesso! {resultado["movimentacoes_criadas"]} movimentações registradas.',
+            'movimentacoes_criadas': resultado['movimentacoes_criadas'],
+            'historicos_vendas': resultado.get('historicos_vendas', 0),
+            'detalhes': resultado['detalhes'],
+            'codigos_sincronizados': codigos_sincronizados
+        }
         
         movimentacoes_criadas = []
         produtos_atualizados = []
