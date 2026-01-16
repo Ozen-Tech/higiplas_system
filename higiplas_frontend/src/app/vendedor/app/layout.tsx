@@ -36,6 +36,17 @@ export default function VendedorAppLayout({
             </Link>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <Link href="/vendedor/visitas">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-10 w-10 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+                title="Visitas"
+              >
+                <span className="hidden sm:inline">📍 Visitas</span>
+                <span className="sm:hidden">📍</span>
+              </Button>
+            </Link>
             <Link href="/vendedor/app/proposta-detalhada">
               <Button 
                 variant="ghost" 

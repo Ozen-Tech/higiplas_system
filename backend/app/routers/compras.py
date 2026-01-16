@@ -181,3 +181,145 @@ def obter_kpi_fornecedor(
             detail=f"Erro ao calcular KPIs do fornecedor: {str(e)}"
         )
 
+
+@router.get("/sugestoes/relatorio-completo", summary="Relatório completo de sugestões de compra")
+def get_relatorio_completo_sugestoes(
+    days_analysis: int = Query(90, description="Período de análise em dias (padrão: 90 dias)"),
+    lead_time_days: int = Query(7, description="Lead time em dias (padrão: 7 dias)"),
+    coverage_days: int = Query(14, description="Dias de cobertura para compra (padrão: 14 dias)"),
+    min_sales_threshold: int = Query(2, description="Número mínimo de vendas para considerar histórico suficiente (padrão: 2)"),
+    cliente_id: Optional[int] = Query(None, description="Filtrar por cliente específico (opcional)"),
+    categoria: Optional[str] = Query(None, description="Filtrar por categoria (opcional)"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Gera relatório completo de sugestões de compra com justificativas detalhadas por cliente.
+    Inclui análise por cliente, produtos mais comprados, projeções e investimento necessário.
+    """
+    try:
+        from ..services.purchase_suggestion_service import PurchaseSuggestionService
+        from ..services.cliente_analytics_service import ClienteAnalyticsService
+        
+        service = PurchaseSuggestionService(db)
+        analytics_service = ClienteAnalyticsService(db)
+        
+        # Obter sugestões base
+        suggestions = service.get_purchase_suggestions(
+            empresa_id=current_user.empresa_id,
+            days_analysis=days_analysis,
+            lead_time_days=lead_time_days,
+            coverage_days=coverage_days,
+            min_sales_threshold=min_sales_threshold
+        )
+        
+        # Filtrar por cliente se fornecido
+        if cliente_id:
+            # Buscar produtos comprados pelo cliente e filtrar sugestões
+            analise_cliente = analytics_service.analisar_padroes_cliente(
+                cliente_id=cliente_id,
+                empresa_id=current_user.empresa_id,
+                dias_analise=days_analysis
+            )
+            
+            produtos_cliente_ids = {
+                p['produto_id'] for p in analise_cliente.get('produtos_mais_comprados', [])
+            }
+            
+            suggestions = [
+                s for s in suggestions 
+                if s['produto_id'] in produtos_cliente_ids
+            ]
+        
+        # Filtrar por categoria se fornecido
+        if categoria:
+            suggestions = [
+                s for s in suggestions 
+                if s.get('categoria') and categoria.lower() in s['categoria'].lower()
+            ]
+        
+        # Estatísticas do relatório
+        total_sugestoes = len(suggestions)
+        sugestoes_criticas = len([s for s in suggestions if s['status'] == 'CRÍTICO'])
+        sugestoes_baixas = len([s for s in suggestions if s['status'] == 'BAIXO'])
+        
+        valor_total_estimado = sum(s.get('valor_estimado_compra', 0) for s in suggestions)
+        
+        # Agrupar por categoria
+        por_categoria = {}
+        for s in suggestions:
+            cat = s.get('categoria') or 'Sem categoria'
+            if cat not in por_categoria:
+                por_categoria[cat] = {
+                    'total_produtos': 0,
+                    'valor_total': 0,
+                    'produtos_criticos': 0
+                }
+            por_categoria[cat]['total_produtos'] += 1
+            por_categoria[cat]['valor_total'] += s.get('valor_estimado_compra', 0)
+            if s['status'] == 'CRÍTICO':
+                por_categoria[cat]['produtos_criticos'] += 1
+        
+        # Top clientes que compram os produtos sugeridos
+        top_clientes_por_produto = {}
+        for s in suggestions[:10]:  # Top 10 produtos
+            analise_produto = analytics_service.analisar_padroes_produto_por_cliente(
+                produto_id=s['produto_id'],
+                empresa_id=current_user.empresa_id,
+                dias_analise=days_analysis
+            )
+            
+            top_clientes = sorted(
+                analise_produto.get('clientes', []),
+                key=lambda x: x.get('total_valor', 0),
+                reverse=True
+            )[:3]  # Top 3 clientes por produto
+            
+            top_clientes_por_produto[s['produto_id']] = {
+                'produto_nome': s['produto_nome'],
+                'clientes': top_clientes
+            }
+        
+        # Projeção de vendas (próximos 14-30 dias)
+        projecao_vendas = {}
+        for s in suggestions:
+            demanda_media_diaria = s.get('demanda_media_diaria', 0)
+            projecao_14_dias = demanda_media_diaria * 14
+            projecao_30_dias = demanda_media_diaria * 30
+            
+            projecao_vendas[s['produto_id']] = {
+                'produto_nome': s['produto_nome'],
+                'projecao_14_dias': round(projecao_14_dias, 1),
+                'projecao_30_dias': round(projecao_30_dias, 1),
+                'demanda_media_diaria': demanda_media_diaria
+            }
+        
+        return {
+            'resumo': {
+                'total_sugestoes': total_sugestoes,
+                'sugestoes_criticas': sugestoes_criticas,
+                'sugestoes_baixas': sugestoes_baixas,
+                'valor_total_estimado': round(valor_total_estimado, 2),
+                'periodo_analise_dias': days_analysis,
+                'data_geracao': datetime.now().isoformat()
+            },
+            'sugestoes': suggestions,
+            'por_categoria': por_categoria,
+            'top_clientes_por_produto': top_clientes_por_produto,
+            'projecao_vendas': projecao_vendas,
+            'parametros': {
+                'days_analysis': days_analysis,
+                'lead_time_days': lead_time_days,
+                'coverage_days': coverage_days,
+                'min_sales_threshold': min_sales_threshold,
+                'cliente_id': cliente_id,
+                'categoria': categoria
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao gerar relatório completo: {str(e)}"
+        )
+

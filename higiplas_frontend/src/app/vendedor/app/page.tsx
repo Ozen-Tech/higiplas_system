@@ -58,13 +58,22 @@ export default function VendedorAppPage() {
             Bem-vindo, {usuario?.nome}
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push('/vendedor/app/historico')}
-          className="w-full sm:w-auto min-h-[44px]"
-        >
-          Ver Histórico
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/vendedor/visitas')}
+            className="w-full sm:w-auto min-h-[44px]"
+          >
+            📍 Visitas
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push('/vendedor/app/historico')}
+            className="w-full sm:w-auto min-h-[44px]"
+          >
+            Ver Histórico
+          </Button>
+        </div>
       </div>
 
       <OrcamentoBuilder />

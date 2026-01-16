@@ -30,20 +30,42 @@ interface ProdutoPreview {
   produtos_similares?: ProdutoSimilar[];
 }
 
+interface Vendedor {
+  id: number;
+  nome: string;
+  email: string;
+}
+
+interface Orcamento {
+  id: number;
+  numero: string;
+  data_criacao?: string;
+  status: string;
+}
+
 interface PreviewResult {
   sucesso: boolean;
   arquivo: string;
   tipo_movimentacao: 'ENTRADA' | 'SAIDA';
+  empresa_id?: number;
   nota_fiscal?: string;
   data_emissao?: string;
   cliente?: string;
+  cliente_id?: number;
+  cnpj_cliente?: string;
   fornecedor?: string;
   cnpj_fornecedor?: string;
   valor_total?: number;
+  vendedor_id?: number;
+  orcamento_id?: number;
+  is_delta_plastico?: boolean;
   produtos_encontrados: ProdutoPreview[];
   produtos_nao_encontrados: ProdutoPreview[];
+  produtos: ProdutoPreview[];
   total_produtos_pdf: number;
   produtos_validos: number;
+  vendedores_disponiveis?: Vendedor[];
+  orcamentos_disponiveis?: Orcamento[];
 }
 
 interface ProcessingResult {
@@ -80,6 +102,8 @@ export default function MovimentacoesPage() {
   const [filterStatus, setFilterStatus] = useState<ProdutoFiltro>('TODOS');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
+  const [vendedorSelecionado, setVendedorSelecionado] = useState<number | null>(null);
+  const [orcamentoSelecionado, setOrcamentoSelecionado] = useState<number | null>(null);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -137,6 +161,13 @@ export default function MovimentacoesPage() {
         setSearchTerms({});
         setSearchResults({});
         setQuantidadesEditadas({});
+        // Definir vendedor e orçamento se vierem do backend
+        if (preview.vendedor_id) {
+          setVendedorSelecionado(preview.vendedor_id);
+        }
+        if (preview.orcamento_id) {
+          setOrcamentoSelecionado(preview.orcamento_id);
+        }
         setWizardStep('ASSOCIACAO');
         setFilterStatus('TODOS');
       } else {
@@ -269,6 +300,10 @@ export default function MovimentacoesPage() {
 
       const dados = {
         tipo_movimentacao: previewData.tipo_movimentacao,
+        empresa_id: previewData.empresa_id,
+        cliente_id: previewData.cliente_id,
+        vendedor_id: vendedorSelecionado || previewData.vendedor_id,
+        orcamento_id: orcamentoSelecionado || previewData.orcamento_id,
         produtos_confirmados: produtosSelecionados,
         nota_fiscal: previewData.nota_fiscal,
         arquivo: previewData.arquivo
@@ -951,13 +986,76 @@ export default function MovimentacoesPage() {
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Detalhes da NF</h4>
                   <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
                     <p><strong>Arquivo:</strong> {previewData.arquivo}</p>
+                    <p><strong>NF:</strong> {previewData.nota_fiscal || '—'}</p>
                     <p><strong>Emissão:</strong> {previewData.data_emissao || '—'}</p>
+                    {previewData.cliente && (
+                      <p><strong>Cliente:</strong> {previewData.cliente}</p>
+                    )}
+                    {previewData.cnpj_cliente && (
+                      <p><strong>CNPJ:</strong> {previewData.cnpj_cliente}</p>
+                    )}
                     <p><strong>Total de itens:</strong> {previewData.total_produtos_pdf}</p>
                     {previewData.valor_total && (
                       <p><strong>Valor:</strong> R$ {previewData.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     )}
+                    {previewData.is_delta_plastico && (
+                      <p className="text-amber-600 dark:text-amber-400 font-semibold">⚠️ Delta Plástico (Entrada especial)</p>
+                    )}
                   </div>
                 </div>
+
+                {previewData.tipo_movimentacao === 'SAIDA' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide mb-2">
+                        Vendedor Responsável
+                      </h4>
+                      <select
+                        value={vendedorSelecionado || previewData.vendedor_id || ''}
+                        onChange={(e) => setVendedorSelecionado(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+                      >
+                        <option value="">Selecione um vendedor...</option>
+                        {previewData.vendedores_disponiveis?.map((vendedor) => (
+                          <option key={vendedor.id} value={vendedor.id}>
+                            {vendedor.nome} {vendedor.email ? `(${vendedor.email})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {vendedorSelecionado && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Vendedor selecionado
+                        </p>
+                      )}
+                    </div>
+
+                    {previewData.cliente_id && previewData.orcamentos_disponiveis && previewData.orcamentos_disponiveis.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide mb-2">
+                          Relacionar com Orçamento (Opcional)
+                        </h4>
+                        <select
+                          value={orcamentoSelecionado || previewData.orcamento_id || ''}
+                          onChange={(e) => setOrcamentoSelecionado(e.target.value ? Number(e.target.value) : null)}
+                          className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+                        >
+                          <option value="">Não relacionar</option>
+                          {previewData.orcamentos_disponiveis.map((orcamento) => (
+                            <option key={orcamento.id} value={orcamento.id}>
+                              {orcamento.numero} - {orcamento.status}
+                              {orcamento.data_criacao && ` (${new Date(orcamento.data_criacao).toLocaleDateString('pt-BR')})`}
+                            </option>
+                          ))}
+                        </select>
+                        {orcamentoSelecionado && (
+                          <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                            ✓ Orçamento relacionado - Vendedor será atribuído automaticamente
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">KPIs rápidos</h4>

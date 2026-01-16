@@ -12,6 +12,7 @@ from sqlalchemy import text, func
 import logging
 
 from ..db import models
+from .cliente_analytics_service import ClienteAnalyticsService
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +274,100 @@ class PurchaseSuggestionService:
                 if fornecedor:
                     fornecedor_nome = fornecedor.nome
             
+            # Análise por cliente usando ClienteAnalyticsService
+            justificativas = []
+            clientes_principais = []
+            
+            try:
+                analytics_service = ClienteAnalyticsService(self.db)
+                analise_produto = analytics_service.analisar_padroes_produto_por_cliente(
+                    produto_id=produto_id,
+                    empresa_id=empresa_id,
+                    dias_analise=days_analysis
+                )
+                
+                # Top clientes que compram este produto
+                top_clientes = sorted(
+                    analise_produto.get('clientes', []),
+                    key=lambda x: x.get('total_valor', 0),
+                    reverse=True
+                )[:5]  # Top 5 clientes
+                
+                clientes_principais = top_clientes
+                
+                # Gerar justificativas baseadas nos clientes
+                if top_clientes:
+                    # Clientes que compram regularmente
+                    clientes_frequentes = [
+                        c for c in top_clientes 
+                        if c.get('frequencia_media_dias') and c.get('frequencia_media_dias') <= 30
+                    ]
+                    if clientes_frequentes:
+                        nomes = [c['cliente_nome'] for c in clientes_frequentes[:3]]
+                        if len(nomes) == 1:
+                            justificativas.append(
+                                f"Cliente {nomes[0]} compra regularmente este produto "
+                                f"(última compra: {clientes_frequentes[0].get('dias_ultima_compra', 'N/A')} dias atrás)"
+                            )
+                        else:
+                            justificativas.append(
+                                f"{len(clientes_frequentes)} clientes compram regularmente este produto: "
+                                f"{', '.join(nomes)}"
+                            )
+                    
+                    # Cliente com compra recente
+                    cliente_recente = min(
+                        [c for c in top_clientes if c.get('dias_ultima_compra') is not None],
+                        key=lambda x: x.get('dias_ultima_compra', 999),
+                        default=None
+                    )
+                    if cliente_recente and cliente_recente.get('dias_ultima_compra', 999) <= 7:
+                        justificativas.append(
+                            f"Cliente {cliente_recente['cliente_nome']} comprou recentemente "
+                            f"({cliente_recente['dias_ultima_compra']} dias atrás)"
+                        )
+                    
+                    # Múltiplos clientes
+                    if len(top_clientes) >= 3:
+                        justificativas.append(
+                            f"Vendido para {analise_produto['clientes_unicos']} clientes diferentes "
+                            f"nos últimos {days_analysis} dias"
+                        )
+                
+            except Exception as e:
+                logger.warning(f"Erro ao analisar padrões por cliente para produto {produto_id}: {e}")
+            
+            # Justificativas gerais
+            if estoque_atual <= 0:
+                justificativas.insert(0, "Estoque zerado - necessário repor urgentemente")
+            elif dias_cobertura_atual < lead_time_days:
+                justificativas.insert(0, f"Estoque atual: {estoque_atual} unidades (cobre apenas {round(dias_cobertura_atual, 1)} dias - menor que lead time de {lead_time_days} dias)")
+            else:
+                justificativas.insert(0, f"Estoque atual: {estoque_atual} unidades (cobre {round(dias_cobertura_atual, 1)} dias)")
+            
+            # Tendência de crescimento
+            if demanda_info.get('numero_vendas', 0) > 5:
+                # Comparar últimos 30 dias com os 30 anteriores
+                vendas_recentes = self.db.query(models.MovimentacaoEstoque).filter(
+                    models.MovimentacaoEstoque.produto_id == produto_id,
+                    models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
+                    models.MovimentacaoEstoque.data_movimentacao >= datetime.now() - timedelta(days=30)
+                ).count()
+                
+                vendas_anteriores = self.db.query(models.MovimentacaoEstoque).filter(
+                    models.MovimentacaoEstoque.produto_id == produto_id,
+                    models.MovimentacaoEstoque.tipo_movimentacao == 'SAIDA',
+                    models.MovimentacaoEstoque.data_movimentacao >= datetime.now() - timedelta(days=60),
+                    models.MovimentacaoEstoque.data_movimentacao < datetime.now() - timedelta(days=30)
+                ).count()
+                
+                if vendas_anteriores > 0:
+                    crescimento = ((vendas_recentes - vendas_anteriores) / vendas_anteriores) * 100
+                    if crescimento > 20:
+                        justificativas.append(f"Tendência de crescimento: +{round(crescimento, 1)}% nos últimos 30 dias")
+                    elif crescimento < -20:
+                        justificativas.append(f"Tendência de redução: {round(crescimento, 1)}% nos últimos 30 dias")
+            
             suggestion = {
                 'produto_id': produto_id,
                 'produto_nome': row.produto_nome,
@@ -297,7 +392,11 @@ class PurchaseSuggestionService:
                 'valor_estimado_compra': round(quantidade_sugerida * (row.preco_custo or 0), 2),
                 'periodo_analise_dias': days_analysis,
                 'lead_time_dias': lead_time_days,
-                'coverage_days': coverage_days
+                'coverage_days': coverage_days,
+                # Novos campos: análise por cliente
+                'justificativas': justificativas,
+                'clientes_principais': clientes_principais,
+                'numero_clientes_unicos': analise_produto.get('clientes_unicos', 0) if 'analise_produto' in locals() else 0
             }
             
             suggestions.append(suggestion)
