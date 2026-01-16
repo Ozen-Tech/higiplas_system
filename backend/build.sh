@@ -55,6 +55,9 @@ except Exception as e:
     print('==> Continuando com as migrações...')
 "
 
+echo "==> Garantindo que tabela visitas_vendedor existe (independente de migrações)..."
+python ensure_visitas_table.py || echo "⚠ Aviso: Erro ao garantir tabela visitas_vendedor, mas continuando..."
+
 echo "==> Rodando migrações do banco de dados..."
 # Desabilita set -e temporariamente para permitir continuar mesmo com erros
 set +e
@@ -69,17 +72,26 @@ if [ -z "$HEAD_COUNT" ] || [ "$HEAD_COUNT" = "" ] || ! [[ "$HEAD_COUNT" =~ ^[0-9
 fi
 
 if [ "$HEAD_COUNT" -gt 1 ] 2>/dev/null; then
-    echo "==> Múltiplas heads detectadas ($HEAD_COUNT), aplicando individualmente..."
-    # Aplica cada head individualmente
-    echo "==> Aplicando: merge_proposta_fornecedor"
-    alembic upgrade merge_proposta_fornecedor 2>&1 | tail -5
+    echo "==> Múltiplas heads detectadas ($HEAD_COUNT), tentando aplicar merge..."
+    # Tenta aplicar migrações específicas primeiro
+    echo "==> Aplicando: create_empresas_higiplas_higitec"
+    alembic upgrade create_empresas_higiplas_higitec 2>&1 | tail -5 || true
     
-    echo "==> Aplicando: approval_fields_001"
-    alembic upgrade approval_fields_001 2>&1 | tail -5
+    echo "==> Aplicando: create_visitas_vendedor"
+    alembic upgrade create_visitas_vendedor 2>&1 | tail -5 || true
     
-    # Depois aplica a migração de merge que une as duas heads
-    echo "==> Aplicando migração de merge: merge_approval_proposta"
-    alembic upgrade merge_approval_proposta 2>&1 | tail -5
+    echo "==> Aplicando: add_data_criacao_foto_perfil_001"
+    alembic upgrade add_data_criacao_foto_perfil_001 2>&1 | tail -5 || true
+    
+    echo "==> Aplicando migração de merge: merge_heads_visitas_001"
+    alembic upgrade merge_heads_visitas_001 2>&1 | tail -5 || true
+    
+    echo "==> Garantindo que tabela visitas_vendedor existe: ensure_visitas_table_001"
+    alembic upgrade ensure_visitas_table_001 2>&1 | tail -5 || true
+    
+    # Tenta aplicar todas as heads de uma vez
+    echo "==> Tentando aplicar todas as heads..."
+    alembic upgrade heads 2>&1 | tail -10 || true
 else
     echo "==> Aplicando migrações normalmente..."
     alembic upgrade head 2>&1 | tail -5
