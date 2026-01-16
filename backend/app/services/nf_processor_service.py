@@ -411,12 +411,13 @@ class NFProcessorService:
         dados_nf: Dict[str, Any]
     ) -> bool:
         """Detecta se é NF do Delta Plástico (sacos de lixo - entrada especial)."""
-        # Detectar pelo nome do fornecedor
-        fornecedor = dados_nf.get('fornecedor', '').upper()
-        texto_upper = texto_completo.upper()
+        # Detectar pelo nome do fornecedor (tratando caso None)
+        fornecedor = dados_nf.get('fornecedor') or ''
+        fornecedor = str(fornecedor).upper() if fornecedor else ''
+        texto_upper = texto_completo.upper() if texto_completo else ''
         
         return (
-            "DELTA" in fornecedor and "PLASTIC" in fornecedor
+            fornecedor and "DELTA" in fornecedor and "PLASTIC" in fornecedor
         ) or (
             "DELTA PLAST" in texto_upper
         )
