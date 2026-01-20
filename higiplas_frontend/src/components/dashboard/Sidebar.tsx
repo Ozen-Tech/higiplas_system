@@ -5,12 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
-  CubeIcon, SparklesIcon, ShoppingCartIcon,
-  // CORRIGIDO: Ícones não utilizados foram removidos da importação.
-  ArrowTrendingUpIcon, ArrowsRightLeftIcon, ClockIcon,
+  CubeIcon, ShoppingCartIcon,
+  ArrowsRightLeftIcon, ClockIcon,
   ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon,
-  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon,
-  UserCircleIcon
+  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -29,19 +27,8 @@ const navigation: NavigationItem[] = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
-  { 
-    name: 'Compras', 
-    href: '/dashboard/compras', 
-    icon: ShoppingCartIcon,
-    subItems: [
-      { name: 'Sugestões', href: '/dashboard/compras', icon: ShoppingCartIcon },
-      { name: 'KPIs de Compras', href: '/dashboard/compras/kpis', icon: ArrowTrendingUpIcon }
-    ]
-  },
-  { name: 'Relatórios', href: '/dashboard/relatorios', icon: DocumentTextIcon },
-  { name: 'IA Insights', href: '/dashboard/insights', icon: SparklesIcon },
-  { name: 'Produtos Mais Vendidos', href: '/dashboard/produtos-mais-vendidos', icon: ArrowTrendingUpIcon },
-  { name: 'Meu Perfil', href: '/dashboard/perfil', icon: UserCircleIcon },
+  { name: 'Sugestões de Compra', href: '/dashboard/sugestoes-compra', icon: ShoppingCartIcon },
+  { name: 'Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
 ];
 
 const adminNavigation: NavigationItem[] = [

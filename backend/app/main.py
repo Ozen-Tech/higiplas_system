@@ -7,7 +7,7 @@ from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
     insights, dashboard_kpis, invoice_processing,
     fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, reports, compras,
-    fichas_tecnicas, concorrentes, propostas_detalhadas, visitas
+    fichas_tecnicas, concorrentes, propostas_detalhadas, visitas, clientes_compras
 )
 
 from app.create_superuser import create_initial_superuser
@@ -97,6 +97,7 @@ app.include_router(minimum_stock.router, tags=["Estoque Mínimo"])
 app.include_router(produtos_mais_vendidos.router, tags=["Produtos Mais Vendidos"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Relatórios"])
 app.include_router(compras.router, tags=["Compras"])
+app.include_router(clientes_compras.router, tags=["Clientes - Análise de Compras"])
 app.include_router(fichas_tecnicas.router, tags=["Fichas Técnicas"])
 app.include_router(concorrentes.router, tags=["Concorrentes"])
 app.include_router(propostas_detalhadas.router, tags=["Propostas Detalhadas"])
