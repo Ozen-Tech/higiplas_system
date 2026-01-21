@@ -124,19 +124,19 @@ export default function MovimentacoesPage() {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    if (file && (file.type === 'application/pdf' || file.type === 'text/xml' || file.type === 'application/xml' || file.name.toLowerCase().endsWith('.xml'))) {
       setArquivo(file);
       setError(null);
       setResult(null);
       setPreviewData(null);
     } else {
-      setError('Por favor, selecione um arquivo PDF válido.');
+      setError('Por favor, selecione um arquivo PDF ou XML válido.');
     }
   };
 
   const handleVisualizarProdutos = async () => {
     if (!arquivo) {
-      setError('Por favor, selecione um arquivo PDF.');
+      setError('Por favor, selecione um arquivo PDF ou XML.');
       return;
     }
 
@@ -148,7 +148,14 @@ export default function MovimentacoesPage() {
       formData.append('arquivo', arquivo);
       formData.append('tipo_movimentacao', tipoMovimentacao);
 
-      const response = await apiService.postFormData('/movimentacoes/preview-pdf', formData);
+      // Detectar se é XML ou PDF e usar o endpoint apropriado
+      const isXML = arquivo.name.toLowerCase().endsWith('.xml') || 
+                    arquivo.type === 'text/xml' || 
+                    arquivo.type === 'application/xml';
+      
+      const endpoint = isXML ? '/entrada/processar-xml' : '/movimentacoes/preview-pdf';
+
+      const response = await apiService.postFormData(endpoint, formData);
 
       if (response && response.data.sucesso) {
         const preview = response.data as PreviewResult;
@@ -171,7 +178,7 @@ export default function MovimentacoesPage() {
         setWizardStep('ASSOCIACAO');
         setFilterStatus('TODOS');
       } else {
-        setError(response?.data?.mensagem || 'Erro ao processar o arquivo PDF.');
+        setError(response?.data?.mensagem || `Erro ao processar o arquivo ${isXML ? 'XML' : 'PDF'}.`);
       }
     } catch (error: unknown) {
       console.error('Erro ao fazer upload:', error);
@@ -188,7 +195,7 @@ export default function MovimentacoesPage() {
 
   const handleProcessarPDFEntrada = async () => {
     if (!arquivo) {
-      setError('Por favor, selecione um arquivo PDF.');
+      setError('Por favor, selecione um arquivo PDF ou XML.');
       return;
     }
 
@@ -199,7 +206,14 @@ export default function MovimentacoesPage() {
       const formData = new FormData();
       formData.append('arquivo', arquivo);
 
-      const response = await apiService.postFormData('/movimentacoes/processar-pdf-entrada', formData);
+      // Detectar se é XML ou PDF e usar o endpoint apropriado
+      const isXML = arquivo.name.toLowerCase().endsWith('.xml') || 
+                    arquivo.type === 'text/xml' || 
+                    arquivo.type === 'application/xml';
+      
+      const endpoint = isXML ? '/entrada/processar-xml' : '/movimentacoes/processar-pdf-entrada';
+
+      const response = await apiService.postFormData(endpoint, formData);
 
       if (response && response.data.sucesso) {
         setResult(response.data);
@@ -207,10 +221,10 @@ export default function MovimentacoesPage() {
         const fileInput = document.getElementById('arquivo') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
       } else {
-        setError(response?.data?.mensagem || 'Erro ao processar o PDF de entrada.');
+        setError(response?.data?.mensagem || `Erro ao processar o ${isXML ? 'XML' : 'PDF'} de entrada.`);
       }
     } catch (error: unknown) {
-      console.error('Erro ao processar PDF de entrada:', error);
+      console.error('Erro ao processar arquivo de entrada:', error);
       const errorMessage = error && typeof error === 'object' && 'response' in error && 
         error.response && typeof error.response === 'object' && 'data' in error.response &&
         error.response.data && typeof error.response.data === 'object' && 'detail' in error.response.data
@@ -609,12 +623,12 @@ export default function MovimentacoesPage() {
                   <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
                     <span className="font-semibold">Clique para fazer upload</span> ou arraste e solte
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Apenas arquivos PDF</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">PDF ou XML (NF-e)</p>
                 </div>
                 <input
                   id="arquivo"
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.xml"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -622,9 +636,39 @@ export default function MovimentacoesPage() {
             </div>
             
             {arquivo && (
-              <div className="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <DocumentTextIcon className="h-5 w-5 text-blue-600 mr-2" />
-                <span className="text-sm text-blue-800 dark:text-blue-200">{arquivo.name}</span>
+              <div className={`flex items-center justify-between p-3 rounded-lg border ${
+                arquivo.name.toLowerCase().endsWith('.xml')
+                  ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                  : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+              }`}>
+                <div className="flex items-center">
+                  <DocumentTextIcon className={`h-5 w-5 mr-2 ${
+                    arquivo.name.toLowerCase().endsWith('.xml')
+                      ? 'text-purple-600'
+                      : 'text-blue-600'
+                  }`} />
+                  <div>
+                    <span className={`text-sm font-medium ${
+                      arquivo.name.toLowerCase().endsWith('.xml')
+                        ? 'text-purple-800 dark:text-purple-200'
+                        : 'text-blue-800 dark:text-blue-200'
+                    }`}>{arquivo.name}</span>
+                    <p className={`text-xs ${
+                      arquivo.name.toLowerCase().endsWith('.xml')
+                        ? 'text-purple-600 dark:text-purple-300'
+                        : 'text-blue-600 dark:text-blue-300'
+                    }`}>
+                      {arquivo.name.toLowerCase().endsWith('.xml') ? '📄 Arquivo XML (NF-e)' : '📄 Arquivo PDF'}
+                    </p>
+                  </div>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  arquivo.name.toLowerCase().endsWith('.xml')
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                }`}>
+                  {arquivo.name.toLowerCase().endsWith('.xml') ? 'XML' : 'PDF'}
+                </span>
               </div>
             )}
           </div>
@@ -649,7 +693,7 @@ export default function MovimentacoesPage() {
                 ) : (
                   <>
                     <CogIcon className="h-4 w-4 mr-2" />
-                    Processar PDF de Entrada
+                    {arquivo?.name.toLowerCase().endsWith('.xml') ? 'Processar XML de Entrada' : 'Processar PDF de Entrada'}
                   </>
                 )}
               </Button>
