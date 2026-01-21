@@ -153,7 +153,7 @@ export default function MovimentacoesPage() {
                     arquivo.type === 'text/xml' || 
                     arquivo.type === 'application/xml';
       
-      const endpoint = isXML ? '/entrada/processar-xml' : '/movimentacoes/preview-pdf';
+      const endpoint = isXML ? '/api/entrada/processar-xml' : '/movimentacoes/preview-pdf';
 
       const response = await apiService.postFormData(endpoint, formData);
 
@@ -211,7 +211,7 @@ export default function MovimentacoesPage() {
                     arquivo.type === 'text/xml' || 
                     arquivo.type === 'application/xml';
       
-      const endpoint = isXML ? '/entrada/processar-xml' : '/movimentacoes/processar-pdf-entrada';
+      const endpoint = isXML ? '/api/entrada/processar-xml' : '/movimentacoes/processar-pdf-entrada';
 
       const response = await apiService.postFormData(endpoint, formData);
 
