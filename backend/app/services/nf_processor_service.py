@@ -60,6 +60,7 @@ class NFProcessorService:
             logger.info(f"Processando PDF: nome_original={nome_arquivo_original}, caminho={caminho_pdf}, nome_para_deteccao={nome_arquivo_para_deteccao}")
             
             texto_completo = self._extrair_texto_pdf(caminho_pdf)
+            logger.info(f"📄 Primeiros 1000 caracteres do texto extraído: {texto_completo[:1000] if texto_completo else 'VAZIO'}")
             
             # Se não conseguiu extrair texto, tentar detectar Delta Plástico pelo nome do arquivo
             texto_vazio = not texto_completo or not texto_completo.strip()
@@ -461,29 +462,35 @@ class NFProcessorService:
     ) -> Optional[int]:
         """Identifica empresa pelo CNPJ emitente ou contexto."""
         if empresa_id_override:
+            logger.info(f"Empresa ID override fornecido: {empresa_id_override}")
             return empresa_id_override
         
         # Extrair CNPJ do emitente (primeiro CNPJ geralmente)
         cnpjs = extrair_cnpj_texto(texto_completo)
+        logger.info(f"CNPJs encontrados no texto: {cnpjs}")
         
         # Buscar por CNPJ da HIGIPLAS ou HIGITEC no texto
         # Se encontrar um dos CNPJs conhecidos, identificar empresa
         for cnpj in cnpjs:
             empresa_id = EmpresaService.identificar_empresa_por_cnpj(self.db, cnpj)
             if empresa_id:
+                logger.info(f"Empresa identificada pelo CNPJ {cnpj}: ID {empresa_id}")
                 return empresa_id
         
         # Se não encontrou pelos CNPJs, tentar pelo contexto do texto
         texto_upper = texto_completo.upper() if texto_completo else ''
+        logger.info(f"Tentando identificar empresa por palavras-chave no texto (primeiros 500 chars): {texto_upper[:500]}")
         
         if "HIGIPLAS" in texto_upper:
             empresa_id = EmpresaService.get_empresa_id(self.db, "HIGIPLAS")
             if empresa_id:
+                logger.info(f"Empresa identificada como HIGIPLAS por palavra-chave: ID {empresa_id}")
                 return empresa_id
         
         if "HIGITEC" in texto_upper:
             empresa_id = EmpresaService.get_empresa_id(self.db, "HIGITEC")
             if empresa_id:
+                logger.info(f"Empresa identificada como HIGITEC por palavra-chave: ID {empresa_id}")
                 return empresa_id
         
         # Se ainda não encontrou e é Delta Plástico, usar HIGIPLAS como padrão
@@ -497,6 +504,7 @@ class NFProcessorService:
                     logger.info("Empresa identificada como HIGIPLAS baseado no nome do arquivo Delta Plástico")
                     return empresa_id
         
+        logger.error(f"❌ Não foi possível identificar a empresa. CNPJs encontrados: {cnpjs}, Nome do arquivo: {caminho_pdf}")
         return None
     
     def _detectar_delta_plastico(
