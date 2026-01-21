@@ -13,6 +13,7 @@ from app.routers import (
 from app.create_superuser import create_initial_superuser
 from app.core.error_handler import register_exception_handlers
 from app.core.logger import app_logger
+from app.db.create_missing_tables import create_all_missing_tables
 from contextlib import asynccontextmanager
 import logging
 import os
@@ -25,8 +26,15 @@ logger = app_logger
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Iniciando aplicação...")
+    
+    # Criar tabelas faltantes
+    logger.info("Verificando e criando tabelas faltantes...")
+    create_all_missing_tables()
+    
+    # Criar superusuário inicial
     create_initial_superuser()
     logger.info("Superusuário criado/verificado com sucesso")
+    
     yield
     # Shutdown
     logger.info("Encerrando aplicação...")
