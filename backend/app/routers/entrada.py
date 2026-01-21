@@ -247,11 +247,47 @@ async def processar_xml_entrada(
             os.unlink(temp_file_path)
             temp_file_path = None
         
+        # Formatar resposta compatível com o formato esperado pelo frontend
+        produtos_encontrados = dados_nf.get('produtos_encontrados', [])
+        produtos_nao_encontrados = dados_nf.get('produtos_nao_encontrados', [])
+        
+        # Transformar produtos para formato compatível com o preview do frontend
+        produtos_formatados = []
+        for prod in produtos_encontrados:
+            produtos_formatados.append({
+                "codigo": prod.get('codigo'),
+                "descricao_pdf": prod.get('descricao'),
+                "quantidade": prod.get('quantidade'),
+                "valor_unitario": prod.get('valor_unitario'),
+                "valor_total": prod.get('valor_total'),
+                "encontrado": prod.get('encontrado', True),
+                "produto_id": prod.get('produto_id'),
+                "nome_sistema": prod.get('nome_sistema'),
+                "codigo_sistema": prod.get('codigo'),
+                "estoque_atual": prod.get('estoque_atual'),
+                "estoque_projetado": prod.get('estoque_projetado')
+            })
+        
+        for prod in produtos_nao_encontrados:
+            produtos_formatados.append({
+                "codigo": prod.get('codigo'),
+                "descricao_pdf": prod.get('descricao'),
+                "quantidade": prod.get('quantidade'),
+                "valor_unitario": prod.get('valor_unitario'),
+                "valor_total": prod.get('valor_total'),
+                "encontrado": False,
+                "produto_id": None,
+                "nome_sistema": None,
+                "codigo_sistema": None,
+                "estoque_atual": None,
+                "estoque_projetado": None
+            })
+        
         return {
             "sucesso": True,
             "arquivo": arquivo.filename,
             "tipo": "ENTRADA",
-            "tipo_movimentacao": dados_nf.get('tipo_movimentacao'),
+            "tipo_movimentacao": dados_nf.get('tipo_movimentacao', 'ENTRADA'),
             "empresa_id": dados_nf.get('empresa_id'),
             "nota_fiscal": dados_nf.get('nota_fiscal'),
             "chave_acesso": dados_nf.get('chave_acesso'),
@@ -259,12 +295,11 @@ async def processar_xml_entrada(
             "fornecedor": dados_nf.get('nome_emitente'),
             "cnpj_fornecedor": dados_nf.get('cnpj_emitente'),
             "valor_total": dados_nf.get('valor_total'),
-            "total_produtos": dados_nf.get('total_produtos'),
-            "produtos": dados_nf.get('produtos', []),
-            "produtos_encontrados": len(dados_nf.get('produtos_encontrados', [])),
-            "produtos_nao_encontrados": len(dados_nf.get('produtos_nao_encontrados', [])),
-            "detalhes_produtos_encontrados": dados_nf.get('produtos_encontrados', []),
-            "detalhes_produtos_nao_encontrados": dados_nf.get('produtos_nao_encontrados', [])
+            "total_produtos_pdf": dados_nf.get('total_produtos', 0),
+            "produtos_validos": len(produtos_encontrados),
+            "produtos_encontrados": produtos_encontrados,
+            "produtos_nao_encontrados": produtos_nao_encontrados,
+            "produtos": produtos_formatados
         }
         
     except Exception as e:
