@@ -4,7 +4,7 @@ Executado automaticamente no startup da aplicação.
 """
 import logging
 from sqlalchemy import text
-from app.db.database import engine
+from app.db.connection import engine
 
 logger = logging.getLogger(__name__)
 
