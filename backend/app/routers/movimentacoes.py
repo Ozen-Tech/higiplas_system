@@ -20,7 +20,10 @@ from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
 from ..db.connection import get_db
 from app.dependencies import get_current_user, get_current_operador, get_admin_user
+import logging
 # Serviço de similaridade importado dinamicamente quando necessário
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     #prefix="/movimentacoes",
@@ -269,7 +272,8 @@ async def preview_pdf_movimentacao(
             vendedor_id=vendedor_id,
             orcamento_id=orcamento_id,
             usuario_id=current_user.id,
-            empresa_id_override=None  # Deixar o serviço identificar automaticamente
+            empresa_id_override=None,  # Deixar o serviço identificar automaticamente
+            nome_arquivo_original=arquivo.filename  # Passar nome original para detecção
         )
         
         # Limpar arquivo temporário
@@ -974,6 +978,217 @@ async def processar_pdf_movimentacao(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar PDF: {str(e)}"
         )
+
+
+# ==================== ENDPOINTS DE PROCESSAMENTO DE XML (NF-e) ====================
+
+@router.post(
+    "/preview-xml",
+    response_model=Dict[str, Any],
+    summary="Visualiza dados extraídos do XML de NF-e",
+    description="Extrai dados de um XML de nota fiscal eletrônica para visualização e confirmação antes do processamento. Identifica empresa, reconhece/cria cliente automaticamente."
+)
+async def preview_xml_movimentacao(
+    arquivo: UploadFile = File(..., description="Arquivo XML da nota fiscal eletrônica"),
+    tipo_movimentacao: Optional[str] = Form(None, description="Tipo de movimentação: ENTRADA ou SAIDA (opcional, auto-detecta)"),
+    vendedor_id: Optional[int] = Form(None, description="ID do vendedor (opcional, para NF de saída)"),
+    orcamento_id: Optional[int] = Form(None, description="ID do orçamento relacionado (opcional)"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Extrai dados do XML de NF-e para visualização antes do processamento."""
+    
+    if not arquivo or not arquivo.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado"
+        )
+    
+    if not arquivo.filename.lower().endswith('.xml'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos XML são aceitos"
+        )
+    
+    if tipo_movimentacao and tipo_movimentacao not in ['ENTRADA', 'SAIDA']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tipo de movimentação deve ser ENTRADA ou SAIDA"
+        )
+    
+    try:
+        # Salvar arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xml') as temp_file:
+            content = await arquivo.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        # Processar XML
+        from ..services.nf_xml_processor_service import NFXMLProcessorService
+        xml_service = NFXMLProcessorService(db)
+        
+        resultado = xml_service.processar_nf_xml(
+            caminho_xml=temp_file_path,
+            tipo_movimentacao=tipo_movimentacao,
+            empresa_id_override=current_user.empresa_id
+        )
+        
+        # Limpar arquivo temporário
+        os.unlink(temp_file_path)
+        
+        return {
+            'sucesso': True,
+            'tipo_movimentacao': resultado['tipo_movimentacao'],
+            'empresa_id': resultado['empresa_id'],
+            'nota_fiscal': resultado['nota_fiscal'],
+            'chave_acesso': resultado.get('chave_acesso'),
+            'data_emissao': resultado['data_emissao'],
+            'cliente_id': resultado.get('cliente_id'),
+            'cliente': resultado.get('cliente'),
+            'cnpj_cliente': resultado.get('cnpj_cliente'),
+            'cnpj_emitente': resultado.get('cnpj_emitente'),
+            'nome_emitente': resultado.get('nome_emitente'),
+            'valor_total': resultado.get('valor_total'),
+            'produtos': resultado['produtos'],
+            'produtos_encontrados': resultado['produtos_encontrados'],
+            'produtos_nao_encontrados': resultado['produtos_nao_encontrados'],
+            'total_produtos': resultado['total_produtos']
+        }
+        
+    except Exception as e:
+        import traceback
+        logger.error(f"Erro ao processar XML: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar XML: {str(e)}"
+        )
+
+
+@router.post(
+    "/processar-xml",
+    response_model=Dict[str, Any],
+    summary="Processa XML de NF-e e registra movimentações",
+    description="Processa um XML de nota fiscal eletrônica e registra as movimentações de estoque automaticamente."
+)
+async def processar_xml_movimentacao(
+    arquivo: UploadFile = File(..., description="Arquivo XML da nota fiscal eletrônica"),
+    tipo_movimentacao: Optional[str] = Form(None, description="Tipo de movimentação: ENTRADA ou SAIDA (opcional, auto-detecta)"),
+    vendedor_id: Optional[int] = Form(None, description="ID do vendedor (opcional, para NF de saída)"),
+    orcamento_id: Optional[int] = Form(None, description="ID do orçamento relacionado (opcional)"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Processa XML de NF-e e registra movimentações automaticamente."""
+    
+    if not arquivo or not arquivo.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado"
+        )
+    
+    if not arquivo.filename.lower().endswith('.xml'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos XML são aceitos"
+        )
+    
+    if tipo_movimentacao and tipo_movimentacao not in ['ENTRADA', 'SAIDA']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tipo de movimentação deve ser ENTRADA ou SAIDA"
+        )
+    
+    try:
+        # Salvar arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xml') as temp_file:
+            content = await arquivo.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        # Processar XML
+        from ..services.nf_xml_processor_service import NFXMLProcessorService
+        xml_service = NFXMLProcessorService(db)
+        
+        resultado_preview = xml_service.processar_nf_xml(
+            caminho_xml=temp_file_path,
+            tipo_movimentacao=tipo_movimentacao,
+            empresa_id_override=current_user.empresa_id
+        )
+        
+        # Preparar dados para confirmação
+        produtos_confirmados = []
+        for produto in resultado_preview['produtos']:
+            if produto.get('encontrado') and produto.get('produto_id'):
+                produtos_confirmados.append({
+                    'produto_id': produto['produto_id'],
+                    'quantidade': produto['quantidade'],
+                    'valor_unitario': produto.get('valor_unitario', 0),
+                    'valor_total': produto.get('valor_total', 0),
+                    'codigo_nf': produto.get('codigo', ''),
+                    'descricao_nf': produto.get('descricao', '')
+                })
+        
+        if not produtos_confirmados:
+            os.unlink(temp_file_path)
+            return {
+                'sucesso': False,
+                'mensagem': 'Nenhum produto encontrado no sistema para processar.',
+                'produtos_nao_encontrados': resultado_preview['produtos_nao_encontrados']
+            }
+        
+        # Confirmar processamento usando o serviço existente
+        from ..services.nf_processor_service import NFProcessorService
+        nf_service = NFProcessorService(db)
+        
+        dados_confirmacao = {
+            'nota_fiscal': resultado_preview['nota_fiscal'],
+            'tipo_movimentacao': resultado_preview['tipo_movimentacao'],
+            'empresa_id': resultado_preview['empresa_id'],
+            'cliente_id': resultado_preview.get('cliente_id'),
+            'cnpj_cliente': resultado_preview.get('cnpj_cliente'),
+            'cliente': resultado_preview.get('cliente'),
+            'vendedor_id': vendedor_id,
+            'orcamento_id': orcamento_id,
+            'produtos_confirmados': produtos_confirmados
+        }
+        
+        resultado = nf_service.confirmar_processamento(
+            dados_confirmacao=dados_confirmacao,
+            usuario_id=current_user.id
+        )
+        
+        # Limpar arquivo temporário
+        os.unlink(temp_file_path)
+        
+        return {
+            'sucesso': True,
+            'mensagem': f'XML processado com sucesso! {resultado["movimentacoes_criadas"]} movimentações criadas.',
+            'movimentacoes_criadas': resultado['movimentacoes_criadas'],
+            'historicos_vendas': resultado.get('historicos_vendas', 0),
+            'tipo_movimentacao': resultado_preview['tipo_movimentacao'],
+            'nota_fiscal': resultado_preview['nota_fiscal'],
+            'chave_acesso': resultado_preview.get('chave_acesso'),
+            'data_emissao': resultado_preview['data_emissao'],
+            'cliente': resultado_preview.get('cliente'),
+            'cnpj_cliente': resultado_preview.get('cnpj_cliente'),
+            'detalhes': {
+                'arquivo': arquivo.filename,
+                'produtos_processados': len(produtos_confirmados),
+                'produtos_nao_encontrados': len(resultado_preview['produtos_nao_encontrados']),
+                'total_produtos_xml': resultado_preview['total_produtos']
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logger.error(f"Erro ao processar XML: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar XML: {str(e)}"
+        )
+
 
 # ==================== ENDPOINTS DE MOVIMENTAÇÕES PENDENTES ====================
 # IMPORTANTE: Estas rotas devem estar ANTES da rota /{produto_id} para evitar conflito

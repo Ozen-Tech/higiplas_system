@@ -7,6 +7,7 @@ from ..dependencies import get_current_user
 from ..db import models
 from ..services.purchase_suggestion_service import PurchaseSuggestionService
 from ..services.compras_kpi_service import ComprasKPIService
+from ..services.cliente_purchase_suggestion_service import ClientePurchaseSuggestionService
 from ..schemas import compras as schemas_compras
 
 router = APIRouter(prefix="/compras", tags=["Compras"])
@@ -179,6 +180,31 @@ def obter_kpi_fornecedor(
         raise HTTPException(
             status_code=500,
             detail=f"Erro ao calcular KPIs do fornecedor: {str(e)}"
+        )
+
+
+@router.get("/sugestoes/baseado-clientes", summary="Sugestões de compra baseadas em todos os clientes")
+def get_sugestoes_baseado_clientes(
+    dias_analise: int = Query(90, description="Período de análise em dias (padrão: 90 dias)"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna sugestões de compra baseadas em produtos que são comprados frequentemente
+    por múltiplos clientes. Ideal para estoque geral.
+    Usa apenas dados verificados de NF-e processadas.
+    """
+    try:
+        service = ClientePurchaseSuggestionService(db)
+        resultado = service.get_global_purchase_suggestions(
+            empresa_id=current_user.empresa_id,
+            dias_analise=dias_analise
+        )
+        return resultado
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao gerar sugestões baseadas em clientes: {str(e)}"
         )
 
 

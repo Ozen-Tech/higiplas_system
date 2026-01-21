@@ -34,7 +34,8 @@ class NFProcessorService:
         vendedor_id: Optional[int] = None,
         orcamento_id: Optional[int] = None,
         usuario_id: int = None,
-        empresa_id_override: Optional[int] = None
+        empresa_id_override: Optional[int] = None,
+        nome_arquivo_original: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Processa um PDF de NF completo: extrai dados, identifica empresa,
@@ -54,18 +55,27 @@ class NFProcessorService:
         try:
             # 1. Extrair texto do PDF
             import os
-            nome_arquivo = os.path.basename(caminho_pdf).upper()
+            # Usar nome original se fornecido, senão usar nome do arquivo temporário
+            nome_arquivo_para_deteccao = (nome_arquivo_original or os.path.basename(caminho_pdf)).upper()
+            logger.info(f"Processando PDF: nome_original={nome_arquivo_original}, caminho={caminho_pdf}, nome_para_deteccao={nome_arquivo_para_deteccao}")
+            
             texto_completo = self._extrair_texto_pdf(caminho_pdf)
             
             # Se não conseguiu extrair texto, tentar detectar Delta Plástico pelo nome do arquivo
-            if not texto_completo or not texto_completo.strip():
-                if "DELTA" in nome_arquivo and "PLAST" in nome_arquivo:
-                    logger.info(f"PDF Delta Plástico detectado pelo nome do arquivo: {nome_arquivo}")
+            texto_vazio = not texto_completo or not texto_completo.strip()
+            if texto_vazio:
+                logger.warning(f"Nenhum texto extraído do PDF. Verificando pelo nome do arquivo: nome_original='{nome_arquivo_original}', nome_deteccao='{nome_arquivo_para_deteccao}'")
+                # Verificar se contém DELTA e PLAST/PLÁSTIC (case insensitive, tratando variações)
+                tem_delta = "DELTA" in nome_arquivo_para_deteccao
+                tem_plast = "PLAST" in nome_arquivo_para_deteccao or "PLÁSTIC" in nome_arquivo_para_deteccao.upper() or "PLASTICO" in nome_arquivo_para_deteccao
+                
+                if tem_delta and tem_plast:
+                    logger.info(f"✓ PDF Delta Plástico detectado pelo nome do arquivo: {nome_arquivo_original or nome_arquivo_para_deteccao}")
                     # Criar texto mínimo para permitir processamento
-                    texto_completo = f"DELTA PLASTICOS {nome_arquivo}"
+                    texto_completo = f"DELTA PLASTICOS {nome_arquivo_original or nome_arquivo_para_deteccao}"
                 else:
-                    logger.error(f"Não foi possível extrair texto do PDF {nome_arquivo}")
-                    raise ValueError("Não foi possível extrair texto do PDF e não foi possível identificar o tipo pelo nome do arquivo")
+                    logger.error(f"✗ Não foi possível detectar Delta Plástico. nome_original='{nome_arquivo_original}', tem_delta={tem_delta}, tem_plast={tem_plast}")
+                    raise ValueError(f"Não foi possível extrair texto do PDF '{nome_arquivo_original or nome_arquivo_para_deteccao}' e não foi possível identificar como Delta Plástico pelo nome do arquivo")
             
             # 2. Extrair dados básicos da NF
             dados_nf = self._extrair_dados_nf(texto_completo, tipo_movimentacao)
@@ -75,14 +85,14 @@ class NFProcessorService:
                 texto_completo,
                 dados_nf,
                 empresa_id_override,
-                caminho_pdf
+                nome_arquivo_original or caminho_pdf
             )
             
             if not empresa_id:
                 raise ValueError("Não foi possível identificar a empresa da NF")
             
             # 4. Detectar se é Delta Plástico (entrada especial)
-            is_delta_plastico = self._detectar_delta_plastico(texto_completo, dados_nf, caminho_pdf)
+            is_delta_plastico = self._detectar_delta_plastico(texto_completo, dados_nf, nome_arquivo_original or caminho_pdf)
             if is_delta_plastico:
                 tipo_movimentacao = "ENTRADA"
                 # Se for Delta Plástico, garantir que o fornecedor está definido
@@ -221,35 +231,56 @@ class NFProcessorService:
                 'estoque_atual': produto_atualizado.quantidade_em_estoque
             })
             
-            # Para saída, criar histórico de venda e preço
-            if tipo_movimentacao == "SAIDA" and cliente_id and valor_unitario > 0:
-                # Histórico de preço
-                historico_preco = models.HistoricoPrecoProduto(
-                    produto_id=produto_id,
-                    preco_unitario=valor_unitario,
-                    quantidade=quantidade,
-                    valor_total=valor_total,
-                    nota_fiscal=nota_fiscal,
-                    empresa_id=empresa_id,
-                    cliente_id=cliente_id
-                )
-                self.db.add(historico_preco)
+            # Para saída, criar histórico de venda e preço (SEMPRE quando houver cliente)
+            if tipo_movimentacao == "SAIDA":
+                # Se não temos cliente_id mas temos CNPJ nos dados, buscar/criar cliente
+                cnpj_cliente = dados_confirmacao.get('cnpj_cliente')
+                if not cliente_id and cnpj_cliente:
+                    try:
+                        cliente = ClienteMatcherService.encontrar_ou_criar_cliente(
+                            db=self.db,
+                            cnpj=cnpj_cliente,
+                            razao_social=dados_confirmacao.get('cliente'),
+                            empresa_id=empresa_id
+                        )
+                        cliente_id = cliente.id if cliente else None
+                        logger.info(f"Cliente identificado/criado pelo CNPJ {cnpj_cliente}: ID {cliente_id}")
+                    except Exception as e:
+                        logger.warning(f"Erro ao buscar/criar cliente pelo CNPJ {cnpj_cliente}: {e}")
                 
-                # Se houver orçamento e vendedor, criar histórico de venda
-                if orcamento_id and vendedor_id:
-                    historico_venda = models.HistoricoVendaCliente(
-                        vendedor_id=vendedor_id,
-                        cliente_id=cliente_id,
+                # Criar HistoricoPrecoProduto SEMPRE que houver SAÍDA com cliente e valor
+                # Este é o registro principal que vincula NF-e verificada ao cliente (via CNPJ)
+                if cliente_id and valor_unitario > 0 and nota_fiscal:
+                    historico_preco = models.HistoricoPrecoProduto(
                         produto_id=produto_id,
-                        orcamento_id=orcamento_id,
-                        empresa_id=empresa_id,
-                        quantidade_vendida=int(quantidade),
-                        preco_unitario_vendido=valor_unitario,
+                        preco_unitario=valor_unitario,
+                        quantidade=quantidade,
                         valor_total=valor_total,
-                        data_venda=datetime.now()
+                        nota_fiscal=nota_fiscal,  # Obrigatório - dados verificados via NF-e
+                        empresa_id=empresa_id,
+                        cliente_id=cliente_id  # Vinculado via CNPJ
                     )
-                    self.db.add(historico_venda)
-                    historicos_vendas.append(historico_venda.id)
+                    self.db.add(historico_preco)
+                    logger.info(f"Histórico de preço criado: Cliente {cliente_id}, Produto {produto_id}, NF {nota_fiscal}")
+                    
+                    # Criar HistoricoVendaCliente apenas se houver orcamento_id
+                    # (pois o modelo exige orcamento_id como obrigatório)
+                    if orcamento_id:
+                        vendedor_para_historico = vendedor_id or usuario_id
+                        historico_venda = models.HistoricoVendaCliente(
+                            vendedor_id=vendedor_para_historico,
+                            cliente_id=cliente_id,
+                            produto_id=produto_id,
+                            orcamento_id=orcamento_id,
+                            empresa_id=empresa_id,
+                            quantidade_vendida=int(quantidade),
+                            preco_unitario_vendido=valor_unitario,
+                            valor_total=valor_total,
+                            data_venda=datetime.now()
+                        )
+                        self.db.add(historico_venda)
+                        historicos_vendas.append(historico_venda.id)
+                        logger.info(f"Histórico de venda criado para cliente {cliente_id}, produto {produto_id}, NF {nota_fiscal}")
         
         # Vincular orçamento à NF se fornecido
         if orcamento_id and tipo_movimentacao == "SAIDA":
@@ -287,21 +318,30 @@ class NFProcessorService:
         except Exception as e:
             logger.warning(f"Erro ao extrair texto com pdfplumber: {e}. Tentando PyPDF2...")
         
-        # Fallback para PyPDF2 se pdfplumber falhar ou não retornar texto
+        # Fallback para PyPDF2/pypdf se pdfplumber falhar ou não retornar texto
         try:
-            from pypdf import PdfReader
+            # Tentar importar PyPDF2 (versões antigas) ou pypdf (versões novas)
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                try:
+                    import PyPDF2
+                    PdfReader = PyPDF2.PdfReader
+                except ImportError:
+                    raise ImportError("Nem pypdf nem PyPDF2 estão disponíveis")
+            
             reader = PdfReader(caminho_pdf)
             for page in reader.pages:
                 page_text = page.extract_text()
                 if page_text:
                     texto += page_text + "\n"
             if texto.strip():
-                logger.info(f"Texto extraído com PyPDF2: {len(texto)} caracteres")
+                logger.info(f"Texto extraído com PyPDF2/pypdf: {len(texto)} caracteres")
                 return texto
-        except ImportError:
-            logger.warning("PyPDF2 não disponível, pulando fallback")
+        except ImportError as imp_err:
+            logger.warning(f"PyPDF2/pypdf não disponível: {imp_err}. Pulando fallback.")
         except Exception as e2:
-            logger.warning(f"Erro ao extrair texto com PyPDF2: {e2}")
+            logger.warning(f"Erro ao extrair texto com PyPDF2/pypdf: {e2}")
         
         # Se nenhuma biblioteca conseguiu extrair texto, retornar string vazia
         # (permitir processamento baseado em nome do arquivo ou outras heurísticas)
