@@ -339,12 +339,21 @@ class NFXMLProcessorService:
         produtos = []
         
         # Buscar todos os elementos det (detalhes/produtos)
-        dets = root.findall('.//{http://www.portalfiscal.inf.br/nfe}det')
-        if not dets:
-            dets = root.findall('.//det')
+        # Tentar ambos os métodos para garantir que todos sejam encontrados
+        dets_com_ns = root.findall('.//{http://www.portalfiscal.inf.br/nfe}det')
+        dets_sem_ns = root.findall('.//det')
         
-        for det in dets:
+        # Usar a lista que tiver mais elementos
+        dets = dets_com_ns if len(dets_com_ns) >= len(dets_sem_ns) else dets_sem_ns
+        
+        logger.info(f"Total de elementos <det> encontrados no XML: {len(dets)}")
+        
+        for idx, det in enumerate(dets, 1):
             produto = {}
+            
+            # Capturar o nItem (número do item na nota)
+            n_item = det.get('nItem', str(idx))
+            produto['nItem'] = n_item
             
             # Buscar prod (produto)
             prod = det.find('.//{http://www.portalfiscal.inf.br/nfe}prod')
@@ -410,8 +419,10 @@ class NFXMLProcessorService:
                     except:
                         produto['valor_total'] = produto.get('valor_unitario', 0) * produto.get('quantidade', 0)
                 
+                logger.debug(f"Produto {idx}/{len(dets)} extraído: nItem={n_item}, código={produto.get('codigo')}, qtd={produto.get('quantidade')}")
                 produtos.append(produto)
         
+        logger.info(f"Total de produtos extraídos do XML: {len(produtos)}")
         return produtos
     
     def _extrair_totais(self, root: ET.Element, ns: Dict[str, str]) -> Dict[str, Any]:

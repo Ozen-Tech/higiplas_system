@@ -9,12 +9,16 @@ import os
 from datetime import datetime
 # Removido: from app.utils.pdf_extractor_melhorado import extrair_produtos_inteligente_entrada_melhorado
 from app.utils.product_matcher import find_product_by_code_or_name
+from app.services.nf_xml_processor_service import NFXMLProcessorService
 
 from ..crud import movimentacao_estoque as crud_movimentacao
 from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..schemas import produto as schemas_produto
 from ..db.connection import get_db
 from app.dependencies import get_current_user
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/entrada",
@@ -187,3 +191,185 @@ def extrair_dados_pdf_entrada(caminho_pdf: str) -> Dict[str, Any]:
             'fornecedor': None,
             'cnpj_fornecedor': None
         }
+
+
+@router.post("/processar-xml", response_model=dict)
+async def processar_xml_entrada(
+    arquivo: UploadFile = File(..., description="Arquivo XML da nota fiscal de entrada"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Processa um XML de nota fiscal de ENTRADA (NF-e) e extrai todos os dados dos produtos.
+    Retorna preview dos produtos para confirmação antes de registrar as movimentações.
+    """
+    
+    logger.info(f"Arquivo XML recebido: {arquivo.filename if arquivo else 'None'}")
+    logger.info(f"Content type: {arquivo.content_type if arquivo else 'None'}")
+    
+    # Validar se o arquivo foi enviado
+    if not arquivo or not arquivo.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado"
+        )
+    
+    if not arquivo.filename.lower().endswith('.xml'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos XML são aceitos"
+        )
+    
+    temp_file_path = None
+    try:
+        logger.info(f"Iniciando processamento do arquivo XML de entrada: {arquivo.filename}")
+        
+        # Salvar arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xml') as temp_file:
+            content = await arquivo.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        logger.info(f"Arquivo XML salvo temporariamente em: {temp_file_path}")
+        
+        # Processar XML usando o serviço
+        xml_processor = NFXMLProcessorService(db)
+        dados_nf = xml_processor.processar_nf_xml(
+            caminho_xml=temp_file_path,
+            tipo_movimentacao="ENTRADA",
+            empresa_id_override=current_user.empresa_id
+        )
+        
+        logger.info(f"XML processado com sucesso. Total de produtos: {dados_nf.get('total_produtos', 0)}")
+        
+        # Limpar arquivo temporário
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
+            temp_file_path = None
+        
+        return {
+            "sucesso": True,
+            "arquivo": arquivo.filename,
+            "tipo": "ENTRADA",
+            "tipo_movimentacao": dados_nf.get('tipo_movimentacao'),
+            "empresa_id": dados_nf.get('empresa_id'),
+            "nota_fiscal": dados_nf.get('nota_fiscal'),
+            "chave_acesso": dados_nf.get('chave_acesso'),
+            "data_emissao": dados_nf.get('data_emissao'),
+            "fornecedor": dados_nf.get('nome_emitente'),
+            "cnpj_fornecedor": dados_nf.get('cnpj_emitente'),
+            "valor_total": dados_nf.get('valor_total'),
+            "total_produtos": dados_nf.get('total_produtos'),
+            "produtos": dados_nf.get('produtos', []),
+            "produtos_encontrados": len(dados_nf.get('produtos_encontrados', [])),
+            "produtos_nao_encontrados": len(dados_nf.get('produtos_nao_encontrados', [])),
+            "detalhes_produtos_encontrados": dados_nf.get('produtos_encontrados', []),
+            "detalhes_produtos_nao_encontrados": dados_nf.get('produtos_nao_encontrados', [])
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar XML de entrada: {str(e)}", exc_info=True)
+        
+        # Limpar arquivo temporário em caso de erro
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+        
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar XML de entrada: {str(e)}"
+        )
+
+
+@router.post("/confirmar-xml", response_model=dict)
+async def confirmar_entrada_xml(
+    nota_fiscal: str,
+    produtos_confirmados: List[Dict[str, Any]],
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Confirma a entrada de produtos processados do XML e cria as movimentações de estoque.
+    
+    Args:
+        nota_fiscal: Número da nota fiscal
+        produtos_confirmados: Lista de produtos com produto_id e quantidade a serem registrados
+    """
+    
+    logger.info(f"Confirmando entrada da NF {nota_fiscal} com {len(produtos_confirmados)} produtos")
+    
+    try:
+        movimentacoes_criadas = 0
+        produtos_processados = []
+        erros = []
+        
+        for produto_conf in produtos_confirmados:
+            produto_id = produto_conf.get('produto_id')
+            quantidade = produto_conf.get('quantidade', 0)
+            
+            if not produto_id or quantidade <= 0:
+                continue
+            
+            try:
+                # Buscar produto para pegar estoque atual
+                produto_sistema = db.query(models.Produto).filter(
+                    models.Produto.id == produto_id,
+                    models.Produto.empresa_id == current_user.empresa_id
+                ).first()
+                
+                if not produto_sistema:
+                    erros.append({
+                        "produto_id": produto_id,
+                        "erro": "Produto não encontrado no sistema"
+                    })
+                    continue
+                
+                # Criar movimentação de entrada
+                movimentacao_data = schemas_movimentacao.MovimentacaoEstoqueCreate(
+                    produto_id=produto_id,
+                    tipo_movimentacao="ENTRADA",
+                    quantidade=float(quantidade),
+                    observacao=f"Entrada XML - NF {nota_fiscal}"
+                )
+                
+                produto_atualizado = crud_movimentacao.create_movimentacao_estoque(
+                    db=db,
+                    movimentacao=movimentacao_data,
+                    usuario_id=current_user.id,
+                    empresa_id=current_user.empresa_id
+                )
+                
+                produtos_processados.append({
+                    "produto_id": produto_id,
+                    "nome": produto_sistema.nome,
+                    "quantidade_entrada": quantidade,
+                    "estoque_anterior": produto_sistema.quantidade_em_estoque,
+                    "estoque_atual": produto_atualizado.quantidade_em_estoque
+                })
+                
+                movimentacoes_criadas += 1
+                logger.info(f"Movimentação criada: {produto_sistema.nome} +{quantidade}")
+                
+            except Exception as e:
+                logger.error(f"Erro ao criar movimentação para produto {produto_id}: {e}")
+                erros.append({
+                    "produto_id": produto_id,
+                    "erro": str(e)
+                })
+        
+        return {
+            "sucesso": True,
+            "nota_fiscal": nota_fiscal,
+            "movimentacoes_criadas": movimentacoes_criadas,
+            "produtos_processados": produtos_processados,
+            "erros": erros
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro geral ao confirmar entrada XML: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao confirmar entrada: {str(e)}"
+        )
