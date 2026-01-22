@@ -18,7 +18,7 @@ from ..crud import movimentacao_estoque as crud_movimentacao
 from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..schemas import produto as schemas_produto
 from ..schemas import usuario as schemas_usuario
-from ..db.connection import get_db
+from ..db.connection import get_db, engine
 from app.dependencies import get_current_user, get_current_operador, get_admin_user
 import logging
 # Serviço de similaridade importado dinamicamente quando necessário
@@ -93,26 +93,91 @@ def read_historico_geral(
     current_user: models.Usuario = Depends(get_current_user)
 ):
     try:
-        # Buscar todas as movimentações da empresa
-        query = db.query(models.MovimentacaoEstoque).join(
-            models.Produto
-        ).filter(
-            models.Produto.empresa_id == current_user.empresa_id
-        )
+        # Verificar se as colunas de reversão existem antes de fazer a query
+        from sqlalchemy import inspect, text
         
-        # Aplicar filtro por tipo se fornecido
+        try:
+            # Verificar se a coluna reversao_de_id existe
+            inspector = inspect(engine)
+            columns = [col['name'] for col in inspector.get_columns('movimentacoes_estoque')]
+            colunas_reversao_existem = 'reversao_de_id' in columns
+        except Exception as e:
+            logger.warning(f"⚠️ Erro ao verificar colunas: {e}. Assumindo que não existem.")
+            colunas_reversao_existem = False
+        
+        # Construir query SQL dinâmica baseada nos filtros
+        where_clauses = ["p.empresa_id = :empresa_id"]
+        params = {'empresa_id': current_user.empresa_id}
+        
         if tipo and tipo != "TODOS":
-            query = query.filter(models.MovimentacaoEstoque.tipo_movimentacao == tipo)
+            where_clauses.append("me.tipo_movimentacao = :tipo")
+            params['tipo'] = tipo
         
-        # Aplicar filtro de busca se fornecido
         if search:
-            query = query.filter(
-                models.Produto.nome.ilike(f"%{search}%") |
-                models.MovimentacaoEstoque.observacao.ilike(f"%{search}%")
-            )
+            where_clauses.append("(p.nome ILIKE :search OR me.observacao ILIKE :search)")
+            params['search'] = f"%{search}%"
         
-        # Ordenar por data mais recente
-        movimentacoes = query.order_by(models.MovimentacaoEstoque.data_movimentacao.desc()).all()
+        where_sql = " AND ".join(where_clauses)
+        
+        # Query SQL que só busca colunas que existem
+        sql_query = text(f"""
+            SELECT 
+                me.id, me.tipo_movimentacao, me.quantidade, me.observacao,
+                me.data_movimentacao, me.origem, me.quantidade_antes, me.quantidade_depois,
+                me.status, me.aprovado_por_id, me.data_aprovacao, me.motivo_rejeicao,
+                me.motivo_movimentacao, me.observacao_motivo, me.dados_antes_edicao,
+                me.dados_depois_edicao, me.produto_id, me.usuario_id
+            FROM movimentacoes_estoque me
+            JOIN produtos p ON p.id = me.produto_id
+            WHERE {where_sql}
+            ORDER BY me.data_movimentacao DESC
+        """)
+        
+        result = db.execute(sql_query, params)
+        rows = result.fetchall()
+        
+        # Converter para objetos MovimentacaoEstoque
+        movimentacoes = []
+        for row in rows:
+            mov = models.MovimentacaoEstoque()
+            mov.id = row[0]
+            mov.tipo_movimentacao = row[1]
+            mov.quantidade = row[2]
+            mov.observacao = row[3]
+            mov.data_movimentacao = row[4]
+            mov.origem = row[5]
+            mov.quantidade_antes = row[6]
+            mov.quantidade_depois = row[7]
+            mov.status = row[8]
+            mov.aprovado_por_id = row[9]
+            mov.data_aprovacao = row[10]
+            mov.motivo_rejeicao = row[11]
+            mov.motivo_movimentacao = row[12]
+            mov.observacao_motivo = row[13]
+            mov.dados_antes_edicao = row[14]
+            mov.dados_depois_edicao = row[15]
+            mov.produto_id = row[16]
+            mov.usuario_id = row[17]
+            
+            # Adicionar campos de reversão se existirem
+            if colunas_reversao_existem:
+                try:
+                    mov.revertida = getattr(mov, 'revertida', False)
+                    mov.reversao_de_id = getattr(mov, 'reversao_de_id', None)
+                    mov.data_reversao = getattr(mov, 'data_reversao', None)
+                    mov.revertida_por_id = getattr(mov, 'revertida_por_id', None)
+                except:
+                    mov.revertida = False
+                    mov.reversao_de_id = None
+                    mov.data_reversao = None
+                    mov.revertida_por_id = None
+            else:
+                mov.revertida = False
+                mov.reversao_de_id = None
+                mov.data_reversao = None
+                mov.revertida_por_id = None
+            
+            movimentacoes.append(mov)
         
         # Calcular estatísticas
         total_entradas = sum(m.quantidade for m in movimentacoes if m.tipo_movimentacao == "ENTRADA")
