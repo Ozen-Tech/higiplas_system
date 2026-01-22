@@ -331,13 +331,17 @@ async def preview_pdf_movimentacao(
         nf_service = NFProcessorService(db)
         
         # Processar NF usando o serviço integrado
+        # Para SAÍDAS, sempre usar a empresa do usuário logado
+        # Para ENTRADAS, tentar identificar automaticamente (pode ser de fornecedor diferente)
+        empresa_id_override = current_user.empresa_id if tipo_movimentacao == 'SAIDA' else None
+        
         resultado = nf_service.processar_nf_pdf(
             caminho_pdf=temp_file_path,
             tipo_movimentacao=tipo_movimentacao,
             vendedor_id=vendedor_id,
             orcamento_id=orcamento_id,
             usuario_id=current_user.id,
-            empresa_id_override=None,  # Deixar o serviço identificar automaticamente
+            empresa_id_override=empresa_id_override,
             nome_arquivo_original=arquivo.filename  # Passar nome original para detecção
         )
         
