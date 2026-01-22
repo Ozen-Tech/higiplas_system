@@ -1896,3 +1896,199 @@ async def reverter_movimentacao(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao reverter movimentação: {str(e)}"
         )
+
+
+@router.post(
+    "/reverter-em-massa",
+    response_model=Dict[str, Any],
+    summary="Reverte múltiplas movimentações de uma vez",
+    description="Reverte todas as movimentações de uma nota fiscal ou por critérios específicos. Útil para reverter uploads duplicados."
+)
+async def reverter_movimentacoes_em_massa(
+    nota_fiscal: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    tipo_movimentacao: Optional[str] = None,
+    empresa_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Reverte múltiplas movimentações de uma vez baseado em critérios:
+    - Por nota fiscal (recomendado para uploads duplicados)
+    - Por período de data
+    - Por tipo de movimentação
+    
+    Exemplo: Reverter todas as movimentações da NF 129944
+    """
+    
+    try:
+        # Verificar permissões
+        if current_user.perfil not in ['ADMIN', 'GERENTE']:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas administradores e gerentes podem reverter movimentações em massa"
+            )
+        
+        # Construir query base
+        query = db.query(models.MovimentacaoEstoque).join(
+            models.Produto
+        ).filter(
+            models.Produto.empresa_id == (empresa_id or current_user.empresa_id)
+        )
+        
+        # Aplicar filtros
+        if nota_fiscal:
+            query = query.filter(
+                models.MovimentacaoEstoque.observacao.like(f'%NF {nota_fiscal}%')
+            )
+        
+        if tipo_movimentacao:
+            query = query.filter(
+                models.MovimentacaoEstoque.tipo_movimentacao == tipo_movimentacao
+            )
+        
+        if data_inicio:
+            try:
+                data_inicio_obj = datetime.fromisoformat(data_inicio.replace('Z', '+00:00'))
+                query = query.filter(models.MovimentacaoEstoque.data_movimentacao >= data_inicio_obj)
+            except:
+                pass
+        
+        if data_fim:
+            try:
+                data_fim_obj = datetime.fromisoformat(data_fim.replace('Z', '+00:00'))
+                query = query.filter(models.MovimentacaoEstoque.data_movimentacao <= data_fim_obj)
+            except:
+                pass
+        
+        # Filtrar apenas movimentações não revertidas
+        # Verificar se a coluna existe
+        from sqlalchemy import inspect
+        try:
+            inspector = inspect(engine)
+            columns = [col['name'] for col in inspector.get_columns('movimentacoes_estoque')]
+            if 'revertida' in columns:
+                query = query.filter(models.MovimentacaoEstoque.revertida == False)
+        except:
+            pass  # Se a coluna não existe, continua sem filtrar
+        
+        # Buscar movimentações
+        movimentacoes = query.order_by(
+            models.MovimentacaoEstoque.data_movimentacao.desc()
+        ).all()
+        
+        if not movimentacoes:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nenhuma movimentação encontrada com os critérios especificados"
+            )
+        
+        # Reverter cada movimentação
+        revertidas = []
+        erros = []
+        
+        for mov in movimentacoes:
+            try:
+                # Verificar se já foi revertida
+                try:
+                    if hasattr(mov, 'revertida') and mov.revertida:
+                        erros.append({
+                            'movimentacao_id': mov.id,
+                            'erro': 'Já foi revertida anteriormente'
+                        })
+                        continue
+                except:
+                    pass
+                
+                # Buscar produto
+                produto = db.query(models.Produto).filter(
+                    models.Produto.id == mov.produto_id
+                ).first()
+                
+                if not produto:
+                    erros.append({
+                        'movimentacao_id': mov.id,
+                        'erro': 'Produto não encontrado'
+                    })
+                    continue
+                
+                # Determinar tipo de reversão
+                tipo_reversao = 'SAIDA' if mov.tipo_movimentacao == 'ENTRADA' else 'ENTRADA'
+                
+                # Salvar estado anterior
+                estoque_antes = produto.quantidade_em_estoque
+                
+                # Aplicar reversão
+                if tipo_reversao == 'ENTRADA':
+                    produto.quantidade_em_estoque += mov.quantidade
+                else:
+                    produto.quantidade_em_estoque -= mov.quantidade
+                
+                estoque_depois = produto.quantidade_em_estoque
+                
+                # Criar movimentação de reversão
+                movimentacao_reversao = models.MovimentacaoEstoque(
+                    produto_id=produto.id,
+                    tipo_movimentacao=tipo_reversao,
+                    quantidade=mov.quantidade,
+                    observacao=f"🔄 REVERSÃO EM MASSA - Movimentação #{mov.id} | Original: {mov.observacao or 'Sem observação'}",
+                    origem='CORRECAO_MANUAL',
+                    quantidade_antes=estoque_antes,
+                    quantidade_depois=estoque_depois,
+                    usuario_id=current_user.id,
+                    status='CONFIRMADO'
+                )
+                
+                # Marcar como revertida se a coluna existir
+                try:
+                    if hasattr(mov, 'revertida'):
+                        mov.revertida = True
+                        mov.data_reversao = datetime.now()
+                        mov.revertida_por_id = current_user.id
+                    if hasattr(movimentacao_reversao, 'reversao_de_id'):
+                        movimentacao_reversao.reversao_de_id = mov.id
+                except:
+                    pass
+                
+                db.add(movimentacao_reversao)
+                revertidas.append({
+                    'movimentacao_id': mov.id,
+                    'produto_id': produto.id,
+                    'produto_nome': produto.nome,
+                    'quantidade_revertida': mov.quantidade,
+                    'tipo_original': mov.tipo_movimentacao,
+                    'tipo_reversao': tipo_reversao
+                })
+                
+            except Exception as e:
+                erros.append({
+                    'movimentacao_id': mov.id,
+                    'erro': str(e)
+                })
+                logger.error(f"Erro ao reverter movimentação {mov.id}: {e}")
+        
+        # Commit todas as reversões
+        db.commit()
+        
+        logger.info(f"✅ {len(revertidas)} movimentações revertidas em massa por {current_user.email}")
+        
+        return {
+            'sucesso': True,
+            'mensagem': f'{len(revertidas)} movimentações revertidas com sucesso!',
+            'total_encontradas': len(movimentacoes),
+            'total_revertidas': len(revertidas),
+            'total_erros': len(erros),
+            'revertidas': revertidas,
+            'erros': erros if erros else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Erro ao reverter movimentações em massa: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao reverter movimentações em massa: {str(e)}"
+        )
