@@ -483,7 +483,7 @@ export default function MovimentacoesPage() {
   };
 
   const produtosComInsights = useMemo(() => {
-    if (!previewData) return [];
+    if (!previewData || !previewData.produtos_encontrados) return [];
     return previewData.produtos_encontrados.map((produto, index) => {
       const quantidadePlanejada = quantidadesEditadas[index] ?? produto.quantidade;
       const estoqueAtual =
@@ -525,21 +525,21 @@ export default function MovimentacoesPage() {
 
   const resumoKPIs = useMemo(() => {
     return {
-      encontrados: previewData?.produtos_encontrados.length ?? 0,
-      pendentes: produtosComInsights.filter(p => p.status === 'PENDENTES').length,
-      alertas: alertasCriticos.length,
+      encontrados: previewData?.produtos_encontrados?.length ?? 0,
+      pendentes: produtosComInsights?.filter(p => p.status === 'PENDENTES')?.length ?? 0,
+      alertas: alertasCriticos?.length ?? 0,
       totalPdf: previewData?.total_produtos_pdf ?? 0
     };
   }, [previewData, produtosComInsights, alertasCriticos]);
 
-  const quantidadeSelecionavel = produtosComInsights.filter(produto => !produto.pendenteAssociacao).length;
+  const quantidadeSelecionavel = produtosComInsights?.filter(produto => !produto.pendenteAssociacao)?.length ?? 0;
   const podeAvancar = quantidadeSelecionavel > 0;
-  const valorTotalSelecionado = selectedProducts.reduce((total, index) => {
-    const produto = produtosComInsights.find(item => item.index === index);
+  const valorTotalSelecionado = selectedProducts?.reduce((total, index) => {
+    const produto = produtosComInsights?.find(item => item.index === index);
     if (!produto) return total;
     const valorLinha = (produto.valor_unitario || 0) * produto.quantidadePlanejada;
     return total + valorLinha;
-  }, 0);
+  }, 0) ?? 0;
 
   const handleQuantidadeChange = (index: number, value: string) => {
     setQuantidadesEditadas(prev => {
