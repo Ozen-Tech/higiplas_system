@@ -252,7 +252,7 @@ function HistoricoGeralContent() {
           </div>
 
           {/* Reversão em Massa */}
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg shadow-md">
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 p-5 rounded-lg shadow-lg">
             <div className="flex items-start">
               <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mr-3 mt-1 flex-shrink-0" />
               <div className="flex-1">
