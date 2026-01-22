@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/dashboard/Header';
 import { apiService } from '@/services/apiService';
-import { ClockIcon, ArrowUpIcon, ArrowDownIcon, UserIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, ArrowUpIcon, ArrowDownIcon, UserIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 interface Movimentacao {
   id: number;
@@ -33,6 +33,9 @@ function HistoricoGeralContent() {
   const [error, setError] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<'TODOS' | 'ENTRADA' | 'SAIDA'>('TODOS');
   const [searchTerm, setSearchTerm] = useState('');
+  const [notaFiscalReverter, setNotaFiscalReverter] = useState('');
+  const [revertendo, setRevertendo] = useState(false);
+  const [resultadoReversao, setResultadoReversao] = useState<{sucesso: boolean, mensagem: string} | null>(null);
   const { logout } = useAuth();
 
   useEffect(() => {
@@ -120,6 +123,78 @@ function HistoricoGeralContent() {
       : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
   };
 
+  const handleReverterEmMassa = async () => {
+    if (!notaFiscalReverter.trim()) {
+      setResultadoReversao({
+        sucesso: false,
+        mensagem: 'Por favor, informe o número da nota fiscal'
+      });
+      return;
+    }
+
+    if (!confirm(`⚠️ ATENÇÃO! Você está prestes a reverter TODAS as movimentações da NF ${notaFiscalReverter}.\n\nIsso irá:\n- Reverter todas as entradas/saídas desta NF\n- Restaurar o estoque ao estado anterior\n\nDeseja continuar?`)) {
+      return;
+    }
+
+    setRevertendo(true);
+    setResultadoReversao(null);
+
+    try {
+      const response = await apiService.post('/movimentacoes/reverter-em-massa', {
+        nota_fiscal: notaFiscalReverter.trim(),
+        tipo_movimentacao: 'ENTRADA' // Reverter apenas entradas por padrão
+      });
+
+      if (response?.data?.sucesso) {
+        setResultadoReversao({
+          sucesso: true,
+          mensagem: `✅ ${response.data.total_revertidas} movimentações revertidas com sucesso!${response.data.erros?.length ? ` (${response.data.total_erros} erros)` : ''}`
+        });
+        setNotaFiscalReverter('');
+        // Recarregar histórico
+        const histResponse = await apiService.get('/movimentacoes/historico-geral');
+        const movimentacoesData = histResponse?.data?.movimentacoes || [];
+        const movimentacoesMapeadas = movimentacoesData.map((mov: Record<string, unknown>) => ({
+          id: mov.id || 0,
+          produto: {
+            id: mov.produto_id || 0,
+            nome: mov.produto_nome || 'Nome não disponível',
+            codigo: mov.produto_codigo || 'N/A'
+          },
+          tipo_movimentacao: mov.tipo_movimentacao || 'ENTRADA',
+          quantidade: mov.quantidade || 0,
+          quantidade_antes: mov.quantidade_antes || null,
+          quantidade_depois: mov.quantidade_depois || null,
+          data_movimentacao: mov.data_movimentacao || new Date().toISOString(),
+          usuario: {
+            nome: mov.usuario_nome || 'N/A'
+          },
+          observacao: mov.observacao || null,
+          nota_fiscal: mov.nota_fiscal || null,
+          origem: mov.origem || null
+        })).filter(Boolean);
+        setMovimentacoes(movimentacoesMapeadas);
+      } else {
+        setResultadoReversao({
+          sucesso: false,
+          mensagem: response?.data?.mensagem || 'Erro ao reverter movimentações'
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage = err && typeof err === 'object' && 'response' in err && 
+        err.response && typeof err.response === 'object' && 'data' in err.response &&
+        err.response.data && typeof err.response.data === 'object' && 'detail' in err.response.data
+        ? String(err.response.data.detail)
+        : 'Erro ao reverter movimentações. Tente novamente.';
+      setResultadoReversao({
+        sucesso: false,
+        mensagem: errorMessage
+      });
+    } finally {
+      setRevertendo(false);
+    }
+  };
+
   return (
     <>
       <Header>
@@ -172,6 +247,53 @@ function HistoricoGeralContent() {
                 >
                   Saídas
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Reversão em Massa */}
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg shadow-md">
+            <div className="flex items-start">
+              <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mr-3 mt-1 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-200 mb-2">
+                  Reverter Movimentações em Massa
+                </h3>
+                <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-4">
+                  Reverta todas as movimentações de uma nota fiscal de uma vez. Útil para corrigir uploads duplicados.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    placeholder="Número da Nota Fiscal (ex: 129944)"
+                    value={notaFiscalReverter}
+                    onChange={(e) => setNotaFiscalReverter(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-yellow-300 dark:border-yellow-700 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 dark:bg-gray-700 dark:text-white"
+                    disabled={revertendo}
+                  />
+                  <button
+                    onClick={handleReverterEmMassa}
+                    disabled={revertendo || !notaFiscalReverter.trim()}
+                    className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    {revertendo ? (
+                      <>
+                        <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                        Revertendo...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowPathIcon className="h-5 w-5" />
+                        Reverter Todas
+                      </>
+                    )}
+                  </button>
+                </div>
+                {resultadoReversao && (
+                  <div className={`mt-3 p-3 rounded-md ${resultadoReversao.sucesso ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'}`}>
+                    {resultadoReversao.mensagem}
+                  </div>
+                )}
               </div>
             </div>
           </div>
