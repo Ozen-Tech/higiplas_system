@@ -122,16 +122,54 @@ export default function MovimentacoesPage() {
     }
   }, [previewData]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && (file.type === 'application/pdf' || file.type === 'text/xml' || file.type === 'application/xml' || file.name.toLowerCase().endsWith('.xml'))) {
-      setArquivo(file);
-      setError(null);
-      setResult(null);
-      setPreviewData(null);
-    } else {
+    if (!file) return;
+
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isXML = file.type === 'text/xml' || file.type === 'application/xml' || file.name.toLowerCase().endsWith('.xml');
+
+    if (!isPDF && !isXML) {
       setError('Por favor, selecione um arquivo PDF ou XML válido.');
+      return;
     }
+
+    // Validação adicional para arquivos XML
+    if (isXML) {
+      try {
+        const text = await file.text();
+        const first200Chars = text.substring(0, 200);
+        
+        // Verificar se realmente parece um XML de NF-e
+        if (!text.trim() || text.length === 0) {
+          setError('O arquivo XML está vazio.');
+          return;
+        }
+        
+        if (!first200Chars.includes('<?xml') && 
+            !first200Chars.includes('<nfeProc') && 
+            !first200Chars.includes('<NFe')) {
+          setError('O arquivo não parece ser um XML de NF-e válido. Verifique se você selecionou o arquivo correto.');
+          return;
+        }
+
+        // Verificar se não é HTML
+        if (first200Chars.toLowerCase().includes('<!doctype html') || 
+            first200Chars.toLowerCase().includes('<html>')) {
+          setError('Este arquivo é HTML, não XML. Por favor, selecione um arquivo XML de NF-e (Nota Fiscal Eletrônica).');
+          return;
+        }
+      } catch (err) {
+        console.error('Erro ao validar arquivo XML:', err);
+        setError('Erro ao ler o arquivo. Tente novamente.');
+        return;
+      }
+    }
+
+    setArquivo(file);
+    setError(null);
+    setResult(null);
+    setPreviewData(null);
   };
 
   const handleVisualizarProdutos = async () => {
