@@ -447,6 +447,7 @@ async def confirmar_movimentacoes(
         produtos_confirmados = dados.get('produtos_confirmados', [])
         tipo_movimentacao = dados.get('tipo_movimentacao')
         nota_fiscal = dados.get('nota_fiscal')
+        arquivo = dados.get('arquivo')  # Nome do arquivo original
         empresa_id = dados.get('empresa_id', current_user.empresa_id)
         
         if not produtos_confirmados:
@@ -454,6 +455,32 @@ async def confirmar_movimentacoes(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Nenhum produto foi confirmado para processamento"
             )
+        
+        # 🛡️ PROTEÇÃO CONTRA DUPLICATAS - Verificar se esta NF já foi processada
+        if nota_fiscal and arquivo:
+            # Verificar se há movimentações recentes (últimos 30 minutos) com a mesma NF
+            from datetime import timedelta
+            limite_tempo = datetime.now() - timedelta(minutes=30)
+            
+            # Buscar movimentações recentes que mencionam esta NF na observação
+            movimentacoes_recentes = db.query(models.MovimentacaoEstoque).join(
+                models.Produto
+            ).filter(
+                models.Produto.empresa_id == empresa_id,
+                models.MovimentacaoEstoque.tipo_movimentacao == tipo_movimentacao,
+                models.MovimentacaoEstoque.observacao.like(f'%NF {nota_fiscal}%'),
+                models.MovimentacaoEstoque.data_movimentacao >= limite_tempo
+            ).all()
+            
+            if movimentacoes_recentes and len(movimentacoes_recentes) >= len(produtos_confirmados):
+                ultima_mov = movimentacoes_recentes[0]
+                logger.warning(f"⚠️ Tentativa de processar NF duplicada: {nota_fiscal} (já processada em {ultima_mov.data_movimentacao})")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"⚠️ DUPLICATA DETECTADA! A Nota Fiscal {nota_fiscal} já foi processada recentemente em {ultima_mov.data_movimentacao.strftime('%d/%m/%Y às %H:%M')}. Para evitar duplicatas no estoque, não é possível processar novamente."
+                )
+        
+        logger.info(f"✅ Processando NF {nota_fiscal} - {len(produtos_confirmados)} produtos - Tipo: {tipo_movimentacao}")
         
         # Preparar dados para o novo serviço
         dados_confirmacao = {
