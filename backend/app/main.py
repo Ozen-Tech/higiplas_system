@@ -7,7 +7,7 @@ from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
     insights, dashboard_kpis, invoice_processing,
     fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, reports, compras,
-    fichas_tecnicas, concorrentes, propostas_detalhadas, visitas, clientes_compras, entrada
+    fichas_tecnicas, concorrentes, propostas_detalhadas, visitas, clientes_compras, entrada, admin
 )
 
 from app.create_superuser import create_initial_superuser
@@ -111,6 +111,7 @@ app.include_router(fichas_tecnicas.router, tags=["Fichas Técnicas"])
 app.include_router(concorrentes.router, tags=["Concorrentes"])
 app.include_router(propostas_detalhadas.router, tags=["Propostas Detalhadas"])
 app.include_router(visitas.router, tags=["Visitas de Vendedores"])
+app.include_router(admin.router, tags=["Admin"])
 
 @app.get("/", tags=["Root"], summary="Verifica a saúde da API")
 async def read_root():
