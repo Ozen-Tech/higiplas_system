@@ -15,7 +15,7 @@ from app.services.nf_xml_processor_service import NFXMLProcessorService
 from ..crud import movimentacao_estoque as crud_movimentacao
 from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..schemas import produto as schemas_produto
-from ..db.connection import get_db
+from ..db.connection import get_db, engine
 from app.dependencies import get_current_user
 import logging
 
@@ -250,18 +250,29 @@ async def processar_xml_entrada(
                 )
             
             # 🛡️ PROTEÇÃO CONTRA ARQUIVO DUPLICADO - Verificar se este arquivo já foi processado
-            hash_arquivo = calcular_hash_arquivo(content)
-            arquivo_existente = db.query(models.ArquivoProcessado).filter(
-                models.ArquivoProcessado.hash_arquivo == hash_arquivo,
-                models.ArquivoProcessado.empresa_id == current_user.empresa_id
-            ).first()
-            
-            if arquivo_existente:
-                logger.warning(f"⚠️ Tentativa de processar arquivo duplicado: {arquivo.filename} (hash: {hash_arquivo[:16]}...)")
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"⚠️ ARQUIVO JÁ PROCESSADO! Este arquivo ({arquivo.filename}) já foi processado em {arquivo_existente.data_processamento.strftime('%d/%m/%Y às %H:%M')}. Para evitar duplicatas, não é possível processar o mesmo arquivo novamente."
-                )
+            # Verificar se a tabela existe antes de usar
+            from sqlalchemy import inspect, text
+            try:
+                inspector = inspect(engine)
+                tabelas = [table['name'] for table in inspector.get_table_names()]
+                tabela_existe = 'arquivos_processados' in tabelas
+                
+                if tabela_existe:
+                    hash_arquivo = calcular_hash_arquivo(content)
+                    arquivo_existente = db.query(models.ArquivoProcessado).filter(
+                        models.ArquivoProcessado.hash_arquivo == hash_arquivo,
+                        models.ArquivoProcessado.empresa_id == current_user.empresa_id
+                    ).first()
+                    
+                    if arquivo_existente:
+                        logger.warning(f"⚠️ Tentativa de processar arquivo duplicado: {arquivo.filename} (hash: {hash_arquivo[:16]}...)")
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail=f"⚠️ ARQUIVO JÁ PROCESSADO! Este arquivo ({arquivo.filename}) já foi processado em {arquivo_existente.data_processamento.strftime('%d/%m/%Y às %H:%M')}. Para evitar duplicatas, não é possível processar o mesmo arquivo novamente."
+                        )
+            except Exception as e:
+                logger.warning(f"⚠️ Não foi possível verificar arquivo duplicado (tabela pode não existir ainda): {e}")
+                # Continua o processamento mesmo se não conseguir verificar
             
             temp_file.write(content)
             temp_file_path = temp_file.name

@@ -79,7 +79,15 @@ def ask_ai_question(
     Recebe uma pergunta do usuário, coleta dados relevantes do sistema
     (estoque atual, histórico de vendas e movimentações recentes)
     e envia para o modelo Gemini para obter uma análise.
+    
+    ⚠️ TEMPORARIAMENTE DESABILITADO
     """
+    # ⚠️ INSIGHTS DE IA DESABILITADOS TEMPORARIAMENTE
+    raise HTTPException(
+        status_code=503,
+        detail="Serviço de insights de IA temporariamente indisponível. Estamos trabalhando para reativá-lo em breve."
+    )
+    
     print("\n--- [Insights] ROTA /insights/ask ACIONADA ---")
     try:
         # --- 1. COLETA COMPLETA DE DADOS DO SISTEMA ---
