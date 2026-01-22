@@ -87,12 +87,22 @@ class MovimentacaoEstoque(Base):
     dados_antes_edicao = Column(JSON, nullable=True)
     dados_depois_edicao = Column(JSON, nullable=True)
     
+    # Campos de reversão
+    reversao_de_id = Column(Integer, ForeignKey("movimentacoes_estoque.id"), nullable=True, index=True)
+    revertida = Column(Boolean, default=False, nullable=False, index=True)  # True se esta movimentação foi revertida
+    data_reversao = Column(DateTime(timezone=True), nullable=True)
+    revertida_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    
     produto_id = Column(Integer, ForeignKey("produtos.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
     produto = relationship("Produto", back_populates="movimentacoes")
     usuario = relationship("Usuario", back_populates="movimentacoes", foreign_keys=[usuario_id])
     aprovado_por = relationship("Usuario", foreign_keys=[aprovado_por_id])
+    revertida_por = relationship("Usuario", foreign_keys=[revertida_por_id])
+    
+    # Self-referencing relationship para reversões
+    reversao_de = relationship("MovimentacaoEstoque", remote_side=[id], foreign_keys=[reversao_de_id], backref="reversoes")
 
 
 class VendaHistorica(Base):
@@ -543,4 +553,35 @@ class VisitaVendedor(Base):
         Index('idx_visita_vendedor_data', 'vendedor_id', 'data_visita'),
         Index('idx_visita_cliente', 'cliente_id', 'data_visita'),
         Index('idx_visita_empresa_confirmada', 'empresa_id', 'confirmada', 'data_visita'),
+    )
+
+
+class ArquivoProcessado(Base):
+    """Registra arquivos (PDF/XML) já processados para evitar duplicatas"""
+    __tablename__ = "arquivos_processados"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    nome_arquivo = Column(String, nullable=False, index=True)
+    hash_arquivo = Column(String, nullable=False, unique=True, index=True)  # SHA256 do conteúdo
+    nota_fiscal = Column(String, nullable=True, index=True)
+    tipo_arquivo = Column(Enum('PDF', 'XML', name='tipo_arquivo_enum'), nullable=False)
+    tipo_movimentacao = Column(Enum('ENTRADA', 'SAIDA', name='tipo_mov_arquivo_enum'), nullable=False)
+    
+    # Dados do processamento
+    data_processamento = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False, index=True)
+    
+    # Estatísticas
+    total_produtos = Column(Integer, nullable=False, default=0)
+    total_movimentacoes = Column(Integer, nullable=False, default=0)
+    
+    # Relacionamentos
+    usuario = relationship("Usuario")
+    empresa = relationship("Empresa")
+    
+    # Índices compostos
+    __table_args__ = (
+        Index('idx_arquivo_empresa_data', 'empresa_id', 'data_processamento'),
+        Index('idx_arquivo_nf', 'nota_fiscal', 'empresa_id'),
     )

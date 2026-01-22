@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from ..db import models
 import tempfile
 import os
+import hashlib
 from datetime import datetime
 # Removido: from app.utils.pdf_extractor_melhorado import extrair_produtos_inteligente_entrada_melhorado
 from app.utils.product_matcher import find_product_by_code_or_name
@@ -19,6 +20,11 @@ from app.dependencies import get_current_user
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def calcular_hash_arquivo(conteudo: bytes) -> str:
+    """Calcula o hash SHA256 do conteúdo do arquivo"""
+    return hashlib.sha256(conteudo).hexdigest()
 
 router = APIRouter(
     prefix="/entrada",
@@ -241,6 +247,20 @@ async def processar_xml_entrada(
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="O arquivo não é um XML de NF-e válido. Certifique-se de enviar apenas arquivos XML de Nota Fiscal Eletrônica (NF-e)."
+                )
+            
+            # 🛡️ PROTEÇÃO CONTRA ARQUIVO DUPLICADO - Verificar se este arquivo já foi processado
+            hash_arquivo = calcular_hash_arquivo(content)
+            arquivo_existente = db.query(models.ArquivoProcessado).filter(
+                models.ArquivoProcessado.hash_arquivo == hash_arquivo,
+                models.ArquivoProcessado.empresa_id == current_user.empresa_id
+            ).first()
+            
+            if arquivo_existente:
+                logger.warning(f"⚠️ Tentativa de processar arquivo duplicado: {arquivo.filename} (hash: {hash_arquivo[:16]}...)")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"⚠️ ARQUIVO JÁ PROCESSADO! Este arquivo ({arquivo.filename}) já foi processado em {arquivo_existente.data_processamento.strftime('%d/%m/%Y às %H:%M')}. Para evitar duplicatas, não é possível processar o mesmo arquivo novamente."
                 )
             
             temp_file.write(content)

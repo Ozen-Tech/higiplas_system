@@ -1709,3 +1709,125 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
     
     print(f"DEBUG: Retornando dados: {dados}")
     return dados
+
+
+@router.delete(
+    "/{movimentacao_id}/reverter",
+    response_model=Dict[str, Any],
+    summary="Reverte uma movimentação de estoque",
+    description="Desfaz uma movimentação de estoque, restaurando o estoque original. Apenas usuários com permissão podem reverter movimentações."
+)
+async def reverter_movimentacao(
+    movimentacao_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Reverte uma movimentação de estoque:
+    - Se foi ENTRADA, faz SAÍDA da mesma quantidade
+    - Se foi SAÍDA, faz ENTRADA da mesma quantidade
+    - Marca a movimentação original como revertida
+    - Cria nova movimentação de reversão
+    """
+    
+    try:
+        # Buscar a movimentação original
+        movimentacao = db.query(models.MovimentacaoEstoque).filter(
+            models.MovimentacaoEstoque.id == movimentacao_id
+        ).first()
+        
+        if not movimentacao:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Movimentação {movimentacao_id} não encontrada"
+            )
+        
+        # Verificar se a movimentação já foi revertida
+        if movimentacao.revertida:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Esta movimentação já foi revertida em {movimentacao.data_reversao.strftime('%d/%m/%Y às %H:%M')}"
+            )
+        
+        # Verificar permissões (apenas admin ou o próprio usuário que criou)
+        if current_user.perfil not in ['ADMIN', 'GERENTE'] and movimentacao.usuario_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para reverter esta movimentação"
+            )
+        
+        # Buscar o produto
+        produto = db.query(models.Produto).filter(
+            models.Produto.id == movimentacao.produto_id
+        ).first()
+        
+        if not produto:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Produto não encontrado"
+            )
+        
+        # Determinar o tipo de reversão (inverso do original)
+        tipo_reversao = 'SAIDA' if movimentacao.tipo_movimentacao == 'ENTRADA' else 'ENTRADA'
+        
+        # Salvar estado anterior
+        estoque_antes = produto.estoque_atual
+        
+        # Aplicar reversão no estoque
+        if tipo_reversao == 'ENTRADA':
+            produto.estoque_atual += movimentacao.quantidade
+        else:
+            produto.estoque_atual -= movimentacao.quantidade
+        
+        estoque_depois = produto.estoque_atual
+        
+        # Criar movimentação de reversão
+        movimentacao_reversao = models.MovimentacaoEstoque(
+            produto_id=produto.id,
+            tipo_movimentacao=tipo_reversao,
+            quantidade=movimentacao.quantidade,
+            observacao=f"🔄 REVERSÃO da movimentação #{movimentacao_id} | Original: {movimentacao.observacao or 'Sem observação'}",
+            origem='CORRECAO_MANUAL',
+            quantidade_antes=estoque_antes,
+            quantidade_depois=estoque_depois,
+            usuario_id=current_user.id,
+            reversao_de_id=movimentacao_id,
+            status='CONFIRMADO'
+        )
+        
+        # Marcar movimentação original como revertida
+        movimentacao.revertida = True
+        movimentacao.data_reversao = datetime.now()
+        movimentacao.revertida_por_id = current_user.id
+        
+        # Salvar tudo
+        db.add(movimentacao_reversao)
+        db.commit()
+        db.refresh(produto)
+        db.refresh(movimentacao_reversao)
+        
+        logger.info(f"✅ Movimentação #{movimentacao_id} revertida com sucesso por {current_user.email}")
+        
+        return {
+            'sucesso': True,
+            'mensagem': f'Movimentação revertida com sucesso! Estoque restaurado de {estoque_antes} para {estoque_depois}.',
+            'movimentacao_original_id': movimentacao_id,
+            'movimentacao_reversao_id': movimentacao_reversao.id,
+            'produto_id': produto.id,
+            'produto_nome': produto.nome,
+            'estoque_anterior': estoque_antes,
+            'estoque_atual': estoque_depois,
+            'quantidade_revertida': movimentacao.quantidade,
+            'tipo_original': movimentacao.tipo_movimentacao,
+            'tipo_reversao': tipo_reversao
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Erro ao reverter movimentação {movimentacao_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao reverter movimentação: {str(e)}"
+        )
