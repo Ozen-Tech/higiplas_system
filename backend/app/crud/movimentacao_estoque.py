@@ -1,11 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import text, inspect
 from fastapi import HTTPException, status
 from ..schemas import movimentacao_estoque as schemas_movimentacao
 from ..db import models
+from ..db.connection import engine
 from datetime import datetime, timedelta
 from typing import List, Optional
 from ..services.stock_service import StockService
 from ..core.logger import stock_operations_logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def create_movimentacao_estoque(db: Session, movimentacao: schemas_movimentacao.MovimentacaoEstoqueCreate, usuario_id: int, empresa_id: int):
@@ -43,7 +48,70 @@ def get_movimentacoes_by_produto_id(db: Session, produto_id: int, empresa_id: in
 
 def get_recent_movimentacoes(db: Session, empresa_id: int, days: int = 30):
     data_limite = datetime.now() - timedelta(days=days)
-
+    
+    # Verificar se as colunas de reversão existem
+    try:
+        inspector = inspect(engine)
+        columns = [col['name'] for col in inspector.get_columns('movimentacoes_estoque')]
+        colunas_reversao_existem = 'reversao_de_id' in columns
+    except Exception as e:
+        logger.warning(f"⚠️ Erro ao verificar colunas: {e}. Assumindo que não existem.")
+        colunas_reversao_existem = False
+    
+    # Se as colunas não existem, usar query SQL direta
+    if not colunas_reversao_existem:
+        sql_query = text("""
+            SELECT 
+                me.id, me.tipo_movimentacao, me.quantidade, me.observacao,
+                me.data_movimentacao, me.origem, me.quantidade_antes, me.quantidade_depois,
+                me.status, me.aprovado_por_id, me.data_aprovacao, me.motivo_rejeicao,
+                me.motivo_movimentacao, me.observacao_motivo, me.dados_antes_edicao,
+                me.dados_depois_edicao, me.produto_id, me.usuario_id
+            FROM movimentacoes_estoque me
+            JOIN produtos p ON p.id = me.produto_id
+            WHERE p.empresa_id = :empresa_id AND me.data_movimentacao >= :data_limite
+            ORDER BY me.data_movimentacao DESC
+        """)
+        
+        result = db.execute(sql_query, {'empresa_id': empresa_id, 'data_limite': data_limite})
+        rows = result.fetchall()
+        
+        # Converter para objetos MovimentacaoEstoque
+        movimentacoes = []
+        for row in rows:
+            mov = models.MovimentacaoEstoque()
+            mov.id = row[0]
+            mov.tipo_movimentacao = row[1]
+            mov.quantidade = row[2]
+            mov.observacao = row[3]
+            mov.data_movimentacao = row[4]
+            mov.origem = row[5]
+            mov.quantidade_antes = row[6]
+            mov.quantidade_depois = row[7]
+            mov.status = row[8]
+            mov.aprovado_por_id = row[9]
+            mov.data_aprovacao = row[10]
+            mov.motivo_rejeicao = row[11]
+            mov.motivo_movimentacao = row[12]
+            mov.observacao_motivo = row[13]
+            mov.dados_antes_edicao = row[14]
+            mov.dados_depois_edicao = row[15]
+            mov.produto_id = row[16]
+            mov.usuario_id = row[17]
+            mov.revertida = False
+            mov.reversao_de_id = None
+            mov.data_reversao = None
+            mov.revertida_por_id = None
+            
+            # Carregar produto e usuário
+            mov.produto = db.query(models.Produto).filter(models.Produto.id == mov.produto_id).first()
+            mov.usuario = db.query(models.Usuario).filter(models.Usuario.id == mov.usuario_id).first()
+            
+            movimentacoes.append(mov)
+        
+        return movimentacoes
+    
+    # Query normal usando ORM quando as colunas existem
     return db.query(models.MovimentacaoEstoque).join(
         models.Produto, models.MovimentacaoEstoque.produto_id == models.Produto.id
     ).join(
