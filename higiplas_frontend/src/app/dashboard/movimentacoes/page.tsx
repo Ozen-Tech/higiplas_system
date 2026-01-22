@@ -312,6 +312,12 @@ export default function MovimentacoesPage() {
   };
 
   const handleConfirmProcessing = async () => {
+    // 🛡️ PROTEÇÃO CONTRA DUPLO CLIQUE
+    if (isConfirming) {
+      console.warn('⚠️ Processamento já em andamento. Ignorando clique duplicado.');
+      return;
+    }
+
     if (!previewData || selectedProducts.length === 0) {
       setError('Selecione pelo menos um produto para processar.');
       return;
