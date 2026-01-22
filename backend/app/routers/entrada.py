@@ -224,9 +224,25 @@ async def processar_xml_entrada(
     try:
         logger.info(f"Iniciando processamento do arquivo XML de entrada: {arquivo.filename}")
         
-        # Salvar arquivo temporariamente
+        # Salvar arquivo temporariamente e validar conteúdo
         with tempfile.NamedTemporaryFile(delete=False, suffix='.xml') as temp_file:
             content = await arquivo.read()
+            
+            # Validar se o conteúdo é realmente um XML
+            if not content or len(content) == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="O arquivo enviado está vazio"
+                )
+            
+            # Verificar se o conteúdo começa com XML válido
+            content_str = content.decode('utf-8', errors='ignore')[:200]  # Primeiros 200 caracteres
+            if not ('<?xml' in content_str or '<nfeProc' in content_str or '<NFe' in content_str):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="O arquivo não é um XML de NF-e válido. Certifique-se de enviar apenas arquivos XML de Nota Fiscal Eletrônica (NF-e)."
+                )
+            
             temp_file.write(content)
             temp_file_path = temp_file.name
         
