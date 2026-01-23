@@ -70,54 +70,89 @@ def create_reversao_columns_and_tables():
                 # Verificar e adicionar colunas de reversão
                 logger.info("Verificando colunas de reversão em movimentacoes_estoque...")
                 
-                # Verificar se a coluna reversao_de_id existe
-                result = connection.execute(text("""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.columns 
-                        WHERE table_schema = 'public' 
-                        AND table_name = 'movimentacoes_estoque'
-                        AND column_name = 'reversao_de_id'
-                    );
+                # Adicionar cada coluna apenas se não existir usando DO blocks
+                # Isso garante que todas as colunas sejam criadas mesmo se algumas já existirem
+                connection.execute(text("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'movimentacoes_estoque'
+                            AND column_name = 'reversao_de_id'
+                        ) THEN
+                            ALTER TABLE movimentacoes_estoque 
+                            ADD COLUMN reversao_de_id INTEGER;
+                        END IF;
+                        
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'movimentacoes_estoque'
+                            AND column_name = 'revertida'
+                        ) THEN
+                            ALTER TABLE movimentacoes_estoque 
+                            ADD COLUMN revertida BOOLEAN DEFAULT FALSE NOT NULL;
+                        END IF;
+                        
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'movimentacoes_estoque'
+                            AND column_name = 'data_reversao'
+                        ) THEN
+                            ALTER TABLE movimentacoes_estoque 
+                            ADD COLUMN data_reversao TIMESTAMP WITH TIME ZONE;
+                        END IF;
+                        
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'movimentacoes_estoque'
+                            AND column_name = 'revertida_por_id'
+                        ) THEN
+                            ALTER TABLE movimentacoes_estoque 
+                            ADD COLUMN revertida_por_id INTEGER;
+                        END IF;
+                    END $$;
                 """))
-                coluna_existe = result.scalar()
                 
-                if not coluna_existe:
-                    logger.info("Adicionando colunas de reversão em movimentacoes_estoque...")
-                    connection.execute(text("""
-                        ALTER TABLE movimentacoes_estoque 
-                        ADD COLUMN reversao_de_id INTEGER,
-                        ADD COLUMN revertida BOOLEAN DEFAULT FALSE NOT NULL,
-                        ADD COLUMN data_reversao TIMESTAMP WITH TIME ZONE,
-                        ADD COLUMN revertida_por_id INTEGER;
-                    """))
-                    
-                    # Criar foreign keys
-                    connection.execute(text("""
-                        ALTER TABLE movimentacoes_estoque
-                        ADD CONSTRAINT fk_movimentacao_reversao_de
-                        FOREIGN KEY (reversao_de_id) REFERENCES movimentacoes_estoque(id);
-                    """))
-                    
-                    connection.execute(text("""
-                        ALTER TABLE movimentacoes_estoque
-                        ADD CONSTRAINT fk_movimentacao_revertida_por
-                        FOREIGN KEY (revertida_por_id) REFERENCES usuarios(id);
-                    """))
-                    
-                    # Criar índices
-                    connection.execute(text("""
-                        CREATE INDEX ix_movimentacoes_estoque_reversao_de_id 
-                        ON movimentacoes_estoque(reversao_de_id);
-                    """))
-                    
-                    connection.execute(text("""
-                        CREATE INDEX ix_movimentacoes_estoque_revertida 
-                        ON movimentacoes_estoque(revertida);
-                    """))
-                    
-                    logger.info("✓ Colunas de reversão adicionadas com sucesso!")
-                else:
-                    logger.info("✓ Colunas de reversão já existem")
+                # Criar foreign keys apenas se não existirem
+                connection.execute(text("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint 
+                            WHERE conname = 'fk_movimentacao_reversao_de'
+                        ) THEN
+                            ALTER TABLE movimentacoes_estoque
+                            ADD CONSTRAINT fk_movimentacao_reversao_de
+                            FOREIGN KEY (reversao_de_id) REFERENCES movimentacoes_estoque(id);
+                        END IF;
+                        
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint 
+                            WHERE conname = 'fk_movimentacao_revertida_por'
+                        ) THEN
+                            ALTER TABLE movimentacoes_estoque
+                            ADD CONSTRAINT fk_movimentacao_revertida_por
+                            FOREIGN KEY (revertida_por_id) REFERENCES usuarios(id);
+                        END IF;
+                    END $$;
+                """))
+                
+                # Criar índices apenas se não existirem
+                connection.execute(text("""
+                    CREATE INDEX IF NOT EXISTS ix_movimentacoes_estoque_reversao_de_id 
+                    ON movimentacoes_estoque(reversao_de_id);
+                """))
+                
+                connection.execute(text("""
+                    CREATE INDEX IF NOT EXISTS ix_movimentacoes_estoque_revertida 
+                    ON movimentacoes_estoque(revertida);
+                """))
+                
+                logger.info("✓ Colunas de reversão verificadas/criadas com sucesso!")
                 
                 # Criar tipos ENUM se não existirem
                 connection.execute(text("""
