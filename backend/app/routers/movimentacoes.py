@@ -1976,20 +1976,97 @@ async def reverter_movimentacoes_em_massa(
             except:
                 pass
         
-        # Filtrar apenas movimentações não revertidas
-        # Verificar se a coluna existe usando hasattr (mais seguro)
-        try:
-            # Tenta filtrar apenas se o modelo tem o atributo
-            if hasattr(models.MovimentacaoEstoque, 'revertida'):
-                query = query.filter(models.MovimentacaoEstoque.revertida == False)
-        except Exception as e:
-            logger.warning(f"Coluna 'revertida' pode não existir ainda: {e}")
-            pass  # Se a coluna não existe, continua sem filtrar
+        # Verificar se as colunas de reversão existem antes de fazer a query
+        from sqlalchemy import inspect, text
         
-        # Buscar movimentações
-        movimentacoes = query.order_by(
-            models.MovimentacaoEstoque.data_movimentacao.desc()
-        ).all()
+        try:
+            inspector = inspect(engine)
+            columns = [col['name'] for col in inspector.get_columns('movimentacoes_estoque')]
+            colunas_reversao_existem = 'reversao_de_id' in columns
+        except Exception as e:
+            logger.warning(f"⚠️ Erro ao verificar colunas: {e}. Assumindo que não existem.")
+            colunas_reversao_existem = False
+        
+        # Se as colunas não existem, usar query SQL direta para evitar erro
+        if not colunas_reversao_existem:
+            # Construir query SQL manualmente
+            where_clauses = ["p.empresa_id = :empresa_id"]
+            params = {'empresa_id': empresa_id or current_user.empresa_id}
+            
+            if nota_fiscal:
+                where_clauses.append("me.observacao ILIKE :nota_fiscal")
+                params['nota_fiscal'] = f'%NF {nota_fiscal}%'
+            
+            if tipo_movimentacao:
+                where_clauses.append("me.tipo_movimentacao = :tipo_movimentacao")
+                params['tipo_movimentacao'] = tipo_movimentacao
+            
+            if data_inicio:
+                try:
+                    data_inicio_obj = datetime.fromisoformat(data_inicio.replace('Z', '+00:00'))
+                    where_clauses.append("me.data_movimentacao >= :data_inicio")
+                    params['data_inicio'] = data_inicio_obj
+                except:
+                    pass
+            
+            if data_fim:
+                try:
+                    data_fim_obj = datetime.fromisoformat(data_fim.replace('Z', '+00:00'))
+                    where_clauses.append("me.data_movimentacao <= :data_fim")
+                    params['data_fim'] = data_fim_obj
+                except:
+                    pass
+            
+            where_sql = " AND ".join(where_clauses)
+            
+            sql_query = text(f"""
+                SELECT 
+                    me.id, me.tipo_movimentacao, me.quantidade, me.observacao,
+                    me.data_movimentacao, me.origem, me.quantidade_antes, me.quantidade_depois,
+                    me.status, me.aprovado_por_id, me.data_aprovacao, me.motivo_rejeicao,
+                    me.motivo_movimentacao, me.observacao_motivo, me.dados_antes_edicao,
+                    me.dados_depois_edicao, me.produto_id, me.usuario_id
+                FROM movimentacoes_estoque me
+                JOIN produtos p ON p.id = me.produto_id
+                WHERE {where_sql}
+                ORDER BY me.data_movimentacao DESC
+            """)
+            
+            result = db.execute(sql_query, params)
+            rows = result.fetchall()
+            
+            # Converter para objetos MovimentacaoEstoque
+            movimentacoes = []
+            for row in rows:
+                mov = models.MovimentacaoEstoque()
+                mov.id = row[0]
+                mov.tipo_movimentacao = row[1]
+                mov.quantidade = row[2]
+                mov.observacao = row[3]
+                mov.data_movimentacao = row[4]
+                mov.origem = row[5]
+                mov.quantidade_antes = row[6]
+                mov.quantidade_depois = row[7]
+                mov.status = row[8]
+                mov.aprovado_por_id = row[9]
+                mov.data_aprovacao = row[10]
+                mov.motivo_rejeicao = row[11]
+                mov.motivo_movimentacao = row[12]
+                mov.observacao_motivo = row[13]
+                mov.dados_antes_edicao = row[14]
+                mov.dados_depois_edicao = row[15]
+                mov.produto_id = row[16]
+                mov.usuario_id = row[17]
+                mov.revertida = False  # Não existe ainda, mas definimos como False
+                movimentacoes.append(mov)
+        else:
+            # Filtrar apenas movimentações não revertidas se a coluna existir
+            query = query.filter(models.MovimentacaoEstoque.revertida == False)
+            
+            # Buscar movimentações usando ORM
+            movimentacoes = query.order_by(
+                models.MovimentacaoEstoque.data_movimentacao.desc()
+            ).all()
         
         if not movimentacoes:
             raise HTTPException(
