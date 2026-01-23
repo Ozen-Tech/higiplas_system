@@ -61,6 +61,158 @@ def create_historico_preco_produto_table():
         # Não levantar exceção para não impedir o startup da aplicação
         
 
+def create_reversao_columns_and_tables():
+    """Adiciona colunas de reversão em movimentacoes_estoque e cria tabela arquivos_processados."""
+    try:
+        with engine.connect() as connection:
+            trans = connection.begin()
+            try:
+                # Verificar e adicionar colunas de reversão
+                logger.info("Verificando colunas de reversão em movimentacoes_estoque...")
+                
+                # Verificar se a coluna reversao_de_id existe
+                result = connection.execute(text("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'movimentacoes_estoque'
+                        AND column_name = 'reversao_de_id'
+                    );
+                """))
+                coluna_existe = result.scalar()
+                
+                if not coluna_existe:
+                    logger.info("Adicionando colunas de reversão em movimentacoes_estoque...")
+                    connection.execute(text("""
+                        ALTER TABLE movimentacoes_estoque 
+                        ADD COLUMN reversao_de_id INTEGER,
+                        ADD COLUMN revertida BOOLEAN DEFAULT FALSE NOT NULL,
+                        ADD COLUMN data_reversao TIMESTAMP WITH TIME ZONE,
+                        ADD COLUMN revertida_por_id INTEGER;
+                    """))
+                    
+                    # Criar foreign keys
+                    connection.execute(text("""
+                        ALTER TABLE movimentacoes_estoque
+                        ADD CONSTRAINT fk_movimentacao_reversao_de
+                        FOREIGN KEY (reversao_de_id) REFERENCES movimentacoes_estoque(id);
+                    """))
+                    
+                    connection.execute(text("""
+                        ALTER TABLE movimentacoes_estoque
+                        ADD CONSTRAINT fk_movimentacao_revertida_por
+                        FOREIGN KEY (revertida_por_id) REFERENCES usuarios(id);
+                    """))
+                    
+                    # Criar índices
+                    connection.execute(text("""
+                        CREATE INDEX ix_movimentacoes_estoque_reversao_de_id 
+                        ON movimentacoes_estoque(reversao_de_id);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX ix_movimentacoes_estoque_revertida 
+                        ON movimentacoes_estoque(revertida);
+                    """))
+                    
+                    logger.info("✓ Colunas de reversão adicionadas com sucesso!")
+                else:
+                    logger.info("✓ Colunas de reversão já existem")
+                
+                # Criar tipos ENUM se não existirem
+                connection.execute(text("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_arquivo_enum') THEN
+                            CREATE TYPE tipo_arquivo_enum AS ENUM ('PDF', 'XML');
+                        END IF;
+                        
+                        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_mov_arquivo_enum') THEN
+                            CREATE TYPE tipo_mov_arquivo_enum AS ENUM ('ENTRADA', 'SAIDA');
+                        END IF;
+                    END $$;
+                """))
+                
+                # Verificar se a tabela arquivos_processados existe
+                result = connection.execute(text("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'arquivos_processados'
+                    );
+                """))
+                tabela_existe = result.scalar()
+                
+                if not tabela_existe:
+                    logger.info("Criando tabela arquivos_processados...")
+                    connection.execute(text("""
+                        CREATE TABLE arquivos_processados (
+                            id SERIAL PRIMARY KEY,
+                            nome_arquivo VARCHAR NOT NULL,
+                            hash_arquivo VARCHAR NOT NULL UNIQUE,
+                            nota_fiscal VARCHAR,
+                            tipo_arquivo tipo_arquivo_enum NOT NULL,
+                            tipo_movimentacao tipo_mov_arquivo_enum NOT NULL,
+                            data_processamento TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+                            usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+                            empresa_id INTEGER NOT NULL REFERENCES empresas(id),
+                            total_produtos INTEGER NOT NULL DEFAULT 0,
+                            total_movimentacoes INTEGER NOT NULL DEFAULT 0
+                        );
+                    """))
+                    
+                    # Criar índices
+                    connection.execute(text("""
+                        CREATE INDEX ix_arquivos_processados_nome_arquivo 
+                        ON arquivos_processados(nome_arquivo);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX ix_arquivos_processados_hash_arquivo 
+                        ON arquivos_processados(hash_arquivo);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX ix_arquivos_processados_nota_fiscal 
+                        ON arquivos_processados(nota_fiscal);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX ix_arquivos_processados_data_processamento 
+                        ON arquivos_processados(data_processamento);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX ix_arquivos_processados_empresa_id 
+                        ON arquivos_processados(empresa_id);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX idx_arquivo_empresa_data 
+                        ON arquivos_processados(empresa_id, data_processamento);
+                    """))
+                    
+                    connection.execute(text("""
+                        CREATE INDEX idx_arquivo_nf 
+                        ON arquivos_processados(nota_fiscal, empresa_id);
+                    """))
+                    
+                    logger.info("✓ Tabela arquivos_processados criada com sucesso!")
+                else:
+                    logger.info("✓ Tabela arquivos_processados já existe")
+                
+                trans.commit()
+                
+            except Exception as e:
+                trans.rollback()
+                raise e
+                
+    except Exception as e:
+        logger.error(f"Erro ao criar colunas de reversão e tabela arquivos_processados: {e}")
+        # Não levantar exceção para não impedir o startup da aplicação
+
+
 def create_all_missing_tables():
     """Cria todas as tabelas faltantes necessárias."""
     create_historico_preco_produto_table()
+    create_reversao_columns_and_tables()
