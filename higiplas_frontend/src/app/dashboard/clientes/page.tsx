@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/dashboard/Header';
 import { useClientesV2 } from '@/hooks/useClientesV2';
+import { ClienteCreateModal } from '@/components/clientes/ClienteCreateModal';
+import { ClienteEditModal } from '@/components/clientes/ClienteEditModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Filter, Package, FileText, X } from 'lucide-react';
+import { Search, Filter, Package, FileText, X, UserPlus, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
@@ -50,10 +52,11 @@ interface HistoricoCompra {
 
 export default function ClientesAdminPage() {
   const { user } = useAuth();
-  const { clientes, fetchClientes } = useClientesV2();
+  const { clientes, fetchClientes, loading: loadingClientes } = useClientesV2();
   
-  const [activeTab, setActiveTab] = useState<'visao-geral' | 'produtos' | 'historico'>('visao-geral');
+  const [activeTab, setActiveTab] = useState<'cadastro' | 'visao-geral' | 'produtos' | 'historico'>('cadastro');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchCadastro, setSearchCadastro] = useState('');
   const [diasAnalise, setDiasAnalise] = useState(90);
   const [clientesCompras, setClientesCompras] = useState<ClienteComprasData[]>([]);
   const [loadingCompras, setLoadingCompras] = useState(false);
@@ -61,6 +64,8 @@ export default function ClientesAdminPage() {
   const [produtosMaisComprados, setProdutosMaisComprados] = useState<ProdutoMaisComprado[]>([]);
   const [historicoCompras, setHistoricoCompras] = useState<HistoricoCompra[]>([]);
   const [loadingDetalhes, setLoadingDetalhes] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editClienteId, setEditClienteId] = useState<number | null>(null);
 
   const isAdmin = user?.perfil?.toUpperCase() === 'ADMIN' || user?.perfil?.toUpperCase() === 'GESTOR';
 
@@ -134,6 +139,21 @@ export default function ClientesAdminPage() {
     );
   });
 
+  const clientesCadastroFiltrados = clientes.filter((c) => {
+    if (!searchCadastro.trim()) return true;
+    const term = searchCadastro.toLowerCase();
+    return (
+      c.nome.toLowerCase().includes(term) ||
+      c.telefone?.toLowerCase().includes(term) ||
+      c.bairro?.toLowerCase().includes(term) ||
+      c.cidade?.toLowerCase().includes(term)
+    );
+  });
+
+  const recarregarClientes = useCallback(() => {
+    fetchClientes({ limit: 1000, skip: 0 });
+  }, [fetchClientes]);
+
   if (!isAdmin) {
     return (
       <>
@@ -154,8 +174,19 @@ export default function ClientesAdminPage() {
   return (
     <>
       <Header>
-        <h1 className="text-xl font-bold">Análise de Compras por Cliente</h1>
+        <h1 className="text-xl font-bold">Clientes</h1>
       </Header>
+      <ClienteCreateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={() => { recarregarClientes(); setCreateModalOpen(false); }}
+      />
+      <ClienteEditModal
+        open={editClienteId !== null}
+        clienteId={editClienteId}
+        onClose={() => setEditClienteId(null)}
+        onSuccess={() => { recarregarClientes(); setEditClienteId(null); }}
+      />
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Filtros */}
@@ -201,6 +232,16 @@ export default function ClientesAdminPage() {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-8">
               <button
+                onClick={() => setActiveTab('cadastro')}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'cadastro'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Cadastro ({clientes.length})
+              </button>
+              <button
                 onClick={() => setActiveTab('visao-geral')}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'visao-geral'
@@ -208,7 +249,7 @@ export default function ClientesAdminPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Visão Geral ({clientesFiltrados.length})
+                Análise de Compras ({clientesFiltrados.length})
               </button>
               {selectedCliente && (
                 <>
@@ -238,6 +279,80 @@ export default function ClientesAdminPage() {
           </div>
 
           {/* Conteúdo das Tabs */}
+          {activeTab === 'cadastro' && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle>Cadastro de Clientes</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Input
+                      placeholder="Buscar por nome, telefone, bairro..."
+                      value={searchCadastro}
+                      onChange={(e) => setSearchCadastro(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                  <Button onClick={() => setCreateModalOpen(true)} className="gap-2">
+                    <UserPlus size={18} />
+                    Novo Cliente
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingClientes ? (
+                  <div className="text-center py-12 text-gray-500">Carregando clientes...</div>
+                ) : clientesCadastroFiltrados.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    {clientes.length === 0
+                      ? 'Nenhum cliente cadastrado. Clique em Novo Cliente para cadastrar.'
+                      : 'Nenhum cliente encontrado com o filtro informado.'}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Telefone</TableHead>
+                          <TableHead>Bairro</TableHead>
+                          <TableHead>Cidade</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clientesCadastroFiltrados.map((c) => (
+                          <TableRow key={c.id}>
+                            <TableCell className="font-medium">{c.nome}</TableCell>
+                            <TableCell className="font-mono text-sm">{c.telefone || '—'}</TableCell>
+                            <TableCell>{c.bairro || '—'}</TableCell>
+                            <TableCell>{c.cidade || '—'}</TableCell>
+                            <TableCell>
+                              <Badge variant={c.status === 'ATIVO' ? 'default' : 'secondary'}>
+                                {c.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditClienteId(c.id)}
+                                title="Editar cliente"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {activeTab === 'visao-geral' && (
             <Card>
               <CardHeader>
