@@ -202,6 +202,8 @@ def get_sugestoes_baseado_clientes(
         )
         return resultado
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("get_sugestoes_baseado_clientes: %s", e)
         raise HTTPException(
             status_code=500,
             detail=f"Erro ao gerar sugestões baseadas em clientes: {str(e)}"

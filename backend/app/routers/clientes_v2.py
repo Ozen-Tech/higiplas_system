@@ -183,11 +183,14 @@ def get_cliente(
             detail="Cliente não encontrado"
         )
     
-    # Mapear para resposta
+    # Mapear para resposta (telefone vazio quebra ClienteResponse min_length=10; usar fallback)
+    telefone_val = (db_cliente.telefone or "").strip()
+    if len(telefone_val) < 10:
+        telefone_val = "0000000000"
     return schemas.ClienteResponse(
         id=db_cliente.id,
         nome=db_cliente.razao_social,
-        telefone=db_cliente.telefone or "",
+        telefone=telefone_val,
         tipo_pessoa="JURIDICA" if db_cliente.cnpj and len(db_cliente.cnpj) > 11 else "FISICA",
         cpf_cnpj=db_cliente.cnpj,
         bairro=extract_bairro(db_cliente.endereco),

@@ -333,7 +333,8 @@ class ClientePurchaseSuggestionService:
             produtos_comprados[produto_id]['total_quantidade'] += compra.quantidade
             produtos_comprados[produto_id]['total_valor'] += compra.valor_total
             produtos_comprados[produto_id]['num_compras'] += 1
-            produtos_comprados[produto_id]['clientes_unicos'].add(compra.cliente_id)
+            if compra.cliente_id is not None:
+                produtos_comprados[produto_id]['clientes_unicos'].add(compra.cliente_id)
             produtos_comprados[produto_id]['datas'].append(compra.data_venda)
         
         # Criar sugestões
@@ -366,8 +367,8 @@ class ClientePurchaseSuggestionService:
             
             sugestoes.append({
                 'produto_id': produto_id,
-                'produto_nome': produto.nome,
-                'codigo': produto.codigo,
+                'produto_nome': produto.nome or "Sem nome",
+                'codigo': produto.codigo or "",
                 'num_clientes_compram': len(dados['clientes_unicos']),
                 'num_compras_periodo': dados['num_compras'],
                 'quantidade_vendida_periodo': dados['total_quantidade'],

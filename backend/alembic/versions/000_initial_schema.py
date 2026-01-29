@@ -176,23 +176,28 @@ def upgrade() -> None:
         END $$;
     """)
     
-    op.create_table('clientes',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('razao_social', sa.String(), nullable=False),
-    sa.Column('cnpj', sa.String(), nullable=True),
-    sa.Column('endereco', sa.String(), nullable=True),
-    sa.Column('email', sa.String(), nullable=True),
-    sa.Column('telefone', sa.String(), nullable=True),
-    sa.Column('empresa_vinculada', sa.Enum('HIGIPLAS', 'HIGITEC', name='empresa_vinculada_enum'), nullable=False),
-    sa.Column('status_pagamento', sa.Enum('BOM_PAGADOR', 'MAU_PAGADOR', name='status_pagamento_enum'), nullable=True),
-    sa.Column('data_criacao', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('empresa_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['empresa_id'], ['empresas.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    result = connection.execute(sa.text(
+        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'clientes')"
+    ))
+    clientes_exists = result.scalar()
+    if not clientes_exists:
+        op.create_table('clientes',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('razao_social', sa.String(), nullable=False),
+        sa.Column('cnpj', sa.String(), nullable=True),
+        sa.Column('endereco', sa.String(), nullable=True),
+        sa.Column('email', sa.String(), nullable=True),
+        sa.Column('telefone', sa.String(), nullable=True),
+        sa.Column('empresa_vinculada', postgresql.ENUM('HIGIPLAS', 'HIGITEC', name='empresa_vinculada_enum', create_type=False), nullable=False),
+        sa.Column('status_pagamento', postgresql.ENUM('BOM_PAGADOR', 'MAU_PAGADOR', name='status_pagamento_enum', create_type=False), nullable=True),
+        sa.Column('data_criacao', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+        sa.Column('empresa_id', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['empresa_id'], ['empresas.id'], ),
+        sa.PrimaryKeyConstraint('id')
         )
-    op.create_index(op.f('ix_clientes_cnpj'), 'clientes', ['cnpj'], unique=True)
-    op.create_index(op.f('ix_clientes_id'), 'clientes', ['id'], unique=False)
-    op.create_index(op.f('ix_clientes_razao_social'), 'clientes', ['razao_social'], unique=False)
+        op.create_index(op.f('ix_clientes_cnpj'), 'clientes', ['cnpj'], unique=True)
+        op.create_index(op.f('ix_clientes_id'), 'clientes', ['id'], unique=False)
+        op.create_index(op.f('ix_clientes_razao_social'), 'clientes', ['razao_social'], unique=False)
     
     # Create orcamentos table if not exists
     result = connection.execute(sa.text(
@@ -240,7 +245,7 @@ def upgrade() -> None:
         sa.Column('valor', sa.Float(), nullable=False),
         sa.Column('data_vencimento', sa.Date(), nullable=False),
         sa.Column('data_pagamento', sa.Date(), nullable=True),
-        sa.Column('status', sa.Enum('PENDENTE', 'PAGO', 'ATRASADO', name='status_pagamento_historico_enum'), nullable=True),
+        sa.Column('status', postgresql.ENUM('PENDENTE', 'PAGO', 'ATRASADO', name='status_pagamento_historico_enum', create_type=False), nullable=True),
         sa.Column('numero_nf', sa.String(), nullable=True),
         sa.Column('observacoes', sa.String(), nullable=True),
         sa.Column('data_criacao', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),

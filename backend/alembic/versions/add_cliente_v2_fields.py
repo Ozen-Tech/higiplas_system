@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add_cliente_v2_fields'
-down_revision = None
+down_revision = '07af028af52e'  # após criar tabela clientes
 branch_labels = None
 depends_on = None
 

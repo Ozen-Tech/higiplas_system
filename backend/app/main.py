@@ -150,48 +150,33 @@ async def options_handler(request: Request):
 # Isso substitui os handlers antigos por versões mais robustas
 register_exception_handlers(app)
 
-# Middleware para logar requisições e adicionar headers CORS manualmente
+# Middleware para CORS e log enxuto (evitar flood em produção)
 @app.middleware("http")
 async def add_cors_and_log(request: Request, call_next):
-    logger.info(f"Requisição: {request.method} {request.url}")
-    logger.info(f"Headers: {dict(request.headers)}")
-    
-    # Capturar body para logging apenas em POST/PUT/PATCH
+    # Capturar body apenas para reenviar ao handler (POST/PUT/PATCH)
     if request.method in ["POST", "PUT", "PATCH"]:
         body = await request.body()
         if body:
-            try:
-                import json
-                body_json = json.loads(body)
-                logger.info(f"Body: {body_json}")
-            except:
-                logger.info(f"Body (raw): {body[:500]}")  # Primeiros 500 chars
-        
-        # Recriar request com body para que possa ser lido novamente
-        async def receive():
-            return {"type": "http.request", "body": body}
-        
-        request._receive = receive
+            async def receive():
+                return {"type": "http.request", "body": body}
+            request._receive = receive
 
-    # Processar a requisição
     try:
         response = await call_next(request)
 
-        # Adicionar headers CORS manualmente baseado na origem da requisição
         origin = request.headers.get("origin")
         if origin and origin in allowed_origins:
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"
         else:
-            # Se não houver origem ou não estiver na lista, usar a primeira origem permitida como fallback
             response.headers["Access-Control-Allow-Origin"] = allowed_origins[0] if allowed_origins else "*"
             response.headers["Access-Control-Allow-Credentials"] = "true"
-        
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, User-Agent, DNT, Cache-Control, X-Requested-With"
         response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Type, Content-Length"
 
-        logger.info(f"Resposta: {response.status_code}")
+        if response.status_code >= 400:
+            logger.warning(f"{request.method} {request.url.path} -> {response.status_code}")
         return response
     except Exception as e:
         logger.error(f"Erro ao processar requisição: {str(e)}")

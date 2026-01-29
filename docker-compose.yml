@@ -20,6 +20,7 @@ services:
     
 
   # Serviço do Banco de Dados PostgreSQL
+  # Porta 5433 no host para não conflitar com PostgreSQL instalado na máquina (5432)
   higiplas_postgres:
     image: postgres:15-alpine
     volumes:
@@ -29,7 +30,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - higiplas_network
     env_file:

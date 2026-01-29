@@ -1,7 +1,7 @@
 // /src/hooks/useClientesV2.ts
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
 import {
@@ -91,8 +91,8 @@ export function useClientesV2() {
   };
 
   // ============= LISTAGEM E BUSCA =============
-  
-  const fetchClientes = async (params: ClienteSearchParams = {}): Promise<ClienteListItemV2[]> => {
+  // useCallback evita loop infinito quando a página usa fetchClientes no useEffect
+  const fetchClientes = useCallback(async (params: ClienteSearchParams = {}): Promise<ClienteListItemV2[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -107,9 +107,8 @@ export function useClientesV2() {
       
       const url = `/clientes/?${queryParams.toString()}`;
       const response = await apiService.get(url);
-      // apiService.get retorna { data, headers }, então precisamos acessar response.data
-      const data = response?.data || response;
-      const clientesList = Array.isArray(data) ? data : [];
+      const data = response?.data ?? response;
+      const clientesList = Array.isArray(data) ? data : (data && typeof data === 'object' && Array.isArray(data.clientes) ? data.clientes : []);
       
       setClientes(clientesList);
       return clientesList;
@@ -122,7 +121,7 @@ export function useClientesV2() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const searchClientes = async (searchTerm: string): Promise<ClienteListItemV2[]> => {
     return await fetchClientes({ search: searchTerm, limit: 20 });
