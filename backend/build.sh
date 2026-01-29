@@ -94,7 +94,8 @@ if [ "$HEAD_COUNT" -gt 1 ] 2>/dev/null; then
     alembic upgrade heads 2>&1 | tail -10 || true
 else
     echo "==> Aplicando migrações normalmente..."
-    alembic upgrade head 2>&1 | tail -5
+    # Usar 'heads' (plural) para funcionar com um ou vários heads; 'head' falha quando há múltiplos
+    alembic upgrade heads 2>&1 | tail -10
 fi
 
 # Reabilita set -e

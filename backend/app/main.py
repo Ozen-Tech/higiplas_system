@@ -114,9 +114,11 @@ app.include_router(visitas.router, tags=["Visitas de Vendedores"])
 app.include_router(admin.router, tags=["Admin"])
 
 @app.get("/", tags=["Root"], summary="Verifica a saúde da API")
+@app.head("/", tags=["Root"], include_in_schema=False)
 async def read_root():
     """
     Endpoint principal para verificar se a API está online.
+    HEAD é usado pelo Render (e outros) para health check; deve retornar 200.
     """
     return {"status": "ok", "message": "Bem-vindo à API da Higiplas!"}
 
