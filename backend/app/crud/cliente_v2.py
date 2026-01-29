@@ -63,9 +63,7 @@ def create_cliente(
 ) -> models.Cliente:
     """Criar cliente completo"""
 
-    # Verificar duplicados por telefone (se fornecido)
-    # Usar SQL direto para verificar se existe cliente ATIVO com este telefone
-    # Isso evita problemas com clientes deletados
+    # Verificar duplicados por telefone (qualquer cliente na mesma empresa)
     if cliente.telefone:
         from sqlalchemy import text
         result = db.execute(
@@ -73,7 +71,6 @@ def create_cliente(
                 SELECT id FROM clientes 
                 WHERE telefone = :telefone 
                 AND empresa_id = :empresa_id
-                AND status_pagamento = 'BOM_PAGADOR'
                 LIMIT 1
             """),
             {"telefone": cliente.telefone, "empresa_id": empresa_id}
@@ -82,11 +79,10 @@ def create_cliente(
         if result:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cliente já existe com este telefone: {cliente.nome}"
+                detail="Cliente já existe com este telefone. Use a busca para selecioná-lo."
             )
 
     # Verificar duplicados por CPF/CNPJ apenas se fornecido
-    # Usar SQL direto para verificar se existe cliente ATIVO com este documento
     if cliente.cpf_cnpj and cliente.cpf_cnpj.strip():
         from sqlalchemy import text
         result = db.execute(
@@ -94,7 +90,6 @@ def create_cliente(
                 SELECT id FROM clientes 
                 WHERE cnpj = :cnpj 
                 AND empresa_id = :empresa_id
-                AND status_pagamento = 'BOM_PAGADOR'
                 LIMIT 1
             """),
             {"cnpj": cliente.cpf_cnpj.strip(), "empresa_id": empresa_id}
@@ -103,7 +98,7 @@ def create_cliente(
         if result:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cliente já existe com este documento"
+                detail="Cliente já existe com este CPF/CNPJ. Use a busca para selecioná-lo."
             )
 
     # Criar endereço simplificado
@@ -111,11 +106,13 @@ def create_cliente(
     if cliente.bairro or cliente.cidade:
         endereco = f"{cliente.bairro or ''}, {cliente.cidade or ''}".strip(", ")
 
+    # Evitar string vazia em cnpj (unique no banco)
+    cnpj_val = (cliente.cpf_cnpj.strip() if cliente.cpf_cnpj and cliente.cpf_cnpj.strip() else None)
     db_cliente = models.Cliente(
         razao_social=cliente.nome,
         telefone=cliente.telefone,
-        cnpj=cliente.cpf_cnpj,
-        email=cliente.email,
+        cnpj=cnpj_val,
+        email=cliente.email if (cliente.email and cliente.email.strip()) else None,
         endereco=endereco,
         observacoes=cliente.observacoes,
         referencia_localizacao=cliente.referencia_localizacao,

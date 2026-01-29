@@ -150,7 +150,13 @@ export function useVendas() {
       toast.success('Cliente criado com sucesso!');
       return response?.data || null;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao criar cliente.';
       handleApiError(err);
+      // Mostrar mensagem da API para o usuário (ex: telefone já cadastrado, validação)
+      if (!msg.includes('[401]')) {
+        const detail = msg.replace(/^\[\d+\]\s*/, '').replace(/^"|"$/g, '');
+        toast.error(detail || 'Não foi possível criar o cliente. Tente novamente.');
+      }
       return null;
     } finally {
         setLoading(false);
