@@ -37,10 +37,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        logger.info(f"Tentando decodificar token: {token[:20]}...")
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str | None = payload.get("sub")
-        logger.info(f"Token decodificado com sucesso. Email: {email}")
         if email is None:
             logger.error("Email não encontrado no payload do token")
             raise credentials_exception
@@ -50,13 +48,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except Exception as e:
         logger.error(f"Erro inesperado ao validar token: {str(e)}")
         raise credentials_exception
-    
+
     user = crud_usuario.get_user_by_email(db, email=email)
     if user is None:
         logger.error(f"Usuário não encontrado no banco de dados: {email}")
         raise credentials_exception
-    
-    logger.info(f"Usuário autenticado com sucesso: {user.email}")
     return user
 
 

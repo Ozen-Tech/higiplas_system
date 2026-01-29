@@ -46,13 +46,16 @@ print("----------------------------------------------------")
 # ===================================================================
 
 # O 'engine' do SQLAlchemy usa a URL acima para se conectar.
-# Configurações do pool para evitar timeout de conexões
+# Configurações do pool para evitar timeout e esgotamento de conexões.
+# Em produção (ex.: Render), o PostgreSQL pode ter limite de conexões; pool_size + max_overflow não devem ultrapassar esse limite.
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_size=10,  # Número de conexões mantidas no pool
-    max_overflow=20,  # Número máximo de conexões além do pool_size
+    pool_size=5,  # Conexões permanentes no pool (reduzido para caber em planos com limite baixo)
+    max_overflow=15,  # Conexões extras sob demanda (total máx. 20)
+    pool_timeout=10,  # Falha em 10s se não houver conexão livre (evita travar 30s)
     pool_pre_ping=True,  # Verifica se a conexão está viva antes de usar
-    pool_recycle=3600,  # Recicla conexões após 1 hora
+    pool_recycle=600,  # Recicla conexões após 10 min (evita conexões mortas com DB remoto)
+    pool_reset_on_return="rollback",  # Devolve conexão em estado limpo
     echo=False
 )
 

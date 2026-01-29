@@ -82,12 +82,19 @@ export default function ClientesAdminPage() {
     }
   }, [diasAnalise]);
 
+  // Carregar lista de clientes (cadastro) uma vez quando admin acessa
   useEffect(() => {
     if (isAdmin) {
       fetchClientes({ limit: 1000, skip: 0 });
+    }
+  }, [isAdmin, fetchClientes]);
+
+  // Carregar visão de compras quando mudar período
+  useEffect(() => {
+    if (isAdmin) {
       fetchClientesCompras();
     }
-  }, [isAdmin, diasAnalise, fetchClientes, fetchClientesCompras]);
+  }, [isAdmin, diasAnalise, fetchClientesCompras]);
 
   const fetchProdutosMaisComprados = async (clienteId: number) => {
     setLoadingDetalhes(true);

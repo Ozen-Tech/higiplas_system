@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20260121_historico_preco'
-down_revision = 'merge_approval_fields_and_proposta'
+down_revision = 'merge_approval_proposta'
 branch_labels = None
 depends_on = None
 
