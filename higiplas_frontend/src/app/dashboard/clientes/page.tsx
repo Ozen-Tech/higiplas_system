@@ -51,7 +51,7 @@ interface HistoricoCompra {
 }
 
 export default function ClientesAdminPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { clientes, fetchClientes, loading: loadingClientes } = useClientesV2();
   
   const [activeTab, setActiveTab] = useState<'cadastro' | 'visao-geral' | 'produtos' | 'historico'>('cadastro');
@@ -160,6 +160,19 @@ export default function ClientesAdminPage() {
   const recarregarClientes = useCallback(() => {
     fetchClientes({ limit: 1000, skip: 0 });
   }, [fetchClientes]);
+
+  if (authLoading) {
+    return (
+      <>
+        <Header>
+          <h1 className="text-xl font-bold">Clientes</h1>
+        </Header>
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <p className="text-gray-500">Carregando...</p>
+        </main>
+      </>
+    );
+  }
 
   if (!isAdmin) {
     return (

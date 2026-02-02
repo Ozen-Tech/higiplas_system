@@ -27,7 +27,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 };
 
 export default function OrcamentosAdminPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { orcamentos, loading, listarTodosOrcamentos, atualizarStatus, confirmarOrcamento, excluirOrcamento } = useOrcamentos();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +45,20 @@ export default function OrcamentosAdminPage() {
       listarTodosOrcamentos();
     }
   }, [isAdmin, listarTodosOrcamentos]);
+
+  // Aguardar carregamento do Auth antes de decidir acesso
+  if (authLoading) {
+    return (
+      <>
+        <Header>
+          <h1 className="text-xl font-bold">Gerenciar Orçamentos</h1>
+        </Header>
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <p className="text-gray-500">Carregando...</p>
+        </main>
+      </>
+    );
+  }
 
   if (!isAdmin) {
     return (

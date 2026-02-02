@@ -167,36 +167,58 @@ def get_visao_geral_clientes(
         from sqlalchemy import func
         
         data_limite = datetime.now() - timedelta(days=dias)
-        
-        # Buscar estatísticas por cliente
+        empresa_id = current_user.empresa_id
+
+        # Unificar HPP (NF-e) e HVC (orçamentos): incluir clientes com compras em qualquer fonte.
+        # Evitar duplicar venda quando orçamento já tem NF (mesma venda em HPP e HVC).
         query = """
-            SELECT 
-                c.id as cliente_id,
-                c.razao_social as cliente_nome,
-                c.cnpj,
-                COUNT(DISTINCT hp.nota_fiscal) as total_notas,
-                COUNT(DISTINCT hp.produto_id) as produtos_unicos,
-                MAX(hp.data_venda) as ultima_compra,
-                SUM(hp.valor_total) as valor_total_compras
+            WITH vendas_nf AS (
+                SELECT hp.cliente_id, hp.produto_id, hp.valor_total, hp.data_venda, hp.nota_fiscal
+                FROM historico_preco_produto hp
+                WHERE hp.empresa_id = :empresa_id AND hp.data_venda >= :data_limite
+                  AND hp.nota_fiscal IS NOT NULL AND hp.cliente_id IS NOT NULL
+            ),
+            vendas_orcamento AS (
+                SELECT hvc.cliente_id, hvc.produto_id, hvc.valor_total, hvc.data_venda
+                FROM historico_vendas_cliente hvc
+                LEFT JOIN orcamentos o ON o.id = hvc.orcamento_id AND o.numero_nf IS NOT NULL AND o.numero_nf != ''
+                WHERE hvc.empresa_id = :empresa_id AND hvc.data_venda >= :data_limite AND o.id IS NULL
+            ),
+            vendas_unificado AS (
+                SELECT cliente_id, produto_id, valor_total, data_venda FROM vendas_nf
+                UNION ALL
+                SELECT cliente_id, produto_id, valor_total, data_venda FROM vendas_orcamento
+            ),
+            agregado AS (
+                SELECT v.cliente_id,
+                    COUNT(DISTINCT v.produto_id) AS produtos_unicos,
+                    MAX(v.data_venda) AS ultima_compra,
+                    COALESCE(SUM(v.valor_total), 0) AS valor_total_compras
+                FROM vendas_unificado v
+                GROUP BY v.cliente_id
+            ),
+            total_notas AS (
+                SELECT hp.cliente_id, COUNT(DISTINCT hp.nota_fiscal) AS total_notas
+                FROM historico_preco_produto hp
+                WHERE hp.empresa_id = :empresa_id AND hp.data_venda >= :data_limite
+                  AND hp.nota_fiscal IS NOT NULL AND hp.cliente_id IS NOT NULL
+                GROUP BY hp.cliente_id
+            )
+            SELECT c.id AS cliente_id, c.razao_social AS cliente_nome, c.cnpj,
+                COALESCE(tn.total_notas, 0) AS total_notas,
+                a.produtos_unicos,
+                a.ultima_compra,
+                a.valor_total_compras
             FROM clientes c
-            LEFT JOIN historico_preco_produto hp ON c.id = hp.cliente_id 
-                AND hp.empresa_id = :empresa_id
-                AND hp.data_venda >= :data_limite
-                AND hp.nota_fiscal IS NOT NULL
+            JOIN agregado a ON c.id = a.cliente_id
+            LEFT JOIN total_notas tn ON c.id = tn.cliente_id
             WHERE c.empresa_id = :empresa_id
-            GROUP BY c.id, c.razao_social, c.cnpj
-            HAVING COUNT(hp.id) > 0
-            ORDER BY valor_total_compras DESC NULLS LAST
+            ORDER BY a.valor_total_compras DESC NULLS LAST
         """
-        
         result = db.execute(
             text(query),
-            {
-                'empresa_id': current_user.empresa_id,
-                'data_limite': data_limite
-            }
+            {'empresa_id': empresa_id, 'data_limite': data_limite}
         )
-        
         clientes_data = []
         for row in result:
             clientes_data.append({
@@ -216,3 +238,69 @@ def get_visao_geral_clientes(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar visão geral: {str(e)}")
+
+
+@router.get("/resultados-mensais", summary="Resultados mensais por cliente (vendas unificadas)")
+def get_resultados_mensais_clientes(
+    ano: int = Query(..., description="Ano (ex.: 2025)"),
+    mes: int = Query(..., ge=1, le=12, description="Mês (1-12)"),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna resultados mensais por cliente: valor total, quantidade de pedidos e produtos vendidos.
+    Fonte unificada: HistoricoPrecoProduto (NF-e) e HistoricoVendaCliente (orçamentos sem NF linkada).
+    """
+    try:
+        from datetime import datetime
+        start = datetime(ano, mes, 1)
+        if mes == 12:
+            end = datetime(ano + 1, 1, 1)
+        else:
+            end = datetime(ano, mes + 1, 1)
+        empresa_id = current_user.empresa_id
+
+        # Agregar por cliente a partir de HPP (NF) e HVC (orçamentos sem NF)
+        query = text("""
+            WITH vendas_nf AS (
+                SELECT hp.cliente_id, hp.produto_id, hp.valor_total, hp.quantidade, hp.data_venda
+                FROM historico_preco_produto hp
+                WHERE hp.empresa_id = :empresa_id AND hp.data_venda >= :start AND hp.data_venda < :end
+                  AND hp.nota_fiscal IS NOT NULL AND hp.cliente_id IS NOT NULL
+            ),
+            vendas_orc AS (
+                SELECT hvc.cliente_id, hvc.produto_id, hvc.valor_total, hvc.quantidade_vendida AS quantidade, hvc.data_venda
+                FROM historico_vendas_cliente hvc
+                LEFT JOIN orcamentos o ON o.id = hvc.orcamento_id AND o.numero_nf IS NOT NULL AND o.numero_nf != ''
+                WHERE hvc.empresa_id = :empresa_id AND hvc.data_venda >= :start AND hvc.data_venda < :end AND o.id IS NULL
+            ),
+            unificado AS (
+                SELECT cliente_id, produto_id, valor_total, quantidade, data_venda FROM vendas_nf
+                UNION ALL
+                SELECT cliente_id, produto_id, valor_total, quantidade, data_venda FROM vendas_orc
+            )
+            SELECT u.cliente_id,
+                c.razao_social AS cliente_nome,
+                c.cnpj,
+                COUNT(DISTINCT u.data_venda::date) AS num_pedidos,
+                COALESCE(SUM(u.valor_total), 0) AS valor_total,
+                COUNT(DISTINCT u.produto_id) AS produtos_unicos
+            FROM unificado u
+            JOIN clientes c ON c.id = u.cliente_id AND c.empresa_id = :empresa_id
+            GROUP BY u.cliente_id, c.razao_social, c.cnpj
+            ORDER BY valor_total DESC
+        """)
+        result = db.execute(query, {"empresa_id": empresa_id, "start": start, "end": end})
+        clientes = []
+        for row in result:
+            clientes.append({
+                "cliente_id": row.cliente_id,
+                "cliente_nome": row.cliente_nome,
+                "cnpj": row.cnpj,
+                "num_pedidos": row.num_pedidos or 0,
+                "valor_total": float(row.valor_total or 0),
+                "produtos_unicos": row.produtos_unicos or 0,
+            })
+        return {"ano": ano, "mes": mes, "clientes": clientes}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar resultados mensais: {str(e)}")

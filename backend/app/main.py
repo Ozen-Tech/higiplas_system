@@ -5,8 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.routers import (
     auth, empresas, produtos, movimentacoes, upload_excel,
-    insights, dashboard_kpis, invoice_processing,
-    fornecedores, ordens_compra, clientes_v2, ai_pdf, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, reports, compras,
+    dashboard_kpis, invoice_processing,
+    fornecedores, ordens_compra, clientes_v2, minimum_stock, vendas, orcamentos, produtos_mais_vendidos, reports, compras,
     fichas_tecnicas, concorrentes, propostas_detalhadas, visitas, clientes_compras, entrada, admin
 )
 
@@ -94,14 +94,12 @@ app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimen
 app.include_router(entrada.router, prefix="/api", tags=["Entrada de Estoque"])
 app.include_router(vendas.router)
 app.include_router(upload_excel.router, tags=["Upload Excel"])
-app.include_router(insights.router, tags=["Insights"])
 app.include_router(clientes_v2.router)  # Sistema principal de clientes
 app.include_router(dashboard_kpis.router, tags=["Dashboard"])
 app.include_router(invoice_processing.router)
 app.include_router(fornecedores.router)
 app.include_router(ordens_compra.router)
 app.include_router(orcamentos.router)
-app.include_router(ai_pdf.router, prefix="/ai-pdf", tags=["ai-pdf"])
 app.include_router(minimum_stock.router, tags=["Estoque Mínimo"])
 app.include_router(produtos_mais_vendidos.router, tags=["Produtos Mais Vendidos"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Relatórios"])

@@ -5,10 +5,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 // Validação da URL da API
 if (!API_BASE_URL) {
   console.error('NEXT_PUBLIC_API_URL não está configurada! Verifique as variáveis de ambiente.');
+  // #region agent log
+  try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'apiService.ts', message: 'API_BASE_URL missing', data: { hasEnv: typeof process !== 'undefined' }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H3' }) }).catch(() => {}); } catch {}
+  // #endregion
 }
 
 async function request(endpoint: string, options: RequestInit = {}) {
   if (!API_BASE_URL) {
+    // #region agent log
+    try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'apiService.request', message: 'request called without API_BASE_URL', data: { endpoint: endpoint?.slice?.(0, 50) }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H3' }) }).catch(() => {}); } catch {}
+    // #endregion
     throw new Error('URL da API não configurada. Verifique a variável de ambiente NEXT_PUBLIC_API_URL.');
   }
 

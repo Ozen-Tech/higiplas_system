@@ -72,6 +72,9 @@ class ClienteMatcherService:
         if cliente:
             # Atualizar informações se necessário
             atualizado = False
+            # Não atualizar com nomes inválidos (ex: "Frete por Conta C")
+            if razao_social and ClienteMatcherService._is_nome_cliente_invalido(razao_social):
+                razao_social = None
             
             if razao_social and razao_social.strip() and (
                 not cliente.razao_social or 
@@ -106,8 +109,8 @@ class ClienteMatcherService:
             return cliente
         
         # Criar novo cliente
-        if not razao_social or not razao_social.strip():
-            # Se não tiver razão social, usar CNPJ como nome temporário
+        # Rejeitar nomes inválidos (ex: "Frete por Conta C" - cabeçalho de tabela)
+        if not razao_social or not razao_social.strip() or ClienteMatcherService._is_nome_cliente_invalido(razao_social):
             razao_social = f"Cliente - {cnpj_normalizado}"
         
         # Determinar empresa_vinculada baseado na empresa_id
@@ -170,6 +173,19 @@ class ClienteMatcherService:
         return query.first()
     
     @staticmethod
+    def _is_nome_cliente_invalido(nome: str) -> bool:
+        """Rejeita nomes que são cabeçalhos de tabela (ex: 'Frete por Conta C')."""
+        if not nome or len(nome) < 3:
+            return True
+        nome_upper = nome.strip().upper()
+        invalidos = (
+            "FRETE POR CONTA",
+            "9-SEM TRANSPORTE",
+            "RAZAO SOCIAL",
+        )
+        return any(nome_upper == inv or nome_upper.startswith(inv + " ") for inv in invalidos)
+    
+    @staticmethod
     def extrair_dados_cliente_da_nf(
         texto_nf: str,
         empresa_id: int
@@ -226,8 +242,14 @@ class ClienteMatcherService:
             for pattern in razao_patterns:
                 match = re.search(pattern, texto_nf, re.IGNORECASE)
                 if match:
-                    dados['razao_social'] = match.group(1).strip()
+                    razao = match.group(1).strip()
+                    if not ClienteMatcherService._is_nome_cliente_invalido(razao):
+                        dados['razao_social'] = razao
                     break
+        
+        # Validar razao_social extraída com CNPJ - pode ser "Frete por Conta C"
+        if dados['razao_social'] and ClienteMatcherService._is_nome_cliente_invalido(dados['razao_social']):
+            dados['razao_social'] = None
         
         # Extrair endereço (padrão básico)
         endereco_patterns = [

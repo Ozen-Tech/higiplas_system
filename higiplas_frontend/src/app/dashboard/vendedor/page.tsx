@@ -28,7 +28,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 };
 
 export default function VendedorHubPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { orcamentos, loading, error, listarOrcamentosVendedor } = useOrcamentos();
   const [activeTab, setActiveTab] = useState<'historico' | 'novo'>('historico');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -46,6 +46,19 @@ export default function VendedorHubPage() {
       listarOrcamentosVendedor();
     }
   }, [podeAcessar, listarOrcamentosVendedor]);
+
+  if (authLoading) {
+    return (
+      <>
+        <Header>
+          <h1 className="text-xl font-bold">Orçamentos</h1>
+        </Header>
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        </main>
+      </>
+    );
+  }
 
   if (!podeAcessar) {
     return (
