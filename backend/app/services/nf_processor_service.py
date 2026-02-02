@@ -21,6 +21,22 @@ from app.utils.pdf_extractor_melhorado import extrair_produtos_inteligente_entra
 logger = logging.getLogger(__name__)
 
 
+def _is_nome_cliente_invalido(nome: str) -> bool:
+    """Rejeita nomes que são cabeçalhos de tabela (ex: 'Frete por Conta C') e não nomes reais de cliente."""
+    if not nome or len(nome) < 3:
+        return True
+    nome_upper = nome.strip().upper()
+    invalidos = (
+        "FRETE POR CONTA",
+        "FRETE POR CONTA C",
+        "FRETE POR CONTA E",
+        "9-SEM TRANSPORTE",
+        "RAZAO SOCIAL",
+        "NOME/RAZÃO SOCIAL",
+    )
+    return any(nome_upper == inv or nome_upper.startswith(inv + " ") for inv in invalidos)
+
+
 class NFProcessorService:
     """Serviço principal para processamento de Notas Fiscais."""
     
@@ -414,7 +430,10 @@ class NFProcessorService:
             for pattern in cliente_patterns:
                 match = re.search(pattern, texto_completo, re.IGNORECASE)
                 if match:
-                    dados['cliente'] = match.group(1).strip()
+                    nome_extraido = match.group(1).strip()
+                    # Ignorar nomes inválidos - "Frete por Conta C/E" é cabeçalho da tabela de transporte, não nome de cliente
+                    if nome_extraido and not _is_nome_cliente_invalido(nome_extraido):
+                        dados['cliente'] = nome_extraido
                     break
         else:
             # Para entrada, fornecedor é o remetente

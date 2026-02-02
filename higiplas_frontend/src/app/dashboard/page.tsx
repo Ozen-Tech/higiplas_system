@@ -21,7 +21,6 @@ import {
   AlertTriangle, 
   TrendingDown, 
   DollarSign, 
-  Sparkles,
   Search,
   RefreshCw,
   Download,
@@ -36,7 +35,6 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiService } from "@/services/apiService";
-import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 
 interface KpiData {
@@ -45,12 +43,10 @@ interface KpiData {
   valor_total_estoque: number;
 }
 
-interface AIInsight {
-  content: string;
-  loading: boolean;
-}
-
 export default function DashboardPage() {
+  // #region agent log
+  try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'dashboard/page.tsx', message: 'DashboardPage render', data: {}, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H3' }) }).catch(() => {}); } catch {}
+  // #endregion
   const { products, loading, error, fetchProducts, createProduct, updateProduct, removeProduct, moveStock } = useProducts();
   const { logout } = useAuth();
   
@@ -61,10 +57,8 @@ export default function DashboardPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [kpiData, setKpiData] = useState<KpiData | null>(null);
   const [kpiLoading, setKpiLoading] = useState(true);
-  const [aiInsight, setAiInsight] = useState<AIInsight>({ content: '', loading: false });
   const [filterStatus, setFilterStatus] = useState<'all' | 'critical' | 'low' | 'ok'>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [aiInsightMinimized, setAiInsightMinimized] = useState(false);
   
   // Filtros profissionais
   const [filtroCategoria, setFiltroCategoria] = useState<string>('all');
@@ -79,7 +73,6 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchProducts(true);
     fetchKPIs();
-    fetchAIInsight();
   }, [fetchProducts]);
 
   const fetchKPIs = async () => {
@@ -93,25 +86,11 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchAIInsight = async () => {
-    setAiInsight({ content: '', loading: true });
-    try {
-      const response = await apiService.post('/insights/ask', { 
-        question: 'Analise o estoque atual e me dê os 3 principais insights e alertas críticos que preciso saber AGORA. Seja direto e objetivo.' 
-      });
-      setAiInsight({ content: response?.data?.answer || '', loading: false });
-    } catch (error) {
-      console.error("Erro ao buscar insights da IA:", error);
-      setAiInsight({ content: '', loading: false });
-    }
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
       fetchProducts(true),
-      fetchKPIs(),
-      fetchAIInsight()
+      fetchKPIs()
     ]);
     setRefreshing(false);
     toast.success('Dados atualizados!');
@@ -407,69 +386,6 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Insights da IA */}
-          <Card className="border-l-4 border-l-gradient-to-b from-blue-500 to-purple-600 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-white" />
-                  </div>
-                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    Insights da IA - Rozana
-                  </CardTitle>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={fetchAIInsight}
-                    disabled={aiInsight.loading}
-                    title="Atualizar insights"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${aiInsight.loading ? 'animate-spin' : ''}`} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAiInsightMinimized(!aiInsightMinimized)}
-                    title={aiInsightMinimized ? "Expandir" : "Minimizar"}
-                  >
-                    {aiInsightMinimized ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            {!aiInsightMinimized && (
-              <CardContent>
-                {aiInsight.loading ? (
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span>Analisando estoque...</span>
-                  </div>
-                ) : aiInsight.content ? (
-                  <div className="prose dark:prose-invert max-w-none prose-sm">
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => <p className="mb-2 last:mb-0 text-gray-700 dark:text-gray-300">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                        strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-gray-100">{children}</strong>,
-                      }}
-                    >
-                      {aiInsight.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400">Clique em atualizar para ver insights</p>
-                )}
-              </CardContent>
-            )}
-          </Card>
-
           {/* Alertas Críticos */}
           {stats.critical > 0 && (
             <Card className="border-2 border-red-500 bg-red-50 dark:bg-red-900/20">
@@ -756,13 +672,6 @@ export default function DashboardPage() {
                 </Button>
                 <Button 
                   variant="outline"
-                  onClick={() => window.location.href = '/dashboard/insights'}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Chat com IA
-                </Button>
-                <Button 
-                  variant="outline"
                   onClick={() => window.location.href = '/dashboard/compras'}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
@@ -783,7 +692,6 @@ export default function DashboardPage() {
             setIsMovementModalOpen(false);
             fetchProducts(true);
             fetchKPIs();
-            fetchAIInsight();
           })} 
         productName={selectedProduct.nome}
         />
@@ -794,7 +702,6 @@ export default function DashboardPage() {
         onCreate={(data) => createProduct(data).then(() => {
           fetchProducts(true);
           fetchKPIs();
-          fetchAIInsight();
         })}
       />
     </>

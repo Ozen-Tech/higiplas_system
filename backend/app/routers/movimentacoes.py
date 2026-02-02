@@ -2,10 +2,12 @@
 
 # Adicionamos 'Body' às importações do FastAPI
 from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Dict, Any, Optional
 from ..db import models
+from ..services.stock_service import StockService
 import json
 import os
 import tempfile
@@ -79,6 +81,105 @@ def create_movimentacao(
         raise e
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Ocorreu um erro interno: {e}")
+
+
+class ItemContagem(BaseModel):
+    """Item da contagem física para ajuste de inventário."""
+    produto_id: int
+    quantidade_fisica: float
+
+
+class AjusteInventarioRequest(BaseModel):
+    """Corpo da requisição de ajuste por contagem física."""
+    itens: List[ItemContagem]
+
+
+@router.post(
+    "/ajuste-inventario",
+    response_model=Dict[str, Any],
+    summary="Ajuste de estoque por contagem física (inventário)",
+    description="Recebe uma lista de produto_id e quantidade_fisica, calcula a diferença em relação ao estoque digital e cria movimentações de CORRECAO_MANUAL (ENTRADA ou SAIDA) para alinhar o estoque."
+)
+def ajuste_inventario(
+    body: AjusteInventarioRequest,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Ajuste de inventário: para cada item, se quantidade_fisica != estoque atual,
+    cria uma movimentação de correção (ENTRADA ou SAIDA) com origem CORRECAO_MANUAL.
+    """
+    if not body.itens:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Envie ao menos um item (produto_id e quantidade_fisica).")
+    empresa_id = current_user.empresa_id
+    usuario_id = current_user.id
+    resultados = []
+    erros = []
+    movimentacoes_criadas = 0
+    for item in body.itens:
+        produto = db.query(models.Produto).filter(
+            models.Produto.id == item.produto_id,
+            models.Produto.empresa_id == empresa_id
+        ).first()
+        if not produto:
+            erros.append({"produto_id": item.produto_id, "erro": "Produto não encontrado ou não pertence à empresa."})
+            continue
+        estoque_atual = produto.quantidade_em_estoque or 0
+        diff = item.quantidade_fisica - estoque_atual
+        if abs(diff) < 1e-6:
+            resultados.append({
+                "produto_id": item.produto_id,
+                "produto_nome": produto.nome,
+                "estoque_atual": estoque_atual,
+                "quantidade_fisica": item.quantidade_fisica,
+                "diferenca": 0,
+                "acao": "nenhuma"
+            })
+            continue
+        try:
+            if diff > 0:
+                StockService.update_stock_transactionally(
+                    db=db,
+                    produto_id=item.produto_id,
+                    quantidade=diff,
+                    tipo_movimentacao="ENTRADA",
+                    usuario_id=usuario_id,
+                    empresa_id=empresa_id,
+                    origem="CORRECAO_MANUAL",
+                    observacao=f"Contagem física (inventário): ajuste +{diff} para alinhar ao físico ({item.quantidade_fisica})"
+                )
+            else:
+                StockService.update_stock_transactionally(
+                    db=db,
+                    produto_id=item.produto_id,
+                    quantidade=abs(diff),
+                    tipo_movimentacao="SAIDA",
+                    usuario_id=usuario_id,
+                    empresa_id=empresa_id,
+                    origem="CORRECAO_MANUAL",
+                    observacao=f"Contagem física (inventário): ajuste -{abs(diff)} para alinhar ao físico ({item.quantidade_fisica})"
+                )
+            movimentacoes_criadas += 1
+            resultados.append({
+                "produto_id": item.produto_id,
+                "produto_nome": produto.nome,
+                "estoque_atual": estoque_atual,
+                "quantidade_fisica": item.quantidade_fisica,
+                "diferenca": diff,
+                "acao": "ENTRADA" if diff > 0 else "SAIDA",
+                "novo_estoque": item.quantidade_fisica
+            })
+        except HTTPException as e:
+            erros.append({"produto_id": item.produto_id, "erro": e.detail})
+        except Exception as e:
+            erros.append({"produto_id": item.produto_id, "erro": str(e)})
+    return {
+        "sucesso": True,
+        "movimentacoes_criadas": movimentacoes_criadas,
+        "resultados": resultados,
+        "erros": erros
+    }
+
 
 @router.get(
     "/historico-geral",
@@ -1702,10 +1803,15 @@ def extrair_dados_pdf(caminho_pdf: str) -> Dict[str, Any]:
             print(f"DEBUG: Data de emissão encontrada: {dados['data_emissao']}")
         
         # Extrair cliente - padrão: Nome/Razão Social J S GONDIM LINHARES FILHO
+        # Ignorar "Frete por Conta C" etc - são cabeçalhos da tabela de transporte
         cliente_match = re.search(r'Nome/Razão Social\s+([A-Z][A-Z\s&.-]+?)\s+\d{2}\.\d{3}\.\d{3}', texto_completo, re.IGNORECASE)
         if cliente_match:
-            dados['cliente'] = cliente_match.group(1).strip()
-            print(f"DEBUG: Cliente encontrado: {dados['cliente']}")
+            nome_extraido = cliente_match.group(1).strip()
+            nome_upper = nome_extraido.upper()
+            invalidos = ("FRETE POR CONTA", "9-SEM TRANSPORTE", "RAZAO SOCIAL")
+            if not any(nome_upper.startswith(inv) for inv in invalidos):
+                dados['cliente'] = nome_extraido
+                print(f"DEBUG: Cliente encontrado: {dados['cliente']}")
         
         # Extrair CNPJ - buscar todos os CNPJs e pegar o do destinatário
         cnpj_matches = re.findall(r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})', texto_completo)

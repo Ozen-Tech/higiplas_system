@@ -6,7 +6,7 @@ logging, timeouts e limites do sistema.
 """
 
 import os
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     SUPERUSER_EMAIL: str
     SUPERUSER_PASSWORD: str
     
-    # External APIs
-    GOOGLE_API_KEY: str
+    # External APIs (opcional - IA removida do sistema)
+    GOOGLE_API_KEY: Optional[str] = None
     
     # Frontend
     NEXT_PUBLIC_API_URL: str

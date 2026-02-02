@@ -13,6 +13,7 @@ import logging
 
 from ..db import models
 from .cliente_analytics_service import ClienteAnalyticsService
+from .regras_sugestao_service import get_regras_empresa
 
 logger = logging.getLogger(__name__)
 
@@ -158,24 +159,23 @@ class PurchaseSuggestionService:
     def get_purchase_suggestions(
         self,
         empresa_id: int,
-        days_analysis: int = 90,
-        lead_time_days: int = 7,
-        coverage_days: int = 14,
-        min_sales_threshold: int = 2
+        days_analysis: Optional[int] = None,
+        lead_time_days: Optional[int] = None,
+        coverage_days: Optional[int] = None,
+        min_sales_threshold: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Retorna lista de produtos que precisam de compra com quantidades sugeridas.
-        
-        Args:
-            empresa_id: ID da empresa
-            days_analysis: Período de análise em dias (padrão 90 dias)
-            lead_time_days: Lead time em dias (padrão 7 dias)
-            coverage_days: Dias de cobertura para compra (padrão 14 dias)
-            min_sales_threshold: Número mínimo de vendas para considerar histórico suficiente
-        
-        Returns:
-            Lista de sugestões de compra
+        Usa regras da tabela regras_sugestao_compra da empresa; parâmetros opcionais sobrescrevem quando fornecidos.
         """
+        regras = get_regras_empresa(self.db, empresa_id)
+        days_analysis = days_analysis if days_analysis is not None else regras["dias_analise"]
+        lead_time_days = lead_time_days if lead_time_days is not None else regras["lead_time_dias"]
+        coverage_days = coverage_days if coverage_days is not None else regras["cobertura_dias"]
+        min_sales_threshold = min_sales_threshold if min_sales_threshold is not None else regras["min_vendas_historico"]
+        safety_margin = regras["margem_seguranca"]
+        additional_safety_margin = regras["margem_adicional_cobertura"]
+
         data_limite = datetime.now() - timedelta(days=days_analysis)
         
         # Query para buscar produtos com movimentações de saída
@@ -246,7 +246,7 @@ class PurchaseSuggestionService:
                 estoque_atual,
                 estoque_minimo_calculado,
                 coverage_days,
-                additional_safety_margin=1.15
+                additional_safety_margin=additional_safety_margin
             )
             
             if quantidade_sugerida <= 0:
@@ -413,23 +413,21 @@ class PurchaseSuggestionService:
         self,
         produto_id: int,
         empresa_id: int,
-        days_analysis: int = 90,
-        lead_time_days: int = 7,
-        coverage_days: int = 14
+        days_analysis: Optional[int] = None,
+        lead_time_days: Optional[int] = None,
+        coverage_days: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Retorna análise completa de um produto específico.
-        
-        Args:
-            produto_id: ID do produto
-            empresa_id: ID da empresa
-            days_analysis: Período de análise em dias
-            lead_time_days: Lead time em dias
-            coverage_days: Dias de cobertura para compra
-        
-        Returns:
-            Dict com análise completa do produto
+        Usa regras da tabela regras_sugestao_compra da empresa; parâmetros opcionais sobrescrevem quando fornecidos.
         """
+        regras = get_regras_empresa(self.db, empresa_id)
+        days_analysis = days_analysis if days_analysis is not None else regras["dias_analise"]
+        lead_time_days = lead_time_days if lead_time_days is not None else regras["lead_time_dias"]
+        coverage_days = coverage_days if coverage_days is not None else regras["cobertura_dias"]
+        safety_margin = regras["margem_seguranca"]
+        additional_safety_margin = regras["margem_adicional_cobertura"]
+
         # Verifica se produto existe e pertence à empresa
         produto = self.db.query(models.Produto).filter(
             models.Produto.id == produto_id,
@@ -449,7 +447,7 @@ class PurchaseSuggestionService:
         estoque_minimo_calculado = self.calculate_minimum_stock(
             demanda_media_diaria,
             lead_time_days,
-            safety_margin=1.2
+            safety_margin=safety_margin
         ) if demanda_info['tem_historico_suficiente'] else (produto.estoque_minimo or 5)
         
         # Calcula quantidade de compra se necessário
@@ -463,7 +461,7 @@ class PurchaseSuggestionService:
                 estoque_atual,
                 estoque_minimo_calculado,
                 coverage_days,
-                additional_safety_margin=1.15
+                additional_safety_margin=additional_safety_margin
             )
         
         # Calcula dias de cobertura

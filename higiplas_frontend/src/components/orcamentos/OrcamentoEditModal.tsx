@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Orcamento, OrcamentoUpdate, OrcamentoItemUpdate } from '@/types/orcamentos';
 import { useOrcamentos } from '@/hooks/useOrcamentos';
 import { useVendas } from '@/hooks/useVendas';
+import { useClientesV2 } from '@/hooks/useClientesV2';
+// #region agent log
+const _log = (msg: string, data: object, hypothesisId: string) => { try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'OrcamentoEditModal.tsx', message: msg, data, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId }) }).catch(() => {}); } catch {} };
+// #endregion
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,8 +29,15 @@ export function OrcamentoEditModal({
   onClose,
   onSuccess,
 }: OrcamentoEditModalProps) {
+  // #region agent log
+  _log('OrcamentoEditModal mount', { hasOrcamento: !!orcamento, orcamentoId: orcamento?.id, hasCliente: !!orcamento?.cliente, clienteId: orcamento?.cliente?.id }, 'H1');
+  // #endregion
   const { editarOrcamento, loading } = useOrcamentos();
-  const { clientes, produtos, buscarClientes, buscarProdutos } = useVendas();
+  const { produtos, buscarProdutos } = useVendas();
+  const { clientes, fetchClientes } = useClientesV2();
+  // #region agent log
+  _log('useClientesV2 result', { clientesIsArray: Array.isArray(clientes), clientesLen: clientes?.length ?? 'n/a' }, 'H2');
+  // #endregion
 
   const [clienteId, setClienteId] = useState(orcamento.cliente.id);
   const [condicaoPagamento, setCondicaoPagamento] = useState(orcamento.condicao_pagamento);
@@ -46,7 +57,25 @@ export function OrcamentoEditModal({
   const [novoItemQuantidade, setNovoItemQuantidade] = useState(1);
   const [novoItemValor, setNovoItemValor] = useState(0);
 
-  const clientesFiltrados = clientes.filter(c =>
+  // Garantir que o cliente atual do orçamento esteja sempre na lista (Select exige valor válido)
+  const clienteAtualParaSelect = useMemo(() => orcamento.cliente ? {
+    id: orcamento.cliente.id,
+    nome: orcamento.cliente.razao_social || (orcamento.cliente as { nome?: string }).nome || `Cliente #${orcamento.cliente.id}`,
+    telefone: '',
+    bairro: undefined,
+    cidade: undefined,
+    status: 'ATIVO',
+    ultima_venda: undefined,
+  } : null, [orcamento.cliente]);
+
+  const clientesComAtual = useMemo(() => {
+    if (!clienteAtualParaSelect) return clientes;
+    const jaTem = clientes.some((c: { id: number }) => c.id === clienteAtualParaSelect.id);
+    if (jaTem) return clientes;
+    return [clienteAtualParaSelect, ...clientes];
+  }, [clientes, clienteAtualParaSelect]);
+
+  const clientesFiltrados = clientesComAtual.filter((c: { nome: string }) =>
     c.nome.toLowerCase().includes(buscaCliente.toLowerCase())
   );
 
@@ -69,7 +98,7 @@ export function OrcamentoEditModal({
           preco_unitario: item.preco_unitario_congelado,
         }))
       );
-      buscarClientes();
+      fetchClientes({ limit: 200 });
       buscarProdutos();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

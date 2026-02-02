@@ -1,6 +1,7 @@
 # backend/app/routers/admin.py
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..db.connection import engine, get_db
@@ -186,3 +187,91 @@ async def aplicar_migracao_reversao(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro de conexão: {str(e)}"
         )
+
+
+# --- Regras de sugestão de compra (admin) ---
+class RegrasSugestaoCompraSchema(BaseModel):
+    lead_time_dias: int = 7
+    cobertura_dias: int = 14
+    dias_analise: int = 90
+    min_vendas_historico: int = 2
+    margem_seguranca: float = 1.2
+    margem_adicional_cobertura: float = 1.15
+    dias_antecedencia_cliente: int = 7
+
+    class Config:
+        from_attributes = True
+
+
+def _get_regras_default():
+    return {
+        "lead_time_dias": 7,
+        "cobertura_dias": 14,
+        "dias_analise": 90,
+        "min_vendas_historico": 2,
+        "margem_seguranca": 1.2,
+        "margem_adicional_cobertura": 1.15,
+        "dias_antecedencia_cliente": 7,
+    }
+
+
+@router.get("/regras-sugestao-compra", response_model=dict)
+def get_regras_sugestao_compra(
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Retorna as regras de sugestão de compra da empresa do usuário (admin)."""
+    if current_user.perfil not in ("admin", "ADMIN", "GERENTE"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores podem ver regras.")
+    regras = db.query(models.RegrasSugestaoCompra).filter(
+        models.RegrasSugestaoCompra.empresa_id == current_user.empresa_id
+    ).first()
+    if not regras:
+        return {"empresa_id": current_user.empresa_id, **_get_regras_default()}
+    return {
+        "empresa_id": regras.empresa_id,
+        "lead_time_dias": regras.lead_time_dias,
+        "cobertura_dias": regras.cobertura_dias,
+        "dias_analise": regras.dias_analise,
+        "min_vendas_historico": regras.min_vendas_historico,
+        "margem_seguranca": regras.margem_seguranca,
+        "margem_adicional_cobertura": regras.margem_adicional_cobertura,
+        "dias_antecedencia_cliente": regras.dias_antecedencia_cliente,
+    }
+
+
+@router.put("/regras-sugestao-compra", response_model=dict)
+def put_regras_sugestao_compra(
+    body: RegrasSugestaoCompraSchema,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Atualiza as regras de sugestão de compra da empresa (admin)."""
+    if current_user.perfil not in ("admin", "ADMIN", "GERENTE"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores podem alterar regras.")
+    regras = db.query(models.RegrasSugestaoCompra).filter(
+        models.RegrasSugestaoCompra.empresa_id == current_user.empresa_id
+    ).first()
+    if not regras:
+        regras = models.RegrasSugestaoCompra(empresa_id=current_user.empresa_id)
+        db.add(regras)
+        db.flush()
+    regras.lead_time_dias = body.lead_time_dias
+    regras.cobertura_dias = body.cobertura_dias
+    regras.dias_analise = body.dias_analise
+    regras.min_vendas_historico = body.min_vendas_historico
+    regras.margem_seguranca = body.margem_seguranca
+    regras.margem_adicional_cobertura = body.margem_adicional_cobertura
+    regras.dias_antecedencia_cliente = body.dias_antecedencia_cliente
+    db.commit()
+    db.refresh(regras)
+    return {
+        "empresa_id": regras.empresa_id,
+        "lead_time_dias": regras.lead_time_dias,
+        "cobertura_dias": regras.cobertura_dias,
+        "dias_analise": regras.dias_analise,
+        "min_vendas_historico": regras.min_vendas_historico,
+        "margem_seguranca": regras.margem_seguranca,
+        "margem_adicional_cobertura": regras.margem_adicional_cobertura,
+        "dias_antecedencia_cliente": regras.dias_antecedencia_cliente,
+    }

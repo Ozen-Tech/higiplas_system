@@ -1,9 +1,9 @@
 """
 Serviço de sugestões de compra baseado em padrões de compra dos clientes.
-Analisa histórico de NF-e processadas para identificar padrões e sugerir compras.
+Analisa histórico de NF-e e orçamentos confirmados (HistoricoVendaCliente) para identificar padrões e sugerir compras.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from datetime import datetime, timedelta
@@ -11,19 +11,50 @@ from collections import defaultdict
 import logging
 
 from ..db import models
+from .regras_sugestao_service import get_regras_empresa
 
 logger = logging.getLogger(__name__)
+
+
+def _linha_compra(produto_id: int, quantidade: float, valor_total: float, data_venda: datetime, preco_unitario: float) -> Tuple[int, float, float, datetime, float]:
+    return (produto_id, quantidade, valor_total, data_venda, preco_unitario)
 
 
 class ClientePurchaseSuggestionService:
     """
     Serviço para sugerir compras baseadas no histórico de compras dos clientes.
-    Lógica: Se cliente X sempre compra produto Y, sugere comprar mais produto Y.
-    Usa apenas dados verificados de NF-e (HistoricoPrecoProduto com nota_fiscal).
+    Usa HistoricoPrecoProduto (NF-e) e HistoricoVendaCliente (orçamentos confirmados), evitando duplicar quando o orçamento já tem NF.
     """
     
     def __init__(self, db: Session):
         self.db = db
+    
+    def _get_historico_unificado_cliente(
+        self, cliente_id: int, empresa_id: int, data_limite: datetime
+    ) -> List[Tuple[int, float, float, datetime, float]]:
+        """Unifica HPP (NF-e) e HVC (orçamentos sem NF linkada) para um cliente. Retorna lista (produto_id, quantidade, valor_total, data_venda, preco_unitario)."""
+        linhas = []
+        # HPP (NF-e verificadas)
+        for h in self.db.query(models.HistoricoPrecoProduto).filter(
+            models.HistoricoPrecoProduto.cliente_id == cliente_id,
+            models.HistoricoPrecoProduto.empresa_id == empresa_id,
+            models.HistoricoPrecoProduto.data_venda >= data_limite,
+            models.HistoricoPrecoProduto.nota_fiscal.isnot(None)
+        ).all():
+            linhas.append(_linha_compra(h.produto_id, float(h.quantidade), float(h.valor_total), h.data_venda, float(h.preco_unitario)))
+        # HVC: orçamentos que ainda não têm NF linkada (evita duplicar com HPP)
+        hvc_query = self.db.query(models.HistoricoVendaCliente).join(
+            models.Orcamento, models.Orcamento.id == models.HistoricoVendaCliente.orcamento_id
+        ).filter(
+            models.HistoricoVendaCliente.cliente_id == cliente_id,
+            models.HistoricoVendaCliente.empresa_id == empresa_id,
+            models.HistoricoVendaCliente.data_venda >= data_limite,
+            (models.Orcamento.numero_nf.is_(None)) | (models.Orcamento.numero_nf == "")
+        )
+        for h in hvc_query.all():
+            q = getattr(h, 'quantidade_vendida', None) or 0
+            linhas.append(_linha_compra(h.produto_id, float(q), float(h.valor_total), h.data_venda, float(h.preco_unitario_vendido)))
+        return linhas
     
     def get_purchase_suggestions_for_cliente(
         self,
@@ -33,26 +64,12 @@ class ClientePurchaseSuggestionService:
     ) -> Dict[str, Any]:
         """
         Retorna sugestões de compra baseadas no histórico de um cliente específico.
-        
-        Args:
-            cliente_id: ID do cliente
-            empresa_id: ID da empresa
-            dias_analise: Período de análise em dias
-        
-        Returns:
-            Dict com sugestões de compra para aquele cliente
+        Usa NF-e (HistoricoPrecoProduto) e orçamentos confirmados (HistoricoVendaCliente).
         """
         data_limite = datetime.now() - timedelta(days=dias_analise)
+        historico_linhas = self._get_historico_unificado_cliente(cliente_id, empresa_id, data_limite)
         
-        # Buscar histórico de compras do cliente (apenas NF-e verificadas)
-        historico = self.db.query(models.HistoricoPrecoProduto).filter(
-            models.HistoricoPrecoProduto.cliente_id == cliente_id,
-            models.HistoricoPrecoProduto.empresa_id == empresa_id,
-            models.HistoricoPrecoProduto.data_venda >= data_limite,
-            models.HistoricoPrecoProduto.nota_fiscal.isnot(None)  # Apenas NF-e verificadas
-        ).order_by(models.HistoricoPrecoProduto.data_venda.desc()).all()
-        
-        if not historico:
+        if not historico_linhas:
             cliente = self.db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
             return {
                 'cliente_id': cliente_id,
@@ -63,7 +80,7 @@ class ClientePurchaseSuggestionService:
                 'periodo_analise_dias': dias_analise
             }
         
-        # Agrupar por produto e calcular frequência
+        # Agrupar por produto e calcular frequência (dados unificados HPP + HVC)
         produtos_comprados = defaultdict(lambda: {
             'total_quantidade': 0,
             'total_valor': 0,
@@ -71,14 +88,12 @@ class ClientePurchaseSuggestionService:
             'datas': [],
             'precos_unitarios': []
         })
-        
-        for compra in historico:
-            produto_id = compra.produto_id
-            produtos_comprados[produto_id]['total_quantidade'] += compra.quantidade
-            produtos_comprados[produto_id]['total_valor'] += compra.valor_total
+        for (produto_id, quantidade, valor_total, data_venda, preco_unitario) in historico_linhas:
+            produtos_comprados[produto_id]['total_quantidade'] += quantidade
+            produtos_comprados[produto_id]['total_valor'] += valor_total
             produtos_comprados[produto_id]['num_compras'] += 1
-            produtos_comprados[produto_id]['datas'].append(compra.data_venda)
-            produtos_comprados[produto_id]['precos_unitarios'].append(compra.preco_unitario)
+            produtos_comprados[produto_id]['datas'].append(data_venda)
+            produtos_comprados[produto_id]['precos_unitarios'].append(preco_unitario)
         
         # Criar sugestões
         sugestoes = []
@@ -111,13 +126,13 @@ class ClientePurchaseSuggestionService:
             dias_proxima_compra_esperada = frequencia_dias or 30
             dias_ate_proxima_compra = dias_proxima_compra_esperada - (dias_desde_ultima_compra or 0)
             
-            # Se falta menos de 1 semana para a próxima compra esperada, sugerir compra
+            # Se falta menos de dias_antecedencia_cliente para a próxima compra esperada, sugerir compra
             quantidade_sugerida = 0
             precisa_comprar = False
             
-            if dias_ate_proxima_compra <= 7 and dias_ate_proxima_compra >= 0:
+            if dias_ate_proxima_compra <= dias_antecedencia_cliente and dias_ate_proxima_compra >= 0:
                 # Está próximo da próxima compra esperada, sugerir compra
-                quantidade_sugerida = int(quantidade_media * (7 / dias_proxima_compra_esperada))  # Quantidade para 1 semana
+                quantidade_sugerida = int(quantidade_media * (dias_antecedencia_cliente / dias_proxima_compra_esperada))
                 precisa_comprar = True
             elif dias_desde_ultima_compra and dias_desde_ultima_compra > dias_proxima_compra_esperada:
                 # Já passou o período esperado, sugerir compra urgente
@@ -296,46 +311,61 @@ class ClientePurchaseSuggestionService:
     def get_global_purchase_suggestions(
         self,
         empresa_id: int,
-        dias_analise: int = 90
+        dias_analise: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Retorna sugestões de compra baseadas em TODOS os clientes.
         Produtos que são comprados frequentemente por múltiplos clientes.
-        
-        Args:
-            empresa_id: ID da empresa
-            dias_analise: Período de análise em dias
-        
-        Returns:
-            Dict com sugestões globais de compra
+        Usa regras da tabela regras_sugestao_compra da empresa.
         """
+        regras = get_regras_empresa(self.db, empresa_id)
+        dias_analise = dias_analise if dias_analise is not None else regras["dias_analise"]
         data_limite = datetime.now() - timedelta(days=dias_analise)
         
-        # Buscar todos os histórico de preços (todas as NF-e processadas)
-        historico = self.db.query(models.HistoricoPrecoProduto).filter(
-            models.HistoricoPrecoProduto.empresa_id == empresa_id,
-            models.HistoricoPrecoProduto.data_venda >= data_limite,
-            models.HistoricoPrecoProduto.cliente_id.isnot(None),
-            models.HistoricoPrecoProduto.nota_fiscal.isnot(None)  # Apenas NF-e verificadas
-        ).all()
-        
-        # Agrupar por produto
+        # Unificar HPP (NF-e) e HVC (orçamentos sem NF linkada) para toda a empresa
         produtos_comprados = defaultdict(lambda: {
             'total_quantidade': 0,
             'total_valor': 0,
             'num_compras': 0,
             'clientes_unicos': set(),
-            'datas': []
+            'datas': [],
+            'linhas_30': []  # (quantidade, data_venda) para demanda últimos 30 dias
         })
-        
-        for compra in historico:
-            produto_id = compra.produto_id
-            produtos_comprados[produto_id]['total_quantidade'] += compra.quantidade
-            produtos_comprados[produto_id]['total_valor'] += compra.valor_total
+        limite_30 = datetime.now() - timedelta(days=30)
+        # HPP (NF-e verificadas)
+        for h in self.db.query(models.HistoricoPrecoProduto).filter(
+            models.HistoricoPrecoProduto.empresa_id == empresa_id,
+            models.HistoricoPrecoProduto.data_venda >= data_limite,
+            models.HistoricoPrecoProduto.cliente_id.isnot(None),
+            models.HistoricoPrecoProduto.nota_fiscal.isnot(None)
+        ).all():
+            produto_id = h.produto_id
+            q = float(h.quantidade)
+            produtos_comprados[produto_id]['total_quantidade'] += q
+            produtos_comprados[produto_id]['total_valor'] += float(h.valor_total)
             produtos_comprados[produto_id]['num_compras'] += 1
-            if compra.cliente_id is not None:
-                produtos_comprados[produto_id]['clientes_unicos'].add(compra.cliente_id)
-            produtos_comprados[produto_id]['datas'].append(compra.data_venda)
+            produtos_comprados[produto_id]['clientes_unicos'].add(h.cliente_id)
+            produtos_comprados[produto_id]['datas'].append(h.data_venda)
+            if h.data_venda >= limite_30:
+                produtos_comprados[produto_id]['linhas_30'].append((q, h.data_venda))
+        # HVC (orçamentos sem NF linkada)
+        hvc_query = self.db.query(models.HistoricoVendaCliente).join(
+            models.Orcamento, models.Orcamento.id == models.HistoricoVendaCliente.orcamento_id
+        ).filter(
+            models.HistoricoVendaCliente.empresa_id == empresa_id,
+            models.HistoricoVendaCliente.data_venda >= data_limite,
+            (models.Orcamento.numero_nf.is_(None)) | (models.Orcamento.numero_nf == "")
+        )
+        for h in hvc_query.all():
+            produto_id = h.produto_id
+            q = float(getattr(h, 'quantidade_vendida', None) or 0)
+            produtos_comprados[produto_id]['total_quantidade'] += q
+            produtos_comprados[produto_id]['total_valor'] += float(h.valor_total)
+            produtos_comprados[produto_id]['num_compras'] += 1
+            produtos_comprados[produto_id]['clientes_unicos'].add(h.cliente_id)
+            produtos_comprados[produto_id]['datas'].append(h.data_venda)
+            if h.data_venda >= limite_30:
+                produtos_comprados[produto_id]['linhas_30'].append((q, h.data_venda))
         
         # Criar sugestões
         sugestoes = []
@@ -354,13 +384,7 @@ class ClientePurchaseSuggestionService:
             
             quantidade_media = dados['total_quantidade'] / dados['num_compras'] if dados['num_compras'] > 0 else 0
             estoque_atual = produto.quantidade_em_estoque or 0
-            
-            # Calcular demanda projetada (baseado em vendas recentes)
-            vendas_recentes = [
-                c for c in historico 
-                if c.produto_id == produto_id and c.data_venda >= datetime.now() - timedelta(days=30)
-            ]
-            demanda_30_dias = sum(c.quantidade for c in vendas_recentes)
+            demanda_30_dias = sum(q for q, _ in dados.get('linhas_30', []))
             
             # Sugerir quantidade para cobrir 45 dias (demanda recente + margem)
             quantidade_sugerida = max(int(demanda_30_dias * 1.5), int(quantidade_media * 2))

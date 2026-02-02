@@ -247,7 +247,42 @@ def create_reversao_columns_and_tables():
         # Não levantar exceção para não impedir o startup da aplicação
 
 
+def create_regras_sugestao_compra_table():
+    """Cria a tabela regras_sugestao_compra se não existir."""
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = 'regras_sugestao_compra'
+                );
+            """))
+            if result.scalar():
+                logger.info("✓ Tabela regras_sugestao_compra já existe")
+                return
+            logger.info("Criando tabela regras_sugestao_compra...")
+            connection.execute(text("""
+                CREATE TABLE regras_sugestao_compra (
+                    id SERIAL PRIMARY KEY,
+                    empresa_id INTEGER NOT NULL UNIQUE REFERENCES empresas(id),
+                    lead_time_dias INTEGER NOT NULL DEFAULT 7,
+                    cobertura_dias INTEGER NOT NULL DEFAULT 14,
+                    dias_analise INTEGER NOT NULL DEFAULT 90,
+                    min_vendas_historico INTEGER NOT NULL DEFAULT 2,
+                    margem_seguranca DOUBLE PRECISION NOT NULL DEFAULT 1.2,
+                    margem_adicional_cobertura DOUBLE PRECISION NOT NULL DEFAULT 1.15,
+                    dias_antecedencia_cliente INTEGER NOT NULL DEFAULT 7
+                );
+                CREATE INDEX ix_regras_sugestao_compra_empresa_id ON regras_sugestao_compra(empresa_id);
+            """))
+            connection.commit()
+            logger.info("✓ Tabela regras_sugestao_compra criada com sucesso!")
+    except Exception as e:
+        logger.error(f"Erro ao criar tabela regras_sugestao_compra: {e}")
+
+
 def create_all_missing_tables():
     """Cria todas as tabelas faltantes necessárias."""
     create_historico_preco_produto_table()
     create_reversao_columns_and_tables()
+    create_regras_sugestao_compra_table()

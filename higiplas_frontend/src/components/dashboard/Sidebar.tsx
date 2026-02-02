@@ -8,7 +8,8 @@ import {
   CubeIcon, ShoppingCartIcon,
   ArrowsRightLeftIcon, ClockIcon,
   ChevronDownIcon, ChevronRightIcon, DocumentTextIcon, UserPlusIcon,
-  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon
+  ClipboardDocumentListIcon, UserGroupIcon, CheckCircleIcon,
+  ClipboardDocumentCheckIcon, Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -26,6 +27,7 @@ type NavigationItem = {
 const navigation: NavigationItem[] = [
   { name: 'Estoque', href: '/dashboard', icon: CubeIcon },
   { name: 'Movimentações', href: '/dashboard/movimentacoes', icon: ArrowsRightLeftIcon },
+  { name: 'Contagem de Estoque', href: '/dashboard/contagem-estoque', icon: ClipboardDocumentCheckIcon },
   { name: 'Histórico Geral', href: '/dashboard/historico', icon: ClockIcon },
   { name: 'Sugestões de Compra', href: '/dashboard/sugestoes-compra', icon: ShoppingCartIcon },
   { name: 'Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },
@@ -33,6 +35,7 @@ const navigation: NavigationItem[] = [
 
 const adminNavigation: NavigationItem[] = [
   { name: 'Criar Usuário', href: '/admin/criar-usuario', icon: UserPlusIcon },
+  { name: 'Regras de Sugestão de Compra', href: '/dashboard/configuracoes/regras-sugestao-compra', icon: Cog6ToothIcon },
   { name: 'Solicitações de Movimentação', href: '/dashboard/movimentacoes-pendentes', icon: CheckCircleIcon },
   { name: 'Gerenciar Orçamentos', href: '/dashboard/orcamentos', icon: ClipboardDocumentListIcon },
   { name: 'Gerenciar Clientes', href: '/dashboard/clientes', icon: UserGroupIcon },

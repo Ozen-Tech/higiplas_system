@@ -585,3 +585,18 @@ class ArquivoProcessado(Base):
         Index('idx_arquivo_empresa_data', 'empresa_id', 'data_processamento'),
         Index('idx_arquivo_nf', 'nota_fiscal', 'empresa_id'),
     )
+
+
+class RegrasSugestaoCompra(Base):
+    """Regras de negócio por empresa para sugestão de compra (quando comprar, lead time, cobertura, etc.)."""
+    __tablename__ = "regras_sugestao_compra"
+    id = Column(Integer, primary_key=True, index=True)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False, unique=True, index=True)
+    lead_time_dias = Column(Integer, nullable=False, default=7)
+    cobertura_dias = Column(Integer, nullable=False, default=14)
+    dias_analise = Column(Integer, nullable=False, default=90)
+    min_vendas_historico = Column(Integer, nullable=False, default=2)
+    margem_seguranca = Column(Float, nullable=False, default=1.2)
+    margem_adicional_cobertura = Column(Float, nullable=False, default=1.15)
+    dias_antecedencia_cliente = Column(Integer, nullable=False, default=7)
+    empresa = relationship("Empresa")
