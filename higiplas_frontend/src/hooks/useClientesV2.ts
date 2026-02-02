@@ -12,15 +12,9 @@ import {
   ClienteStats,
   ClienteSearchParams
 } from '@/types';
-// #region agent log
-const _ulog = (m: string, d: object, h: string) => { try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'useClientesV2.ts', message: m, data: d, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: h }) }).catch(() => {}); } catch {} };
-// #endregion
 
 export function useClientesV2() {
   const [clientes, setClientes] = useState<ClienteListItemV2[]>([]);
-  // #region agent log
-  _ulog('useClientesV2 init', { clientesIsArray: Array.isArray(clientes), len: clientes?.length }, 'H2');
-  // #endregion
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

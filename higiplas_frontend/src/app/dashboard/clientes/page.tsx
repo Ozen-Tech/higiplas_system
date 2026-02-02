@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Filter, Package, FileText, X, UserPlus, Pencil } from 'lucide-react';
+import { Search, Filter, Package, FileText, X, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/apiService';
 import toast from 'react-hot-toast';
@@ -52,7 +52,7 @@ interface HistoricoCompra {
 
 export default function ClientesAdminPage() {
   const { user, loading: authLoading } = useAuth();
-  const { clientes, fetchClientes, loading: loadingClientes } = useClientesV2();
+  const { clientes, fetchClientes, deleteCliente, loading: loadingClientes } = useClientesV2();
   
   const [activeTab, setActiveTab] = useState<'cadastro' | 'visao-geral' | 'produtos' | 'historico'>('cadastro');
   const [searchTerm, setSearchTerm] = useState('');
@@ -160,6 +160,18 @@ export default function ClientesAdminPage() {
   const recarregarClientes = useCallback(() => {
     fetchClientes({ limit: 1000, skip: 0 });
   }, [fetchClientes]);
+
+  const handleExcluirCliente = async (clienteId: number, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o cliente "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await deleteCliente(clienteId);
+      recarregarClientes();
+      if (selectedCliente === clienteId) setSelectedCliente(null);
+      if (editClienteId === clienteId) setEditClienteId(null);
+    } catch {
+      // toast já é exibido pelo deleteCliente
+    }
+  };
 
   if (authLoading) {
     return (
@@ -354,14 +366,25 @@ export default function ClientesAdminPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditClienteId(c.id)}
-                                title="Editar cliente"
-                              >
-                                <Pencil size={16} />
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditClienteId(c.id)}
+                                  title="Editar cliente"
+                                >
+                                  <Pencil size={16} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleExcluirCliente(c.id, c.nome)}
+                                  title="Excluir cliente"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}

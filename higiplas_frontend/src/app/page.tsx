@@ -13,9 +13,6 @@ import { adminService } from '@/services/adminService';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  // #region agent log
-  try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx (login)', message: 'LoginPage render', data: {}, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H3' }) }).catch(() => {}); } catch {}
-  // #endregion
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
