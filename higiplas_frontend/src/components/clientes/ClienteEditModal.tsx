@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useClientesV2 } from '@/hooks/useClientesV2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,23 +34,33 @@ export function ClienteEditModal({
   const [observacoes, setObservacoes] = useState('');
   const [referenciaLocalizacao, setReferenciaLocalizacao] = useState('');
   const [status, setStatus] = useState<'ATIVO' | 'INATIVO' | 'PROSPECTO'>('ATIVO');
+  const lastFetchedId = useRef<number | null>(null);
 
   useEffect(() => {
-    if (open && clienteId) {
-      getClienteById(clienteId).then((c: ClienteV2 | null) => {
-        if (c) {
-          setNome(c.nome);
-          setTelefone((c.telefone === '0000000000' ? '' : c.telefone) ?? '');
-          setTipoPessoa(c.tipo_pessoa ?? 'FISICA');
-          setCpfCnpj(c.cpf_cnpj ?? '');
-          setBairro(c.bairro ?? '');
-          setCidade(c.cidade ?? '');
-          setObservacoes(c.observacoes ?? '');
-          setReferenciaLocalizacao(c.referencia_localizacao ?? '');
-          setStatus(c.status ?? 'ATIVO');
-        }
-      });
+    if (!open || !clienteId) {
+      if (!open) lastFetchedId.current = null;
+      return;
     }
+    // Evitar requisições duplicadas (ex: React Strict Mode, re-renders)
+    if (lastFetchedId.current === clienteId) return;
+    lastFetchedId.current = clienteId;
+
+    getClienteById(clienteId).then((c: ClienteV2 | null) => {
+      if (c) {
+        setNome(c.nome);
+        setTelefone((c.telefone === '0000000000' ? '' : c.telefone) ?? '');
+        setTipoPessoa(c.tipo_pessoa ?? 'FISICA');
+        setCpfCnpj(c.cpf_cnpj ?? '');
+        setBairro(c.bairro ?? '');
+        setCidade(c.cidade ?? '');
+        setObservacoes(c.observacoes ?? '');
+        setReferenciaLocalizacao(c.referencia_localizacao ?? '');
+        setStatus(c.status ?? 'ATIVO');
+      }
+      lastFetchedId.current = null; // Permitir novo fetch ao reabrir
+    }).catch(() => {
+      lastFetchedId.current = null;
+    });
   }, [open, clienteId, getClienteById]);
 
   const handleSalvar = async () => {

@@ -136,12 +136,11 @@ export function useClientesV2() {
   };
 
   // ============= OPERAÇÕES INDIVIDUAIS =============
-  
-  const getClienteById = async (id: number): Promise<ClienteV2 | null> => {
+  // useCallback evita loop infinito quando ClienteEditModal usa em useEffect
+  const getClienteById = useCallback(async (id: number): Promise<ClienteV2 | null> => {
     try {
       setLoading(true);
       const response = await apiService.get(`/clientes/${id}`);
-      // apiService.get retorna { data, headers }
       const data = response?.data || response;
       return data || null;
     } catch (err) {
@@ -151,7 +150,7 @@ export function useClientesV2() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const updateCliente = async (id: number, clienteData: ClienteUpdateV2): Promise<ClienteV2 | null> => {
     try {
