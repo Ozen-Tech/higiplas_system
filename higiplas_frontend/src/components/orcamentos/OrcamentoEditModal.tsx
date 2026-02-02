@@ -5,9 +5,6 @@ import { Orcamento, OrcamentoUpdate, OrcamentoItemUpdate } from '@/types/orcamen
 import { useOrcamentos } from '@/hooks/useOrcamentos';
 import { useVendas } from '@/hooks/useVendas';
 import { useClientesV2 } from '@/hooks/useClientesV2';
-// #region agent log
-const _log = (msg: string, data: object, hypothesisId: string) => { try { fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'OrcamentoEditModal.tsx', message: msg, data, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId }) }).catch(() => {}); } catch {} };
-// #endregion
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,15 +26,9 @@ export function OrcamentoEditModal({
   onClose,
   onSuccess,
 }: OrcamentoEditModalProps) {
-  // #region agent log
-  _log('OrcamentoEditModal mount', { hasOrcamento: !!orcamento, orcamentoId: orcamento?.id, hasCliente: !!orcamento?.cliente, clienteId: orcamento?.cliente?.id }, 'H1');
-  // #endregion
   const { editarOrcamento, loading } = useOrcamentos();
   const { produtos, buscarProdutos } = useVendas();
   const { clientes, fetchClientes } = useClientesV2();
-  // #region agent log
-  _log('useClientesV2 result', { clientesIsArray: Array.isArray(clientes), clientesLen: clientes?.length ?? 'n/a' }, 'H2');
-  // #endregion
 
   const [clienteId, setClienteId] = useState(orcamento.cliente.id);
   const [condicaoPagamento, setCondicaoPagamento] = useState(orcamento.condicao_pagamento);

@@ -71,16 +71,10 @@ export default function SugestoesCompraPage() {
 
   const fetchSugestoes = useCallback(async () => {
     setLoading(true);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sugestoes-compra/page.tsx:fetchSugestoes',message:'fetchSugestoes start',data:{diasAnalise},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     try {
       // Buscar visão geral de clientes
       const visaoGeralResponse = await apiService.get(`/clientes/todos/visao-geral?dias=${diasAnalise}`);
       const clientes = visaoGeralResponse?.data?.clientes || [];
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sugestoes-compra/page.tsx:visao-geral',message:'visao-geral response',data:{hasData:!!visaoGeralResponse?.data,clientesCount:clientes?.length,keys:visaoGeralResponse?.data?Object.keys(visaoGeralResponse.data):[]},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
 
       // Buscar sugestões para cada cliente que tem compras
       const sugestoesPromises = clientes.map(async (cliente: ClienteVisaoGeral) => {
@@ -90,10 +84,6 @@ export default function SugestoesCompraPage() {
           );
           return response?.data;
         } catch (error) {
-          const err = error as { message?: string; response?: { status?: number } };
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sugestoes-compra/page.tsx:sugestoes-cliente',message:'sugestoes-cliente error',data:{cliente_id:cliente.cliente_id,msg:err?.message,status:err?.response?.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
           console.error(`Erro ao buscar sugestões para cliente ${cliente.cliente_id}:`, error);
           return null;
         }
@@ -112,20 +102,10 @@ export default function SugestoesCompraPage() {
           `/compras/sugestoes/baseado-clientes?dias_analise=${diasAnalise}`
         );
         setSugestoesGlobais(globalResponse?.data?.sugestoes || []);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sugestoes-compra/page.tsx:global',message:'global sugestoes ok',data:{count:(globalResponse?.data?.sugestoes||[])?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-      } catch (globalErr) {
-        const err = globalErr as { message?: string; response?: { status?: number; data?: unknown } };
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sugestoes-compra/page.tsx:global',message:'global sugestoes error',data:{msg:err?.message,status:err?.response?.status,detail:err?.response?.data},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
+      } catch {
+        // Ignorar erro de sugestões globais
       }
     } catch (error) {
-      const err = error as { message?: string; response?: { status?: number; data?: unknown } };
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sugestoes-compra/page.tsx:catch',message:'fetchSugestoes error',data:{msg:err?.message,status:err?.response?.status,detail:err?.response?.data},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       console.error('Erro ao buscar sugestões:', error);
       toast.error('Erro ao carregar sugestões de compra');
     } finally {

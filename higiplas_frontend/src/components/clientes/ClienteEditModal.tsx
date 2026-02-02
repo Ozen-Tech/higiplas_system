@@ -37,14 +37,8 @@ export function ClienteEditModal({
 
   useEffect(() => {
     if (open && clienteId) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClienteEditModal.tsx:getClienteById',message:'getClienteById call',data:{clienteId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       getClienteById(clienteId).then((c: ClienteV2 | null) => {
         if (c) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClienteEditModal.tsx:getClienteById',message:'getClienteById result',data:{hasCliente:true,hasNome:!!c.nome,hasTelefone:!!c.telefone},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
           setNome(c.nome);
           setTelefone((c.telefone === '0000000000' ? '' : c.telefone) ?? '');
           setTipoPessoa(c.tipo_pessoa ?? 'FISICA');
@@ -54,10 +48,6 @@ export function ClienteEditModal({
           setObservacoes(c.observacoes ?? '');
           setReferenciaLocalizacao(c.referencia_localizacao ?? '');
           setStatus(c.status ?? 'ATIVO');
-        } else {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClienteEditModal.tsx:getClienteById',message:'getClienteById null',data:{clienteId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
         }
       });
     }
@@ -66,21 +56,11 @@ export function ClienteEditModal({
   const handleSalvar = async () => {
     if (!clienteId || !nome || !telefone) return;
     const payload = { nome, telefone, tipo_pessoa: tipoPessoa, cpf_cnpj: cpfCnpj || undefined, bairro: bairro || undefined, cidade: cidade || undefined, observacoes: observacoes || undefined, referencia_localizacao: referenciaLocalizacao || undefined, status };
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClienteEditModal.tsx:handleSalvar',message:'updateCliente call',data:{clienteId,status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     try {
       await updateCliente(clienteId, payload);
       onSuccess();
       onClose();
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClienteEditModal.tsx:handleSalvar',message:'updateCliente success',data:{clienteId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
     } catch (err) {
-      const e = err as { message?: string; response?: { status?: number; data?: unknown } };
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/dd87b882-9f5c-4d4f-ba43-1e6325b293f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClienteEditModal.tsx:handleSalvar',message:'updateCliente error',data:{clienteId,msg:e?.message,status:e?.response?.status,detail:e?.response?.data},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       console.error('Erro ao atualizar cliente:', err);
     }
   };
