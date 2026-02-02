@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiService } from "@/services/apiService";
-import { ClipboardDocumentCheckIcon, ArrowPathIcon } from "lucide-react";
+import { ClipboardCheck, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Product {
@@ -107,11 +107,11 @@ export default function ContagemEstoquePage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ClipboardDocumentCheckIcon className="h-6 w-6" />
+                <ClipboardCheck className="h-6 w-6" />
                 <CardTitle>Contagem de Estoque (Inventário)</CardTitle>
               </div>
               <Button variant="outline" size="sm" onClick={fetchProducts} disabled={loading}>
-                <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
                 Atualizar lista
               </Button>
             </div>

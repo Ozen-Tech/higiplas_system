@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { adminService, RegrasSugestaoCompra } from '@/services/adminService';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Cog6ToothIcon, Loader2, Check } from 'lucide-react';
+import { Settings, Loader2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const DEFAULTS: RegrasSugestaoCompra = {
@@ -104,7 +104,7 @@ export default function RegrasSugestaoCompraPage() {
     <ClientLayout>
       <Header>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Cog6ToothIcon className="h-7 w-7" />
+          <Settings className="h-7 w-7" />
           Regras de sugestão de compra
         </h1>
       </Header>
