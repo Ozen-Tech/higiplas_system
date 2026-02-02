@@ -26,8 +26,6 @@ import {
   Download,
   Plus,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
   Filter,
   X,
   ArrowUp,
