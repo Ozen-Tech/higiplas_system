@@ -318,8 +318,6 @@ class HistoricoPrecoProduto(Base):
     # Campos opcionais para contexto
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
     cliente = relationship("Cliente")
-    
-    data_criacao = Column(DateTime(timezone=True), server_default=func.now())
 
 class OrdemDeCompra(Base):
     __tablename__ = "ordens_compra"
